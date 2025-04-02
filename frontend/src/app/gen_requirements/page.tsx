@@ -12,18 +12,21 @@ export default function RequirementsPage() {
   const mockRequirements: Requirement[] = [
     {
       id: "1",
+      idTitle: "1",
       title: 'User Authentication',
       description: 'The system shall provide user authentication with role-based access control.',
       priority: 'High',
     },
     {
       id: "2",
+      idTitle: "2",
       title: 'Data Export',
       description: 'The system shall allow users to export their data in CSV format.',
       priority: 'Medium',
     },
     {
-      id: "3",
+      id: "1",
+      idTitle: "3",
       title: 'Offline Mode',
       description: 'The system shall support offline functionality for core features.',
       priority: 'Low',
@@ -34,7 +37,7 @@ export default function RequirementsPage() {
     <div className="min-h-screen bg-[#EBE5EB] p-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-7xl mx-auto">
 
-        {/* Left: Project Input */}
+        
         <div className={input.wrapper}>
           <h2 className={input.title}>📱 Project Input</h2>
 
@@ -58,7 +61,7 @@ export default function RequirementsPage() {
           </div>
         </div>
 
-        {/* Right: Generated Requirements */}
+        
         <div className={gen.wrapper}>
           <div className={gen.header}>
             <h2 className={gen.title}>Generated requirements</h2>
@@ -72,7 +75,8 @@ export default function RequirementsPage() {
             {mockRequirements.map((req) => (
               <RequirementCard
                 key={req.id}
-                id={`REQ-${req.id}`}
+                id={req.id}
+                idTitle={`REQ-${req.idTitle}`}
                 title={req.title}
                 description={req.description}
                 priority={req.priority}
