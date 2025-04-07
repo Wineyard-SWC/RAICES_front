@@ -5,12 +5,29 @@ import { epicUserStoryGroupStyles as styles } from '../styles/epicwithuserstorie
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import UserStoryCard from './userstorycard';
+import { UserStory } from '@/types/userstory';
 
-type Props = EpicWithUserStories;
 
-const EpicUserStoryGroup = ({ id, idTitle, userStories }: Props) => {
+
+type Props = {
+  id: string;
+  idTitle: string;
+  userStories: UserStory[];
+  editMode?: boolean;
+  onUpdate: (updated: UserStory) => void;
+  availableEpics: string[];
+};
+
+const EpicUserStoryGroup = ({
+  id,
+  idTitle,
+  userStories,
+  editMode = false,
+  onUpdate,
+  availableEpics
+}: Props) => {
   const [expanded, setExpanded] = useState(true);
-
+  
   return (
     <div className={styles.wrapper}>
       <div className={styles.header}>
@@ -26,7 +43,13 @@ const EpicUserStoryGroup = ({ id, idTitle, userStories }: Props) => {
       {expanded && (
         <div className={styles.list}>
           {userStories.map((story) => (
-            <UserStoryCard key={story.id} {...story} />
+            <UserStoryCard
+            key={story.id}
+            {...story}
+            onUpdate={onUpdate}
+            editMode={editMode}
+            availableEpics={availableEpics}
+           />
           ))}
         </div>
       )}
