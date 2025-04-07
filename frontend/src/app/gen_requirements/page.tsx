@@ -57,7 +57,7 @@ export default function RequirementsPage() {
 
           <div className={input.actions}>
             <button className={input.generateButton}>Generate Requirements</button>
-            <button className={input.clearButton}>Clear</button>
+            <button className={input.clearButton} onClick={() => setProjectDescription('')}>Clear</button>
           </div>
         </div>
 
