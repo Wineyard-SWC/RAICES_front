@@ -133,14 +133,8 @@ export default function LoginPage() {
               Don&apos;t have an account?{" "}
               <Link 
                 href="/signup" 
-<<<<<<< Updated upstream
-                className="font-medium !text-[#4A2B4D] hover:underline"
-                style={{ color: '#4A2B4D' }}
-                >
-=======
                 className="text-[#4A2B4D] hover:underline font-medium"
               >
->>>>>>> Stashed changes
                 Sign up
               </Link>
             </p>
