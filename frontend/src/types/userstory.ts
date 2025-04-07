@@ -1,4 +1,5 @@
 export interface UserStory {
+    epicId: string;
     id: string; 
     idTitle: string;
     title: string;
@@ -6,4 +7,4 @@ export interface UserStory {
     priority: 'High' | 'Medium' | 'Low';
     points: number;
     acceptanceCriteria: string[];
-  }
+}
