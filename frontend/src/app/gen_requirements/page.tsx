@@ -26,11 +26,11 @@ export default function RequirementsPage() {
     }
   }, [generatedOutput]);
 
-          <div className={input.actions}>
-            <button className={input.generateButton}>Generate Requirements</button>
-            <button className={input.clearButton} onClick={() => setProjectDescription('')}>Clear</button>
-          </div>
-        </div>
+        //   <div className={input.actions}>
+        //     <button className={input.generateButton}>Generate Requirements</button>
+        //     <button className={input.clearButton} onClick={() => setProjectDescription('')}>Clear</button>
+        //   </div>
+        // </div>
   const handleGenerate = () => {
     if (projectDescription.trim() === "") return;
     generate(projectDescription);
