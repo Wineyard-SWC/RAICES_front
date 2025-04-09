@@ -1,65 +1,61 @@
 'use client';
+
 import { useState } from "react";
+import { useSessionContext } from "@/contexts/sessioncontext";
+
 
 export const useGenerateRequirements = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [generatedOutput, setGeneratedOutput] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
-    const route = process.env.REQUIREMENT_ROUTE!
-    
+    const { sessionId, setSessionId} = useSessionContext();
+
+    const apiUrl = process.env.NEXT_PUBLIC_REQUIREMENT_ROUTE!;
+
     const generate = async (projectDescription: string) => {
       setIsLoading(true);
       setError(null);
-      /*
+
+      if (!apiUrl) {
+        setError("API configuration error: URL not defined");
+        return;
+      }
+
+
       try {
-        const response = await fetch(route, {
+        const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
                 "message": projectDescription,
-                "session_id": "",
-                "save_to_kb": false
+                "session_id": sessionId || ""
             })
         });
-  
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Failed to generate user stories');
         
-        setGeneratedOutput(data.data);*/
-
-        try {
-          await new Promise((res) => setTimeout(res, 1000)); 
-      
-          const mockedResponse = {
-            content: {
-              funcionales: [
-                {
-                  id: "REQ-001",
-                  title: "Inicio de sesión",
-                  description: "El sistema debe permitir a los usuarios iniciar sesión.",
-                  category: "Funcional",
-                  priority: "Alta",
-                },
-              ],
-              no_funcionales: [
-                {
-                  id: "REQ-NF-001",
-                  title: "Interfaz amigable",
-                  description: "La interfaz debe ser intuitiva y fácil de usar.",
-                  category: "No Funcional",
-                  priority: "Media",
-                },
-              ],
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => null);
+                throw new Error(
+                    errorData?.error || `API responded with status: ${response.status}`
+                );
             }
-          };
-      
-        setGeneratedOutput(mockedResponse);
+            
 
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
+            const data = await response.json();
+            
+            
+            setSessionId(data.session_id)
+
+            setGeneratedOutput({
+                content: data.message.content
+            });
+            
+        } catch (err: any) {
+            console.error("Error in API call:", err);
+            setError(err.message || "Failed to communicate with the API");
+        } finally {
+            setIsLoading(false);
+        }
     };
   
     return {

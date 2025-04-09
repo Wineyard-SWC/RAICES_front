@@ -5,4 +5,5 @@ export interface Requirement {
     description: string;
     priority: 'High' | 'Medium' | 'Low';
     category?: 'Funcional' | 'No Funcional';
+    selected?: boolean;
   }

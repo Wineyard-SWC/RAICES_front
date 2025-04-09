@@ -8,7 +8,8 @@ export const epicCardStyles = {
     relatedTitle: "text-sm font-semibold text-black mb-1",
     requirementItem: "flex items-start text-sm text-[#4A2B4A] space-x-2",
     requirementCheck: "text-[#4A2B4A] mt-1",
-    plusIcon: "absolute top-4 right-4 md:top-4 md:right-4 text-[#4A2B4A] hover:scale-110 transition"  
+    plusIcon: "absolute top-4 right-4 md:top-4 md:right-4 text-[#4A2B4A] hover:scale-110 transition",
+    icon: "text-[#4A2B4A] mt-1",
 };
 
   
