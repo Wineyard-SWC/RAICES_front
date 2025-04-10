@@ -1,10 +1,16 @@
 export interface UserStory {
-    epicId: string;
+    assigned_epic: string;
     id: string; 
     idTitle: string;
     title: string;
     description: string;
     priority: 'High' | 'Medium' | 'Low';
     points: number;
-    acceptanceCriteria: string[];
-}
+    acceptance_criteria: string[];
+    selected?: boolean
+};
+
+
+export type UserStoryResponse = {
+    content: UserStory[];
+};

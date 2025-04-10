@@ -6,8 +6,7 @@ import { ChevronUp, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import UserStoryCard from './userstorycard';
 import { UserStory } from '@/types/userstory';
-
-
+import { useSelectedUserStoriesContext } from '@/contexts/selecteduserstories';
 
 type Props = {
   id: string;
@@ -28,6 +27,14 @@ const EpicUserStoryGroup = ({
 }: Props) => {
   const [expanded, setExpanded] = useState(true);
   
+  const { selectedUserStoriesIds, setSelectedUserStoriesIds } = useSelectedUserStoriesContext();
+
+  const toggleSelectStory = (id: string) => {
+    setSelectedUserStoriesIds((prev) =>
+      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
+    );
+  };
+
   return (
     <div className={styles.wrapper}>
       <div className={styles.header}>
@@ -42,12 +49,14 @@ const EpicUserStoryGroup = ({
 
       {expanded && (
         <div className={styles.list}>
-          {userStories.map((story) => (
+          {userStories?.map((story) => (
             <UserStoryCard
             key={story.id}
             {...story}
             onUpdate={onUpdate}
             editMode={editMode}
+            isSelected={selectedUserStoriesIds.includes(story.id)}
+            onToggleSelect={() => toggleSelectStory(story.id)}
             availableEpics={availableEpics}
            />
           ))}

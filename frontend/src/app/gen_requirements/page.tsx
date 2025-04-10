@@ -6,12 +6,19 @@ import { useState, useEffect } from 'react';
 import GeneratorView from '@/components/generatorview';
 import { useGenerateRequirements } from '@/hooks/useGenerateRequirements';
 import { parseRequirementsFromAPI } from '@/utils/parseRequirementsFromApi';
+import { projectInputStyles as input } from './styles/projectinput.module';
+import { useRequirementContext } from '@/contexts/requirementcontext';
+import { useProjectContext } from '@/contexts/projectcontext';
+import { useSelectedRequirementContext } from '@/contexts/selectedrequirements';
+import LoadingScreen from '@/components/loading';
 
 export default function RequirementsPage() {
-  const [projectDescription, setProjectDescription] = useState('');
-  const [editMode, setEditMode] = useState(false);
-  const [requirements, setRequirements] = useState<Requirement[]>([]);
+  const { projectDescription, setProjectDescription } = useProjectContext();
+  const [ editMode, setEditMode ] = useState(false);
+  const { requirements, setRequirements } = useRequirementContext();
+  const { selectedIds, setSelectedIds } = useSelectedRequirementContext();
 
+  
   const {
     generate,
     isLoading,
@@ -20,50 +27,75 @@ export default function RequirementsPage() {
   } = useGenerateRequirements();
 
   useEffect(() => {
-    if (generatedOutput && generatedOutput.content) {
-      const parsed = parseRequirementsFromAPI(generatedOutput);
-      setRequirements(parsed);
-    }
-  }, [generatedOutput]);
+    if (generatedOutput && generatedOutput?.content) {
 
-          <div className={input.actions}>
-            <button className={input.generateButton}>Generate Requirements</button>
-            <button className={input.clearButton} onClick={() => setProjectDescription('')}>Clear</button>
-          </div>
-        </div>
+      try {
+        const parsed = parseRequirementsFromAPI(generatedOutput);
+        setRequirements(parsed);
+      } 
+      catch (err) {
+      }
+    }
+  }, [generatedOutput, setRequirements]);
+
   const handleGenerate = () => {
     if (projectDescription.trim() === "") return;
     generate(projectDescription);
   };
 
+  const toggleSelectRequirement = (reqId: string) => {
+    setSelectedIds(prev =>
+      prev.includes(reqId) ? prev.filter(id => id !== reqId) : [...prev, reqId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    const allRequirementsIds = requirements.map(req => req.id);
+    
+    setSelectedIds(allRequirementsIds);
+  };
+
   return (
-    <GeneratorView
-      inputTitle="📱 Project Input"
-      inputLabel="Project's Description"
-      inputValue={projectDescription}
-      onInputChange={setProjectDescription}
-      onGenerate={handleGenerate}
-      onClear={() => {
-        setProjectDescription("");
-        setRequirements([]);
-      }}
-      generatedTitle="Generated Requirements"
-      isEditMode={editMode}
-      onToggleEdit={() => setEditMode(!editMode)}
-      items={requirements}
-      renderItem={(req) => (
-        <RequirementCard
-          key={req.id}
-          {...req}
-          idTitle={`${req.idTitle}`}
-          onUpdate={(updated) =>
-            setRequirements((prev) =>
-              prev.map((r) => (r.id === updated.id ? updated : r))
-            )
-          }
-          editMode={editMode}
-        />
-      )}
-    />
+    
+    <>
+      <LoadingScreen isLoading={isLoading} generationType="requirements" />
+    
+
+    
+      <GeneratorView
+        showInput={true}
+        inputTitle="📱 Project Input"
+        inputLabel="Project's Description"
+        inputValue={projectDescription}
+        onInputChange={setProjectDescription}
+        onGenerate={handleGenerate}
+        onClear={() => {
+          setProjectDescription("");
+          setRequirements([]);
+        }}
+        generatedTitle="Generated Requirements"
+        isEditMode={editMode}
+        onToggleEdit={() => setEditMode(!editMode)}
+        items={requirements}
+        renderItem={(req) => (
+          <RequirementCard
+            key={req.id}
+            {...req}
+            idTitle={`${req.idTitle}`}
+            isSelected={selectedIds.includes(req.id)}
+            onToggleSelect={() => toggleSelectRequirement(req.id)}
+            onUpdate={(updated) =>
+              setRequirements((prev) =>
+                prev.map((r) => (r.id === updated.id ? updated : r))
+              )
+            }
+            editMode={editMode}
+          />
+        )}
+        onSelectAll={handleSelectAll}
+        isLoading={isLoading}
+        error={error}
+      />
+    </>
   );
 }

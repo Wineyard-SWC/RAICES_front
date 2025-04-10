@@ -2,13 +2,15 @@
 
 import { Epic } from '@/types/epic';
 import { epicCardStyles as styles } from '../styles/epic.module';
-import { CheckCircle, Pencil, Plus } from 'lucide-react';
+import { CheckCircle, Check, Pencil, Circle } from 'lucide-react';
 import React, { useState } from 'react';
 import EpicEditModal from './epiceditmodal';
 
 type Props = Pick<Epic, 'id' | 'title' | 'idTitle' | 'description' | 'relatedRequirements'> & {
   editMode?: boolean;
   onUpdate: (updated: Epic) => void;
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
 };
 
 const EpicCard = ({
@@ -18,6 +20,8 @@ const EpicCard = ({
   description,
   relatedRequirements,
   editMode = false,
+  isSelected = false,
+  onToggleSelect,
   onUpdate
 }: Props) => {
   const [openEdit, setOpenEdit] = useState(false);
@@ -28,14 +32,33 @@ const EpicCard = ({
         <div className={styles.header}>
           <div className="flex items-center justify-between">
             <div>
-              <span className={styles.badge}>{`EPIC-${idTitle.toString().padStart(2, '0')}`}</span>
+              <span className={styles.badge}>{`${idTitle.toString().padStart(2, '0')}`}</span>
               <span className={styles.title}>{title}</span>
             </div>
-            {editMode && (
-              <button onClick={() => setOpenEdit(true)} aria-label="Edit Epic">
-                <Pencil size={16} className="text-[#4A2B4A]" />
-              </button>
-            )}
+              {editMode && (
+                    <button 
+                    className={styles.plusIcon}
+                    onClick={() => setOpenEdit(true)} 
+                    aria-label="Edit requirement">
+                      <Pencil size={16} className="text-[#4A2B4A]" />
+                    </button>
+                  )}
+              {!editMode && (
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation(); 
+                    if (onToggleSelect) onToggleSelect();
+                  }} 
+                  aria-label={isSelected ? "Deselect epic" : "Select epic"}
+                  className="flex items-center justify-center"
+                >
+                  {isSelected ? (
+                    <Check size={16} className={`${styles.plusIcon} bg-[#4A2B4A] text-white rounded-full`} />
+                  ) : (
+                    <Circle size={16} className={styles.plusIcon} />
+                  )}
+                </button>
+              )}
           </div>
         </div>
 
@@ -52,10 +75,6 @@ const EpicCard = ({
             ))}
           </ul>
         </div>
-
-        <button className={styles.plusIcon} aria-label="Add Requirement">
-          <Plus size={18} />
-        </button>
       </div>
 
       <EpicEditModal
