@@ -69,34 +69,35 @@ export const VerifyDocument = v1.firestore.document("{collection}/{docID}")
         return null;
     });
 
-    export const AddDocumentsFromJSON = v2.https.onRequest(async (req, res) => {
-        try {
-            // Obtener la ruta del archivo JSON desde los parámetros de la solicitud
-            const filePath = req.body.filePath;
+export const AddDocumentsFromJSON = v2.https.onRequest(async (req, res) => {
+    try {
+         // Obtener la ruta del archivo JSON desde los parámetros de la solicitud
+        const filePath = req.body.filePath;
     
-            // Validar que se haya proporcionado la ruta del archivo
-            if (!filePath) {
-                return res.status(400).send("Por favor, proporciona la ruta del archivo JSON en el cuerpo de la solicitud.");
-            }
-    
-            // Leer y parsear el archivo JSON
-            const jsonData = JSON.parse(fs.readFileSync(filePath, "utf8"));
-    
-            // Validar que el archivo JSON contiene un array
-            if (!Array.isArray(jsonData)) {
-                return res.status(400).send("El archivo JSON debe contener un array de objetos.");
-            }
-    
-            const collectionRef = admin.firestore().collection("requirements");
-    
-            // Añadir cada documento individualmente
-            for (const docData of jsonData) {
-                await collectionRef.add(docData); // Crear un nuevo documento con un ID único
-            }
-    
-            res.status(200).send("Documentos añadidos exitosamente desde el archivo JSON.");
-        } catch (error) {
-            console.error("Error al añadir documentos desde JSON:", error);
-            res.status(500).send(`Error en el servidor: ${error.message}`);
+        // Validar que se haya proporcionado la ruta del archivo
+        if (!filePath) {
+            return res.status(400).send("Por favor, proporciona la ruta del archivo JSON en el cuerpo de la solicitud.");
         }
-    });
+    
+        // Leer y parsear el archivo JSON
+        const jsonData = JSON.parse(fs.readFileSync(filePath, "utf8"));
+
+        // Validar que el archivo JSON contiene un array
+        if (!Array.isArray(jsonData)) {
+            return res.status(400).send("El archivo JSON debe contener un array de objetos.");
+        }
+    
+        const collectionRef = admin.firestore().collection("requirements");
+    
+        // Añadir cada documento individualmente
+        for (const docData of jsonData) {
+            await collectionRef.add(docData); // Crear un nuevo documento con un ID único
+        }
+    
+        res.status(200).send("Documentos añadidos exitosamente desde el archivo JSON.");
+    } catch (error) {
+        console.error("Error al añadir documentos desde JSON:", error);
+        res.status(500).send(`Error en el servidor: ${error.message}`);
+    }
+});
+
