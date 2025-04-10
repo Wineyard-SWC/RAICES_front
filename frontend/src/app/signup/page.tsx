@@ -133,10 +133,10 @@ export default function CreateAccountPage() {
     <div className="flex min-h-screen">
       <div className="w-full sm:w-1/2 flex flex-col justify-center items-center text-white p-10" style={{ backgroundColor: '#4A2B4A' }}>
         <div className="bg-purple-300 rounded-full p-10 flex justify-center items-center">
-          <span className="text-3xl font-bold text-purple-900 tracking-wide">RAÍCES</span>
+          <span className="text-3xl font-bold text-purple-900 tracking-wide">RAICES</span>
         </div>
         <p className="text-center mt-4 max-w-md">
-          Join our community of agile teams and start planning your sprints more effectively. Get started with RAÍCES today.
+          Join our community of agile teams and start planning your sprints more effectively. Get started with RAICES today.
         </p>
       </div>
 

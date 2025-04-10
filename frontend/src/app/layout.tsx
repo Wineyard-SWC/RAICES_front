@@ -23,7 +23,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <AppProviders>
+          {/* Contenido principal de tu aplicación */}
           {children}
+
+          {/* Contenedor para inyectar los modales mediante Portals */}
+          <div id="modal-root" />
         </AppProviders>
       </body>
     </html>
