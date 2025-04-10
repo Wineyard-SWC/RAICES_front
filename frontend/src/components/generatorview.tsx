@@ -25,6 +25,7 @@ type GeneratorViewProps<T> = {
   renderLeftContent?: () => React.ReactNode;
   onSelectAll?: () => void;
   isItemSelectable?: boolean;
+  onSave?: () => void;
 };
 
 const GeneratorView = <T,>({
@@ -44,7 +45,8 @@ const GeneratorView = <T,>({
   error,
   renderLeftContent,
   onSelectAll,
-  isItemSelectable = true
+  isItemSelectable = true,
+  onSave
 }: GeneratorViewProps<T>) => {
   const pathname = usePathname();
   const [currentTab, setCurrentTab] = useState(pathname);
@@ -148,8 +150,12 @@ const GeneratorView = <T,>({
               <span className="text-lg mr-2">📋</span> Select all
             </button>
 
-            <button className={`${gen.button} w-full flex justify-center`}>
+            <button className={`${gen.button} w-full flex justify-center`}
+                onClick={onSave}
+                disabled={!isItemSelectable || items.length === 0}
+              >
               <span className="text-lg mr-2">⬇️</span> Save 
+              
             </button>
 
             <button className={`${gen.button} w-full flex justify-center`}>

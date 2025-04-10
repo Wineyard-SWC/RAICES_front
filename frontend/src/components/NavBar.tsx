@@ -22,7 +22,7 @@ const Navbar = ({ projectSelected = false, onProjectSelect }: NavbarProps) => {
   }
 
   return (
-    <nav className="flex items-center justify-between px-4 py-2 border-b border-[#ebe5eb] bg-white">
+    <nav className="flex items-center justify-between px-4 py-2 border-b border-black bg-[#ebe5eb]">
     
     {/* Logo on the left */}
     <div className="flex-shrink-0 h-[60px] flex items-center justify-center">
