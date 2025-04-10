@@ -11,6 +11,7 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+console.log("Firebase API Key:", process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 export const githubProvider = new GithubAuthProvider();
