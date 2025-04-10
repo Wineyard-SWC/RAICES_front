@@ -3,6 +3,7 @@
 import EpicUserStoryGroup from './components/epicwithuserstoriescard';
 import GeneratorView from '@/components/generatorview';
 import { epicInputStyles as input } from "./styles/epicinput.module";
+import { projectInputStyles as inputproject } from '../gen_requirements/styles/projectinput.module';
 import { useState, useEffect } from 'react';
 import { UserStory } from '@/types/userstory';
 import { useGenerateUserStories } from '@/hooks/useGenerateUserStories'; 
@@ -14,6 +15,7 @@ import { useUserStoryContext } from '@/contexts/userstorycontext';
 import { useSelectedEpicsContext } from '@/contexts/selectedepics';
 import { useSelectedUserStoriesContext } from '@/contexts/selecteduserstories';
 import { Epic } from '@/types/epic';
+import LoadingScreen from '@/components/loading';
 
 export default function GenerateUserStoriesPage() {
   const [epicDescription, setEpicDescription] = useState('');
@@ -80,47 +82,54 @@ export default function GenerateUserStoriesPage() {
   };
 
   return (
-    <GeneratorView
-      inputTitle="📦 Epics Input"
-      inputLabel="Describe your epics"
-      inputValue={epicDescription}
-      onInputChange={setEpicDescription}
-      onGenerate={handleGenerate}
-      onClear={() => {
-        setEpicDescription('');
-        setUserStories([]);
-      }}
-      generatedTitle="Generated User Stories"
-      isEditMode={editMode}
-      onToggleEdit={() => setEditMode(!editMode)}
-      isLoading={isLoading}
-      error={error}
-      items={Object.entries(groupedByEpic)}
-      renderItem={([epicId, stories]) => (
-        <EpicUserStoryGroup
-          key={epicId}
-          id={epicId}
-          idTitle={epicId}
-          userStories={stories ?? []}
-          editMode={editMode}
-          onUpdate={handleUpdateStory}
-          availableEpics={allEpicIds}
-        />
-      )}
-      renderLeftContent={() => (
-        <div className="space-y-5 max-h-[60vh] overflow-y-auto">
-          {selectedEpics.map((epic) => (
-            <EpicCard
-              key={epic.id}
-              isSelected = {true}
-              {...epic}
-              editMode={false}
-              onUpdate={() => {}} 
-            />
-          ))}
-        </div>
-      )}
-      onSelectAll={handleSelectAll}
-    />
+    <>
+      <LoadingScreen isLoading={isLoading} generationType="userStories" />
+      
+
+
+      <GeneratorView
+        inputTitle="📦 Epics Input"
+        inputLabel="Describe your epics"
+        inputValue={epicDescription}
+        onInputChange={setEpicDescription}
+        onGenerate={handleGenerate}
+        onClear={() => {
+          setEpicDescription('');
+          setUserStories([]);
+        }}
+        generatedTitle="Generated User Stories"
+        isEditMode={editMode}
+        onToggleEdit={() => setEditMode(!editMode)}
+        isLoading={isLoading}
+        error={error}
+        items={Object.entries(groupedByEpic)}
+        renderItem={([epicId, stories]) => (
+          <EpicUserStoryGroup
+            key={epicId}
+            id={epicId}
+            idTitle={epicId}
+            userStories={stories ?? []}
+            editMode={editMode}
+            onUpdate={handleUpdateStory}
+            availableEpics={allEpicIds}
+          />
+        )}
+        renderLeftContent={() => (
+          <div className="space-y-5 max-h-[60vh] overflow-y-auto">
+            <label className={inputproject.label}>Project's Epics</label>
+            {selectedEpics.map((epic) => (
+              <EpicCard
+                key={epic.id}
+                isSelected = {true}
+                {...epic}
+                editMode={false}
+                onUpdate={() => {}} 
+              />
+            ))}
+          </div>
+        )}
+        onSelectAll={handleSelectAll}
+      />
+    </>
   );
 }

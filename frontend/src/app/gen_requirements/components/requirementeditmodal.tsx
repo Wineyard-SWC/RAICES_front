@@ -68,6 +68,8 @@ const RequirementEditModal = ({ open, onClose, requirement, onSave }: Props) => 
   };
 
   const handleSave = () => {
+    if (!validateForm()) return;
+
     const updatedRequirement: Requirement = {
         ...requirement,
         title,
@@ -85,7 +87,7 @@ const RequirementEditModal = ({ open, onClose, requirement, onSave }: Props) => 
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
 
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <DialogPanel className="bg-[#F5F0F1] rounded-xl shadow-lg max-w-md w-full p-6 space-y-4 overflow-y-auto max-h-[90vh]">
+        <DialogPanel className="bg-[#F5F0F1] rounded-xl shadow-lg max-w-xl w-full p-6 space-y-4 overflow-y-auto max-h-[90vh]">
           <DialogTitle className="text-lg font-bold text-[#4A2B4A]">Edit Requirement</DialogTitle>
 
           <div className="space-y-1">
@@ -106,7 +108,7 @@ const RequirementEditModal = ({ open, onClose, requirement, onSave }: Props) => 
                 id="descriptionInput"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className={`w-full border p-2 rounded-md resize-none min-h-[80px] bg-white ${errors.description ? 'border-red-500' : 'border-gray-300'}`}
+                className={`w-full border p-2 rounded-md resize-none min-h-[150px] bg-white ${errors.description ? 'border-red-500' : 'border-gray-300'}`}
                 rows={3}
                 placeholder="Write a short description"
             />
