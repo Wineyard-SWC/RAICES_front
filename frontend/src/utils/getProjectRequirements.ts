@@ -1,0 +1,37 @@
+import { Requirement } from "@/types/requirement";
+
+const apiURL = process.env.NEXT_PUBLIC_API_URL!
+
+
+export async function getProjectRequirements(projectId: string): Promise<Requirement[]> {
+  const response = await fetch(apiURL+`/projects/${projectId}/requirements`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Error al obtener los requerimientos del proyecto");
+  }
+
+  const data = await response.json();
+
+  const normalizePriority = (value: string): Requirement["priority"] => {
+    const val = value.toLowerCase();
+    if (val === "high") return "High";
+    if (val === "medium") return "Medium";
+    if (val === "low") return "Low";
+    return "Medium"; 
+  };
+
+  return data.map((r: any) => ({
+    id: r.id,
+    idTitle: r.idTitle,
+    title: r.title,
+    description: r.description,
+    epicRef: r.epicRef,
+    priority: normalizePriority(r.priority),
+    projectRef: r.projectRef,
+  }));
+}
