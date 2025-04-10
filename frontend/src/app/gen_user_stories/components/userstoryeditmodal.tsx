@@ -127,7 +127,7 @@ const UserStoryEditModal = ({ open, onClose, userStory, onSave, availableEpics }
     <Dialog open={open} onClose={handleTryClose} className="relative z-50">
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <DialogPanel className="bg-[#F5F0F1] rounded-xl shadow-lg max-w-md w-full p-6 space-y-4 overflow-y-auto max-h-[90vh]">
+        <DialogPanel className="bg-[#F5F0F1] rounded-xl shadow-lg max-w-xl w-full p-6 space-y-4 overflow-y-auto max-h-[90vh]">
           <DialogTitle className="text-lg font-bold text-[#4A2B4A]">Edit User Story</DialogTitle>
           
           <div className="space-y-1">
@@ -144,7 +144,7 @@ const UserStoryEditModal = ({ open, onClose, userStory, onSave, availableEpics }
           <div className="space-y-1">
             <label className="text-sm font-medium text-black">Description</label>
             <textarea
-              className={`w-full border p-2 rounded-md resize-y min-h-[80px] bg-white ${errors.description ? 'border-red-500' : 'border-gray-300'}`}
+              className={`w-full border p-2 rounded-md resize-none min-h-[150px] bg-white ${errors.description ? 'border-red-500' : 'border-gray-300'}`}
               value={description} 
               onChange={(e) => setDescription(e.target.value)}
               aria-label="Edit description" 

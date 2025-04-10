@@ -13,6 +13,7 @@ import { projectInputStyles as input } from '../gen_requirements/styles/projecti
 import { useSelectedRequirementContext } from '@/contexts/selectedrequirements';
 import { useSelectedEpicsContext } from '@/contexts/selectedepics';
 import RequirementCard from '../gen_requirements/components/requirementcard';
+import LoadingScreen from '@/components/loading';
 
 
 export default function GenerateEpicsPage() {
@@ -84,48 +85,55 @@ export default function GenerateEpicsPage() {
   };
 
   return (
-    <GeneratorView
-      inputTitle="📄 Requirements Input"
-      inputLabel="List your requirements"
-      inputValue={reqDescription}
-      onInputChange={setReqDescription}
-      onGenerate={handleGenerate}
-      onClear={() => {
-        setReqDescription('');
-        setEpics([]);
-      }}
-      generatedTitle="Generated Epics"
-      isEditMode={editMode}
-      onToggleEdit={() => setEditMode(!editMode)}
-      isLoading={isLoading}
-      error={error}
-      items={epics}
-      renderItem={(epic) => (
-        <EpicCard
-          key={epic.id}
-          {...epic}
-          isSelected={selectedEpicIds.includes(epic.id)}
-          onToggleSelect={() => toggleSelectEpic(epic.id)}
-          editMode={editMode}
-          onUpdate={handleUpdateEpic}
-        />
-      )}
-      renderLeftContent={() => (
-        <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-      
-          {selectedRequirements.map((req) => (
-            <RequirementCard
-              key={req.id}
-              {...req}
-              isSelected = {true}
-              idTitle={req.id}
-              editMode={false}
-              onUpdate={() => {}} 
-            />
-          ))}
-        </div>
-      )}
-      onSelectAll={handleSelectAll}
-    />
+    <>
+      <LoadingScreen isLoading={isLoading} generationType="epics"/>
+    
+
+      <GeneratorView
+        inputTitle="📄 Requirements Input"
+        inputLabel="List your requirements"
+        inputValue={reqDescription}
+        onInputChange={setReqDescription}
+        onGenerate={handleGenerate}
+        onClear={() => {
+          setReqDescription('');
+          setEpics([]);
+        }}
+        generatedTitle="Generated Epics"
+        isEditMode={editMode}
+        onToggleEdit={() => setEditMode(!editMode)}
+        isLoading={isLoading}
+        error={error}
+        items={epics}
+        renderItem={(epic) => (
+          <EpicCard
+            key={epic.id}
+            {...epic}
+            isSelected={selectedEpicIds.includes(epic.id)}
+            onToggleSelect={() => toggleSelectEpic(epic.id)}
+            editMode={editMode}
+            onUpdate={handleUpdateEpic}
+          />
+        )}
+        renderLeftContent={() => (
+
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+            <label className={input.label}>Project's Requirements</label>
+
+            {selectedRequirements.map((req) => (
+              <RequirementCard
+                key={req.id}
+                {...req}
+                isSelected = {true}
+                idTitle={req.id}
+                editMode={false}
+                onUpdate={() => {}} 
+              />
+            ))}
+          </div>
+        )}
+        onSelectAll={handleSelectAll}
+      />
+    </>
   );
 }

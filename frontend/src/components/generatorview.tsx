@@ -57,7 +57,7 @@ const GeneratorView = <T,>({
   const isRequirementsView = currentTab === '/gen_requirements';
 
   return (
-    <div className="min-h-screen bg-[#EBE5EB] px-4 py-6">
+    <div className="min-h-screen bg-[#EBE5EB] px-4 py-10">
       <div className="mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-screen-xl min-h-[60vh]">
       
         {/* Input panel */}
@@ -123,7 +123,6 @@ const GeneratorView = <T,>({
               </div>
             </div>
 
-            <div className='py-16 '>
               <div className={gen.list}>   
               {items.length > 0 ? (
                 items.map(renderItem)
@@ -135,7 +134,6 @@ const GeneratorView = <T,>({
                 </div>
               )}
               </div>
-            </div>
       
 
           </div>
@@ -151,7 +149,7 @@ const GeneratorView = <T,>({
             </button>
 
             <button className={`${gen.button} w-full flex justify-center`}>
-              <span className="text-lg mr-2">⬇️</span> Save to project
+              <span className="text-lg mr-2">⬇️</span> Save 
             </button>
 
             <button className={`${gen.button} w-full flex justify-center`}>
