@@ -4,7 +4,7 @@ import { endpointClientChangedSubscribe } from 'next/dist/build/swc/generated-na
 import { UserStory } from '../../../types/userstory';
 import { userStoryCardStyles as styles } from '../styles/userstory.module';
 import UserStoryEditModal from './userstoryeditmodal';
-import { CheckCircle, Plus, Pencil} from 'lucide-react';
+import { CheckCircle, Plus, Pencil, Check, Circle} from 'lucide-react';
 import React, {useState} from 'react';
 
 
@@ -14,27 +14,31 @@ type Props = Pick<UserStory,
     | 'title'
     | 'description'
     | 'priority'
-    | 'acceptanceCriteria'
-    | 'epicId'
+    | 'acceptance_criteria'
+    | 'assigned_epic'
     | 'points'
 > & {
   editMode?:boolean;
   onUpdate: (updated:UserStory)=>void;
   availableEpics:string[];
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
 };
 
 const UserStoryCard = ({
     id,
+    assigned_epic,
     idTitle,
     title,
     description,
     priority,
-    acceptanceCriteria,
-    epicId,
+    acceptance_criteria,
     points,
     editMode,
     onUpdate,
-    availableEpics
+    availableEpics,
+    onToggleSelect,
+    isSelected
 
 }: Props) => {
     const [openEdit, setOpenEdit] = useState(false);
@@ -50,13 +54,29 @@ const UserStoryCard = ({
             
             {editMode && (
             <button 
-              className={styles.plusIcon} onClick={() => setOpenEdit(true)}
+              className={styles.plusIcon} 
+              onClick={() => setOpenEdit(true)}
               aria-label="Edit"
               >
               <Pencil size={16} />
             </button>
             )}
-
+            {!editMode && (
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onToggleSelect) onToggleSelect();
+                }} 
+                aria-label={isSelected ? "Deselect user story" : "Select user story"}
+                className="flex items-center justify-center"
+              >
+                {isSelected ? (
+                  <Check size={16} className={`${styles.icon} bg-[#4A2B4A] text-white rounded-full`} />
+                ) : (
+                  <Circle size={16} className={styles.icon} />
+                )}
+              </button>
+            )}
           </div>
     
           <h3 className={styles.title}>{title}</h3>
@@ -65,7 +85,7 @@ const UserStoryCard = ({
           <div>
             <p className={styles.acceptanceTitle}>Acceptance Criteria:</p>
             <ul className="space-y-1 mt-1">
-              {acceptanceCriteria.map((criterion, index) => (
+              {acceptance_criteria?.map((criterion, index) => (
                 <li key={index} className={styles.acceptanceItem}>
                   <CheckCircle size={14} className={styles.icon} />
                   <span>{criterion}</span>
@@ -83,8 +103,8 @@ const UserStoryCard = ({
           title,
           description,
           priority,
-          acceptanceCriteria,
-          epicId,
+          acceptance_criteria,
+          assigned_epic,
           points
         }}
         availableEpics={availableEpics}

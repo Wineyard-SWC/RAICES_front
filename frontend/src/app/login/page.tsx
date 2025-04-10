@@ -46,7 +46,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md space-y-6">
           <div className="text-left">
             <h2 className="text-3xl font-bold">Welcome back</h2>
-            <p className="mt-2 text-gray-600">Log in to continue to your dashboard</p>
+            <p className="mt-2 text-gray-600">Log in to continue to your projects</p>
           </div>
 
           {error && (

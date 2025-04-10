@@ -1,80 +1,137 @@
-'use client';
+"use client"
 
-import { Project } from '@/types/project';
-import ProjectCard from "./components/projectcard";
-import { useProjects } from '@/hooks/useProjects';
-import { useUser } from '@/contexts/usercontext';
+import { useState, useEffect } from "react"
+import type { Project } from "@/types/project"
+import SearchBar from "@/components/search_bar"
+import Navbar from "@/components/NavBar"
+import { useProjects } from "@/hooks/useProjects"
+import { useUser } from "@/contexts/usercontext"
+import { useCreateProject } from "@/hooks/useCreateProject"
+import ProjectCard from "./components/projectcard"
+import CreateProjectModal from "./components/create_project_modal"
+import JoinProjectModal from "./components/join_project_modal"
 
 export default function ProjectsPage() {
-  const { userId } = useUser();
-  const { projects, loading } = useProjects(userId);
+  // Obtén el userId desde el contexto de usuario
+  const { userId, setUserId } = useUser()
 
-  if (loading) return <p>Loading...</p>;
+  // Si no se tiene el userId, como fallback lo recuperamos del localStorage
+  useEffect(() => {
+    if (!userId) {
+      const storedUserId = localStorage.getItem("userId")
+      if (storedUserId) {
+        setUserId(storedUserId)
+      }
+    }
+  }, [userId, setUserId])
+
+  // Utiliza el hook para traer los proyectos del usuario
+  const { projects: fetchedProjects, loading } = useProjects(userId)
+  const { createProject, loading: creatingProject } = useCreateProject(userId)
+
+  // Estados para búsqueda y filtro
+  const [projects, setProjects] = useState<Project[]>([])
+  const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState("All Status")
+  const [selectedProject, setSelectedProject] = useState<string | null>(null)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isJoinModalOpen, setIsJoinModalOpen] = useState(false)
+
+  // Actualiza la lista filtrada cada vez que cambian los proyectos, la búsqueda o el filtro
+  useEffect(() => {
+    filterProjects(searchQuery, statusFilter, fetchedProjects)
+  }, [fetchedProjects, searchQuery, statusFilter])
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query)
+    filterProjects(query, statusFilter, fetchedProjects)
+  }
+
+  const handleStatusChange = (status: string) => {
+    setStatusFilter(status)
+    filterProjects(searchQuery, status, fetchedProjects)
+  }
+
+  const filterProjects = (query: string, status: string, projectsList: Project[]) => {
+    let filtered = projectsList
+
+    if (query) {
+      filtered = filtered.filter(
+        (project) =>
+          project.title.toLowerCase().includes(query.toLowerCase()) ||
+          project.description.toLowerCase().includes(query.toLowerCase()),
+      )
+    }
+
+    if (status !== "All Status") {
+      filtered = filtered.filter((project) => project.status === status)
+    }
+
+    setProjects(filtered)
+  }
+
+  const handleProjectSelect = (projectId: string) => {
+    setSelectedProject(projectId)
+    // Guardar el ID del proyecto seleccionado en localStorage
+    localStorage.setItem("currentProjectId", projectId)
+  }
+
+  const handleCreateProject = async (projectData: any) => {
+    try {
+      const newProject = await createProject(projectData)
+      if (newProject) {
+        // Actualizar la lista de proyectos (opcional, también se actualizará en el siguiente fetch)
+        setProjects([...projects, newProject])
+      }
+    } catch (error) {
+      console.error("Error al crear el proyecto:", error)
+    }
+  }
+
+  // Muestra un indicador de carga mientras se obtienen los proyectos
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Loading projects...</p>
+      </div>
+    )
+  }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <ProjectCard
-        id={1}
-        title="Food Donation Tracker"
-        description="An app to track food donations for shelters."
-        status="Active"
-        priority="High"
-        progress={60}
-        startDate="2025-03-01"
-        endDate="2025-07-01"
-        team="Community Ops"
-        teamSize={5}
-        tasksCompleted={8}
-        totalTasks={14}
-      />
+    <div className="min-h-screen bg-[#ebe5eb]/30">
+      <Navbar projectSelected={!!selectedProject} />
 
-      <ProjectCard
-        id={2}
-        title="Recycling Map"
-        description="Locate and manage local recycling centers."
-        status="On Hold"
-        priority="Medium"
-        progress={35}
-        startDate="2025-01-10"
-        endDate="2025-06-15"
-        team="Eco Team"
-        teamSize={3}
-        tasksCompleted={4}
-        totalTasks={12}
-      />
+      <main className="container mx-auto px-4 py-8">
+        <div>
+          <h1 className="text-4xl font-bold text-[#1e1e1e]">Projects</h1>
+          <p className="text-[#694969] mt-2">Manage and track all of your ongoing projects</p>
+        </div>
 
-      <ProjectCard
-        id={3}
-        title="Volunteer Scheduler"
-        description="Schedule shifts for volunteers across events."
-        status="Completed"
-        priority="Low"
-        progress={100}
-        startDate="2024-11-01"
-        endDate="2025-02-28"
-        team="Events Team"
-        teamSize={7}
-        tasksCompleted={20}
-        totalTasks={20}
-      />
-    </div>
-  );
-}
-
-/*{projects.map((project: Project) => (
-        <ProjectCard
-          key={project.id}
-          id={project.id}
-          title={project.title}
-          description={project.description}
-          status={project.status}
-          priority={project.priority}
-          progress={project.progress}
-          startDate={new Date(project.startDate).toDateString()}
-          endDate={new Date(project.endDate).toDateString()}
-          team={project.team}
-          teamSize={project.teamSize}
-          tasksCompleted={project.tasksCompleted}
-          totalTasks={project.totalTasks}
+        <SearchBar
+          onSearch={handleSearch}
+          onFilterChange={handleStatusChange}
+          onNewProject={() => setIsCreateModalOpen(true)}
+          onJoinProject={() => setIsJoinModalOpen(true)}
         />
-    ))}*/
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+          {projects.map((project) => (
+            <div key={project.id} className="cursor-pointer transition-transform hover:scale-[1.02]">
+              <ProjectCard {...project} />
+            </div>
+          ))}
+        </div>
+
+        {/* Modal para crear proyecto */}
+        <CreateProjectModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onCreateProject={handleCreateProject}
+        />
+
+        {/* Modal para unirse a un proyecto */}
+        <JoinProjectModal isOpen={isJoinModalOpen} onClose={() => setIsJoinModalOpen(false)} />
+      </main>
+    </div>
+  )
+}

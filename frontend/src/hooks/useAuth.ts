@@ -34,10 +34,12 @@ export const useAuth = () => {
 
       const token = await user.getIdToken();
       localStorage.setItem('authToken', token);
+      localStorage.setItem('userId', user.uid);
+
       setUserId(user.uid);
 
       await validateTokenWithBackend(token);
-      router.push('/dashboard');
+      router.push('/projects');
     } catch (err: any) {
       setError('Error logging in: ' + err.message);
     } finally {
@@ -51,7 +53,10 @@ export const useAuth = () => {
     try {
       const userCredential = await signInWithPopup(auth, googleProvider);
       const token = await userCredential.user.getIdToken();
+
       localStorage.setItem('authToken', token);
+      localStorage.setItem('userId', userCredential.user.uid);
+
       setUserId(userCredential.user.uid);
 
       await validateTokenWithBackend(token);
@@ -70,6 +75,8 @@ export const useAuth = () => {
       const userCredential = await signInWithPopup(auth, githubProvider);
       const token = await userCredential.user.getIdToken();
       localStorage.setItem('authToken', token);
+      localStorage.setItem('userId', userCredential.user.uid);
+
       setUserId(userCredential.user.uid);
 
       await validateTokenWithBackend(token);

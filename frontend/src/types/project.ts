@@ -1,14 +1,15 @@
 export interface Project {
-    id: number;
-    title: string;
-    description: string;
-    status: 'Active' | 'Completed' | 'On Hold';
-    priority: 'High' | 'Medium' | 'Low';
-    progress: number;
-    startDate: string; 
-    endDate: string;
-    team: string;
-    teamSize: number;
-    tasksCompleted: number;
-    totalTasks: number;
-  }
+  id: string
+  title: string
+  description: string
+  status: string
+  priority: string
+  progress: number
+  startDate: string
+  endDate: string
+  invitationCode: string
+  tasksCompleted: number
+  totalTasks: number
+  team: string
+  teamSize: number
+}
