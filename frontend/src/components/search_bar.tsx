@@ -36,7 +36,7 @@ const SearchBar = ({ onSearch, onFilterChange, onNewProject, onJoinProject }: Se
         <input
           type="text"
           placeholder="Search projects..."
-          className="w-full pl-10 pr-4 py-2 border border-[#ebe5eb] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4a2b4a]"
+          className="w-full pl-10 pr-4 py-2 border border-[#ebe5eb] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4a2b4a] bg-white"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />

@@ -58,7 +58,7 @@ export default function CreateAccountPage() {
       setError('Verification email sent. Please check your inbox.');
   
       setTimeout(() => {
-        router.push("/"); // Redirigir al login después de 3 segundos
+        router.push("/login"); // Redirigir al login después de 3 segundos
       }, 3000);
   
       auth.signOut(); // Cerrar sesión hasta que verifique el correo
