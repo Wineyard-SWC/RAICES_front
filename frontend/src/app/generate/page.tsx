@@ -3,36 +3,38 @@
 import Link from "next/link"
 import { FileText, Layers, Book, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
-//import Navbar from "@/components/navbar"
+import Navbar from "@/components/NavBar"
 
 export default function GeneratePage() {
   //<Navbar />
   return (
-    <div className="min-h-screen bg-[#F5F5F5]">
+    <div className="min-h-screen bg-[#ebe5eb]/30">
       {/* Navigation Bar */}
-      
+
+      <Navbar projectSelected={true} />
 
       {/* Main Content */}
-      <main className="container mx-auto max-w-6xl px-4 py-8">
-        <div className="mb-8">
-          <h1 className="mb-2 text-4xl font-bold">What will we work on today?</h1>
-          <p className="text-lg text-gray-600">
-            Generate an manage your sprint planning artifacts with RACES AI assistant
+      <main className="container mx-auto px-4 py-8">
+        {/* Título y descripción */}
+        <div>
+          <h1 className="text-4xl font-bold text-[#1e1e1e]">What will we work on today?</h1>
+          <p className="text-[#694969] mt-2">
+            Generate and manage your sprint planning artifacts with RACES AI assistant
           </p>
         </div>
 
-        {/* Accelerate Card */}
-        <div className="mb-12 rounded-lg bg-[#4A2B4D] p-8 text-white">
+        {/* Tarjeta de "Accelerate" */}
+        <div className="my-10 rounded-lg bg-[#4A2B4D] p-8 text-white">
           <h2 className="mb-4 text-2xl font-bold">Accelerate Your Sprint Planning</h2>
           <p className="max-w-3xl">
             Our AI assistant helps you generate requirements, epics, and user stories based on your project description.
-            Save time and focus on what matter&apos;s most.
+            Save time and focus on what matters most.
           </p>
         </div>
 
-        {/* Generation Options */}
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold">Generation Options</h2>
+        {/* Espacio adicional antes de “Generation Options” */}
+        <div className="mt-10 mb-6">
+          <h2 className="text-2xl font-bold text-[#1e1e1e]">Generation Options</h2>
         </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -48,17 +50,17 @@ export default function GeneratePage() {
 
             <p className="mb-6 text-sm text-gray-600">
               Our AI analyzes your project description and generates comprehensive requirements that align with your
-              goals
+              goals.
             </p>
 
             <Link href="/gen_requirements">
-                <Button
-                    variant="outline"
-                    className="mt-auto flex items-center space-x-2 border-[#4A2B4D] text-[#4A2B4D] hover:bg-[#F5F5F5]"
-            >
-                    <span>Generate Requirements</span>
-                    <ExternalLink className="h-4 w-4" />
-                </Button>
+              <Button
+                variant="outline"
+                className="mt-auto flex items-center space-x-2 border-[#4A2B4D] text-[#4A2B4D] hover:bg-[#F5F5F5]"
+              >
+                <span>Generate Requirements</span>
+                <ExternalLink className="h-4 w-4" />
+              </Button>
             </Link>
           </div>
 
@@ -73,17 +75,17 @@ export default function GeneratePage() {
             <div className="my-4 border-t border-gray-200"></div>
 
             <p className="mb-6 text-sm text-gray-600">
-              Transform your requirements into well-structured epics that organize your project into manageable chunks
+              Transform your requirements into well-structured epics that organize your project into manageable chunks.
             </p>
 
             <Link href="/gen_epics">
-                <Button
-                    variant="outline"
-                    className="mt-auto flex items-center space-x-2 border-[#4A2B4D] text-[#4A2B4D] hover:bg-[#F5F5F5]"
-            >
-                    <span>Generate Epics</span>
-                    <ExternalLink className="h-4 w-4" />
-                </Button>
+              <Button
+                variant="outline"
+                className="mt-auto flex items-center space-x-2 border-[#4A2B4D] text-[#4A2B4D] hover:bg-[#F5F5F5]"
+              >
+                <span>Generate Epics</span>
+                <ExternalLink className="h-4 w-4" />
+              </Button>
             </Link>
           </div>
 
@@ -102,13 +104,13 @@ export default function GeneratePage() {
             </p>
 
             <Link href="/gen_user_stories">
-                <Button
-                    variant="outline"
-                    className="mt-auto flex items-center space-x-2 border-[#4A2B4D] text-[#4A2B4D] hover:bg-[#F5F5F5]"
-            >
-                    <span>Generate User Stories</span>
-                    <ExternalLink className="h-4 w-4" />
-                </Button>
+              <Button
+                variant="outline"
+                className="mt-auto flex items-center space-x-2 border-[#4A2B4D] text-[#4A2B4D] hover:bg-[#F5F5F5]"
+              >
+                <span>Generate User Stories</span>
+                <ExternalLink className="h-4 w-4" />
+              </Button>
             </Link>
           </div>
         </div>

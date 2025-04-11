@@ -36,10 +36,14 @@ export const useJoinProject = (userId: string | null) => {
           joinedAt: new Date().toISOString(),
         }),
       })
+      
+      console.log("------------------ANTES-------------")
 
       if (!relationResponse.ok) {
         throw new Error("Error joining project")
       }
+
+      console.log("------------------LATEEEEEEEEEEEEEEEEEER-------------")
 
       // 2. Get the current project data
       const projectResponse = await fetch(`${API_URL}/projects/${projectId}`)
