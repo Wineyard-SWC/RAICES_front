@@ -12,7 +12,7 @@ export const parseEpicsFromAPI = (rawResponse: any): Epic[] => {
       ? item.related_requirements.map((req: any) => ({
           idTitle: req.id || '',
           title: req.id ?.split(':')[0] || '', 
-          description: req.description || '',
+          description: req.description.split(':')[1]?.trim() ?? req.description,
         }))
       : [],
   }));

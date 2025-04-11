@@ -15,6 +15,7 @@ type Props = {
   editMode?: boolean;
   onUpdate: (updated: UserStory) => void;
   availableEpics: string[];
+  onDelete:  (id: string) => void;
 };
 
 const EpicUserStoryGroup = ({
@@ -23,7 +24,8 @@ const EpicUserStoryGroup = ({
   userStories,
   editMode = false,
   onUpdate,
-  availableEpics
+  availableEpics,
+  onDelete,
 }: Props) => {
   const [expanded, setExpanded] = useState(true);
   
@@ -33,6 +35,14 @@ const EpicUserStoryGroup = ({
     setSelectedUserStoriesIds((prev) =>
       prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
     );
+  };
+
+  const handleDelete = (storyId: string) => {
+    setSelectedUserStoriesIds((prev) => prev.filter((id) => id !== storyId));
+    
+    if (onDelete) {
+      onDelete(storyId);
+    }
   };
 
   return (
@@ -58,6 +68,7 @@ const EpicUserStoryGroup = ({
             isSelected={selectedUserStoriesIds.includes(story.id)}
             onToggleSelect={() => toggleSelectStory(story.id)}
             availableEpics={availableEpics}
+            onDelete={handleDelete}
            />
           ))}
         </div>

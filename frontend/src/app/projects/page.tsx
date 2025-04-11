@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import type { Project } from "@/types/project"
 import SearchBar from "@/components/search_bar"
-import Navbar from "@/components/NavBar"
+import NavBar from "@/components/NavBar"
 import { useProjects } from "@/hooks/useProjects"
 import { useUser } from "@/contexts/usercontext"
 import { useCreateProject } from "@/hooks/useCreateProject"
@@ -36,6 +36,7 @@ export default function ProjectsPage() {
   const [selectedProject, setSelectedProject] = useState<string | null>(null)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false)
+  
 
   // Actualiza la lista filtrada cada vez que cambian los proyectos, la búsqueda o el filtro
   useEffect(() => {
@@ -96,10 +97,10 @@ export default function ProjectsPage() {
       </div>
     )
   }
-
+      //<NavBar projectSelected={!!selectedProject||} />
   return (
     <div className="min-h-screen bg-[#ebe5eb]/30">
-      <Navbar projectSelected={!!selectedProject} />
+
 
       <main className="container mx-auto px-4 py-8">
         <div>

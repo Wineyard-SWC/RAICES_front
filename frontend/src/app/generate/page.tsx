@@ -3,13 +3,14 @@
 import Link from "next/link"
 import { FileText, Layers, Book, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import Navbar from "@/components/navbar"
+//import Navbar from "@/components/navbar"
 
 export default function GeneratePage() {
+  //<Navbar />
   return (
     <div className="min-h-screen bg-[#F5F5F5]">
       {/* Navigation Bar */}
-      <Navbar />
+      
 
       {/* Main Content */}
       <main className="container mx-auto max-w-6xl px-4 py-8">

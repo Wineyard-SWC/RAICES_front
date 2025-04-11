@@ -6,6 +6,15 @@ import { projectInputStyles as input } from '@/app/gen_requirements/styles/proje
 import { generatedReqStyles as gen} from '@/app/gen_requirements/styles/genreq.module';
 import { FlowTabs } from './changegenerativeview';
 import EpicCard from '@/app/gen_epics/components/epiccard';
+import AddManualModal from './addManualModal';
+import ManualEpicForm from '@/app/gen_epics/components/ManualEpicForm';
+import ManualRequirementForm from '@/app/gen_requirements/components/ManualRequirementForm';
+import ManualUserStoryForm from './ManualUserStoryForm';
+
+import { useRequirementContext } from '@/contexts/requirementcontext';
+import { useEpicContext } from '@/contexts/epiccontext';
+import { useUserStoryContext } from '@/contexts/userstorycontext';
+
 
 type GeneratorViewProps<T> = {
   showInput?: boolean;
@@ -50,13 +59,29 @@ const GeneratorView = <T,>({
 }: GeneratorViewProps<T>) => {
   const pathname = usePathname();
   const [currentTab, setCurrentTab] = useState(pathname);
+  const isRequirementsView = currentTab === '/gen_requirements';
+  const [showAddModal, setShowAddModal] = useState(false);
+
+  const { requirements, setRequirements } = useRequirementContext();
+  const { epics, setEpics } = useEpicContext();
+  const { userStories, setUserStories } = useUserStoryContext();
+
+  const getAvailableRequirements = () => {
+    return items.map((item: any) => ({
+      idTitle: item.idTitle,
+      title: item.title,
+      description: item.description
+    }));
+  };
   
+  const getAvailableEpicIds = () => {
+    return items.map((item: any) => item.idTitle);
+  };
+  
+
   useEffect(() => {
     setCurrentTab(pathname);
   }, [pathname]);
-
-
-  const isRequirementsView = currentTab === '/gen_requirements';
 
   return (
     <div className="min-h-screen bg-[#EBE5EB] px-4 py-10">
@@ -69,7 +94,7 @@ const GeneratorView = <T,>({
               <span className="text-2xl"></span> {inputTitle}
             </h2>
             
-            <FlowTabs currentPath={currentTab} onTabChange={setCurrentTab} />
+            <FlowTabs currentPath={currentTab} onTabChange={setCurrentTab} isLoading={isLoading}/>
             
             {renderLeftContent ? (
               renderLeftContent() 
@@ -77,10 +102,16 @@ const GeneratorView = <T,>({
               <>
                 <label className={input.label}>Project's Description</label>
                 <textarea
-                  className={`${input.textarea} resize-none`}
+                  className={`${input.textarea} overflow-hidden`}
                   value={inputValue}
                   placeholder="Describe your project goals, target users, key features and any specific requirements you already know..."
-                  onChange={(e) => onInputChange?.(e.target.value)}
+                  onChange={(e) =>{
+                     onInputChange?.(e.target.value);
+                     const textarea = e.target;
+                      textarea.style.height = 'auto'; 
+                      textarea.style.height = `${textarea.scrollHeight}px`
+                    }}
+                    rows={1}
                 />
               </>
             ) : null}
@@ -96,7 +127,8 @@ const GeneratorView = <T,>({
               >
                 {isLoading ? 'Generating...' : `Generate ${isRequirementsView ? 'Requirements' : currentTab.includes('epics') ? 'Epics' : 'User Stories'}`}
               </button>
-              <button className={input.clearButton} onClick={onClear}>Clear</button>
+              <button className={input.clearButton} onClick={onClear} disabled={isLoading}
+              >Clear</button>
             </div>
           </div>
         </div>
@@ -140,6 +172,15 @@ const GeneratorView = <T,>({
 
           </div>
       
+          <div className="flex justify-center mt-1 mb-10 ">
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="text-sm text-[#4A2B4A] underline hover:text-[#2d1a2d]"
+            >
+              {!isEditMode ? '' : '+ Add manually'} 
+            </button>
+          </div>
+
           <div className={`${gen.actions} w-full grid grid-cols-3 gap-3`}>
             
             <button 
@@ -158,13 +199,80 @@ const GeneratorView = <T,>({
               
             </button>
 
-            <button className={`${gen.button} w-full flex justify-center`}>
+            <button className={`${gen.button} w-full flex justify-center`}
+              onClick={onGenerate}
+              disabled={isLoading}
+            >
               <span className="text-lg mr-2">🔄</span> Regenerate
             </button>
           </div>
 
         </div>
       </div>
+        <AddManualModal
+        open={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onAdd={(item) => {
+          if (isRequirementsView) {
+            setRequirements((prev: any) => [...prev, item as T]);
+          } else if (currentTab.includes('epics')) {
+            setEpics((prev: any) => [...prev, item as T]);
+          } else {
+            setUserStories((prev: any) => [...prev, item as T]);
+          };
+          setShowAddModal(false);
+        }}
+        renderForm={(onSubmit, onCancel) => {
+          const nextId = (() => {
+            if (isRequirementsView) return requirements.length + 1;
+            else if (currentTab.includes('epics')) return epics.length + 1;
+            else if (!currentTab.includes('epics')) return userStories.length + 1;
+            return 1;
+          })();
+
+          if (isRequirementsView) {
+            return (
+              <ManualRequirementForm
+                onSubmit={onSubmit}
+                onCancel={onCancel}
+                nextId={nextId}
+              />
+            );
+          }
+
+          if (currentTab.includes('epics')) {
+            return (
+              <ManualEpicForm
+                onSubmit={onSubmit}
+                onCancel={onCancel}
+                nextId={nextId}
+                availableRequirements={requirements.map((r) => ({
+                  idTitle: r.idTitle,
+                  title: r.idTitle,
+                  description: r.description,
+                }))}
+              />
+            );
+          }
+
+          if (!currentTab.includes('epics')) {
+            return (
+              <ManualUserStoryForm
+                onSubmit={onSubmit}
+                onCancel={onCancel}
+                nextId={nextId}
+                availableEpics={epics.map((e) => e.idTitle)}
+              />
+            );
+          }
+
+          return (
+            <div>No form available</div>
+          );        
+        }}
+      />
+  
+
     </div>
   );
 };

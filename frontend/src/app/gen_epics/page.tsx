@@ -25,8 +25,7 @@ export default function GenerateEpicsPage() {
   const { requirements, setRequirements } = useRequirementContext();
   const { selectedIds, setSelectedIds } = useSelectedRequirementContext();
   const {selectedEpicIds, setSelectedEpicIds} = useSelectedEpicsContext();
-  const selectedProject = "vi9cZ4luTp2T8IADZ5b0" //Hardcodeado cambiar
-
+  const selectedProject = localStorage.getItem("currentProjectId")
   const selectedRequirements = requirements.filter(req => selectedIds.includes(req.id));
 
   const {
@@ -45,10 +44,9 @@ export default function GenerateEpicsPage() {
   }, [generatedOutput]);
 
   const handleGenerate = () => {
+
     const grouped = groupRequirementsForAPI(selectedRequirements);
 
-    if (selectedRequirements.length === 0) return;
-    
     generate(grouped);
   };
 
@@ -65,19 +63,26 @@ export default function GenerateEpicsPage() {
   };
 
   const groupRequirementsForAPI = (reqs: Requirement[]) => {
-    const mapClean = (r: Requirement) => ({
-      id: r.idTitle,
-      title: r.title,
-      description: r.description,
-      category: r.category,
-      priority: r.priority.toLowerCase() === 'high' ? 'Alta' :
-                r.priority.toLowerCase() === 'medium' ? 'Media' :
-                r.priority.toLowerCase() === 'low' ? 'Baja' : 'Media',
-    });
-  
+
+    const mapClean = (r: Requirement) => {
+      const category = r.category || (r.idTitle?.includes('-NF-') ? 'No Funcional' : 'Funcional');
+      
+      return {
+        id: r.idTitle,
+        title: r.title,
+        description: r.description,
+        category: category,
+        priority: r.priority.toLowerCase() === 'high' ? 'Alta' :
+                  r.priority.toLowerCase() === 'medium' ? 'Media' :
+                  r.priority.toLowerCase() === 'low' ? 'Baja' : 'Media',        
+      };
+    }; 
+    const processedReqs = reqs.map(mapClean);
+
+
     return {
-      funcionales: reqs.filter(r => r.category === 'Funcional').map(mapClean),
-      no_funcionales: reqs.filter(r => r.category === 'No Funcional').map(mapClean),
+      funcionales: processedReqs.filter(r => r.category === 'Funcional'),
+      no_funcionales: processedReqs.filter(r => r.category === 'No Funcional'),
     };
   };
 
@@ -103,7 +108,7 @@ export default function GenerateEpicsPage() {
         }))
       }));
   
-      await postEpics(cleaned, selectedProject);
+      await postEpics(cleaned, selectedProject!);
       alert('Épicas guardadas con éxito!');
     } catch (err) {
       console.error('Error al guardar épicas:', err);
@@ -112,7 +117,7 @@ export default function GenerateEpicsPage() {
 
   const handleImportRequirements = async () => {
     try {
-      const importedReqs = await getProjectRequirements(selectedProject);
+      const importedReqs = await getProjectRequirements(selectedProject!);
       setRequirements(importedReqs);
       const importedIds = importedReqs.map((r) => r.id);
       setSelectedIds(importedIds);      
@@ -157,6 +162,10 @@ export default function GenerateEpicsPage() {
             onToggleSelect={() => toggleSelectEpic(epic.id)}
             editMode={editMode}
             onUpdate={handleUpdateEpic}
+            onDelete={(id) => {
+              setEpics((prev) => prev.filter((epic) => epic.id !== id));
+              setSelectedEpicIds((prev) => prev.filter((epicId) => epicId !== id));
+            }}
           />
         )}
         renderLeftContent={() => (
@@ -164,7 +173,7 @@ export default function GenerateEpicsPage() {
             <div className="flex items-baseline  justify-between">
             <label className={input.label}>Selected Requirements</label>
             <button 
-              className="text-[#4A2B4A] text-lg font-medium hover:underline"
+              className="text-[#4A2B4A] text-sm font-medium hover:underline"
               onClick={handleImportRequirements}
             >
               Import from project's requirements
@@ -180,6 +189,7 @@ export default function GenerateEpicsPage() {
                 idTitle={req.idTitle}
                 editMode={false}
                 onUpdate={() => {}} 
+                onDelete={() => {}}
               />
             ))}
           </div>

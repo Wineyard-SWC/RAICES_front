@@ -19,8 +19,7 @@ export default function RequirementsPage() {
   const [ editMode, setEditMode ] = useState(false);
   const { requirements, setRequirements } = useRequirementContext();
   const { selectedIds, setSelectedIds } = useSelectedRequirementContext();
-  const selectedProject = "vi9cZ4luTp2T8IADZ5b0" //Hardcodeado cambiar
-  
+  const selectedProject = "vi9cZ4luTp2T8IADZ5b0" 
   const {
     generate,
     isLoading,
@@ -114,6 +113,9 @@ export default function RequirementsPage() {
               )
             }
             editMode={editMode}
+            onDelete={(deletedId) =>
+              setRequirements((prev) => prev.filter((r) => r.id !== deletedId))
+            } 
           />
         )}
         onSelectAll={handleSelectAll}
