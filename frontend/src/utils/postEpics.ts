@@ -26,7 +26,7 @@ export async function postEpics(epics: Omit<Epic, 'id'>[], projectId: string) {
 
   
   if (!response.ok) {
-    throw new Error("Error al guardar las épicas");
+    throw new Error("Error saving the epics");
   }
 
   return await response.json();

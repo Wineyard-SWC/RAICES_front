@@ -23,7 +23,7 @@ export async function postUserStories(stories: Omit<UserStory, 'id' | 'selected'
   });
 
   if (!response.ok) {
-    throw new Error("Error al guardar las historias de usuario");
+    throw new Error("Error saving the user stories");
   }
 
   return await response.json();

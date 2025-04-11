@@ -8,6 +8,7 @@ import { auth, googleProvider, githubProvider } from '@/utils/firebaseConfig';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FaEye, FaEyeSlash } from 'react-icons/fa'
+import Image from "next/image"
 
 export default function CreateAccountPage() {
   const [firstName, setFirstName] = useState('');
@@ -132,8 +133,8 @@ export default function CreateAccountPage() {
   return (
     <div className="flex min-h-screen">
       <div className="w-full sm:w-1/2 flex flex-col justify-center items-center text-white p-10" style={{ backgroundColor: '#4A2B4A' }}>
-        <div className="bg-purple-300 rounded-full p-10 flex justify-center items-center">
-          <span className="text-3xl font-bold text-purple-900 tracking-wide">RAICES</span>
+        <div className="mb-8 flex h-40 w-40 items-center justify-center rounded-full bg-[#D9B8D9]">
+          <Image src="/logo.png" alt="RACES Logo" width={160} height={120} className="object-contain" priority />
         </div>
         <p className="text-center mt-4 max-w-md">
           Join our community of agile teams and start planning your sprints more effectively. Get started with RAICES today.
@@ -246,7 +247,7 @@ export default function CreateAccountPage() {
           </button>
           
           <p className="text-center text-sm mt-4 text-black">
-            Already have an account? <Link href="/" style={{ color: '#694969' }}>Log in</Link>
+            Already have an account? <Link href="/login" style={{ color: '#694969' }}>Log in</Link>
           </p>
 
           <div className="flex items-center my-4">

@@ -19,7 +19,7 @@ export async function postRequirements(requirements: Omit<Requirement, 'id'>[], 
   });
 
   if (!response.ok) {
-    throw new Error("Error al guardar los requerimientos");
+    throw new Error("Error saving the requirements");
   }
 
   return await response.json();

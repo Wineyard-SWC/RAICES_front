@@ -12,7 +12,7 @@ export async function getProjectRequirements(projectId: string): Promise<Require
   });
 
   if (!response.ok) {
-    throw new Error("Error al obtener los requerimientos del proyecto");
+    throw new Error("Error while obtaining the requirements of the project");
   }
 
   const data = await response.json();

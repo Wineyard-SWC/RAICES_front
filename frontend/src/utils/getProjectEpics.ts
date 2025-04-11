@@ -12,7 +12,7 @@ export async function getProjectEpics(projectId: string): Promise<Epic[]> {
   });
 
   if (!response.ok) {
-    throw new Error("Error al obtener las épicas del proyecto");
+    throw new Error("Error while obtaining the epics of the project");
   }
 
   const data = await response.json();
