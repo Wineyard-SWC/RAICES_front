@@ -127,13 +127,16 @@ export default function ProjectCard({
 
             {menuOpen && (
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 py-1">
-                <button
-                  onClick={handleInvite}
-                  className="flex items-center w-full px-4 py-2 text-sm text-[#4a2b4a] hover:bg-[#ebe5eb]"
-                >
-                  <UserPlus size={16} className="mr-2" />
-                  Invite
-                </button>
+                {/* Solo mostrar si es owner el invite*/}
+                {isOwner && (
+                  <button
+                    onClick={handleInvite}
+                    className="flex items-center w-full px-4 py-2 text-sm text-[#4a2b4a] hover:bg-[#ebe5eb]"
+                  >
+                    <UserPlus size={16} className="mr-2" />
+                    Invite
+                  </button>
+                )}
 
                 {/* Solo mostrar Edit si es dueño */}
                 {isOwner && (

@@ -22,10 +22,10 @@ const InviteCodeModal = ({ isOpen, onClose, invitationCode, projectTitle }: Invi
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={onClose}>
       <div className="bg-white rounded-lg w-full max-w-md" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center p-4 border-b border-[#ebe5eb]">
-          <h2 className="text-xl font-semibold text-[#4a2b4a]">Invitar al proyecto</h2>
+          <h2 className="text-xl font-semibold text-[#4a2b4a]">Invite to Project</h2>
           <button onClick={onClose} className="text-[#694969] hover:text-[#4a2b4a]">
             <X size={20} />
           </button>
@@ -33,7 +33,7 @@ const InviteCodeModal = ({ isOpen, onClose, invitationCode, projectTitle }: Invi
 
         <div className="p-6">
           <p className="text-[#694969] mb-4">
-            Comparte este código de invitación para que otros usuarios puedan unirse a <strong>{projectTitle}</strong>:
+            Share this invitation code so others can join <strong>{projectTitle}</strong>:
           </p>
 
           <div className="flex items-center">
@@ -48,11 +48,11 @@ const InviteCodeModal = ({ isOpen, onClose, invitationCode, projectTitle }: Invi
             </button>
           </div>
 
-          {copied && <p className="text-green-600 text-sm mt-2">¡Código copiado al portapapeles!</p>}
+          {copied && <p className="text-green-600 text-sm mt-2">Code copied to clipboard!</p>}
 
           <div className="mt-6 flex justify-end">
             <button onClick={onClose} className="px-4 py-2 bg-[#4a2b4a] text-white rounded-md hover:bg-[#694969]">
-              Cerrar
+              Close
             </button>
           </div>
         </div>
