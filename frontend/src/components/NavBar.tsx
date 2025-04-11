@@ -23,6 +23,9 @@ const PATH_TO_TAB: Record<string, TabType> = {
   "/roadmap": "Roadmap",
   "/team": "Team",
   "/generate": "Generate",
+  "/gen_requirements": "Generate",
+  "/gen_epics": "Generate",
+  "/gen_user_stories": "Generate",
 }
 
 const Navbar = ({ projectSelected = false }: NavbarProps) => {
@@ -139,10 +142,10 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
   }
 
   return (
-    <nav className="flex items-center justify-between px-4 py-2 border-b border-[#ebe5eb] bg-white">
+    <nav className="flex items-center justify-between px-4 py-2 border-b border-black bg-EBE5EB">
       {/* Logo */}
       <div className="flex-shrink-0 h-[60px] flex items-center justify-center">
-        <Link href="/" className="mr-8 flex items-center justify-center">
+        <Link href="/projects" className="mr-8 flex items-center justify-center">
           <div className="flex items-center justify-center">
             <Image
               src="/img/raicesinvertido.png"

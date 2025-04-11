@@ -13,7 +13,7 @@ export const FlowTabs = ({ currentPath, onTabChange, isLoading }) => {
   const pathname = currentPath || usePathname();
 
   return (
-    <div className="w-full flex border rounded-lg overflow-hidden mb-6">
+    <div className="w-full flex border border-[#4a2b4a] divide-x divide-[#4a2b4a] rounded-lg overflow-hidden mb-6">
       {tabs.map((tab) => (
         <Link href={tab.href} key={tab.label} className="flex-1">
           <button

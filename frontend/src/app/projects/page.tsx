@@ -3,13 +3,13 @@
 import { useState, useEffect } from "react"
 import type { Project } from "@/types/project"
 import SearchBar from "@/components/search_bar"
-import NavBar from "@/components/navbar"
 import { useProjects } from "@/hooks/useProjects"
 import { useUser } from "@/contexts/usercontext"
 import { useCreateProject } from "@/hooks/useCreateProject"
 import ProjectCard from "./components/projectcard"
 import CreateProjectModal from "./components/create_project_modal"
 import JoinProjectModal from "./components/join_project_modal"
+import Navbar from "@/components/NavBar"
 
 export default function ProjectsPage() {
   // Obtén el userId desde el contexto de usuario
@@ -100,7 +100,7 @@ export default function ProjectsPage() {
       //<NavBar projectSelected={!!selectedProject||} />
   return (
     <div className="min-h-screen bg-[#ebe5eb]/30">
-
+      <Navbar projectSelected={!!selectedProject} />
 
       <main className="container mx-auto px-4 py-8">
         <div>

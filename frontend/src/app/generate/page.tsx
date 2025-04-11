@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { FileText, Layers, Book, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import Navbar from "@/components/navbar"
+import Navbar from "@/components/NavBar"
 
 export default function GeneratePage() {
   //<Navbar />

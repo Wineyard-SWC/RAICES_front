@@ -14,7 +14,7 @@ import { useSelectedRequirementContext } from '@/contexts/selectedrequirements';
 import { useSelectedEpicsContext } from '@/contexts/selectedepics';
 import RequirementCard from '../gen_requirements/components/requirementcard';
 import LoadingScreen from '@/components/loading';
-import Navbar from '@/components/navbar';
+import Navbar from '@/components/NavBar';
 import { postEpics } from '@/utils/postEpics';
 import { getProjectRequirements } from '@/utils/getProjectRequirements';
 
@@ -109,9 +109,10 @@ export default function GenerateEpicsPage() {
       }));
   
       await postEpics(cleaned, selectedProject!);
-      alert('Épicas guardadas con éxito!');
+      alert('Epics saved successfully!');
+
     } catch (err) {
-      console.error('Error al guardar épicas:', err);
+      console.error('Error while saving the epics:', err);
     }
   };
 
@@ -121,17 +122,11 @@ export default function GenerateEpicsPage() {
       setRequirements(importedReqs);
       const importedIds = importedReqs.map((r) => r.id);
       setSelectedIds(importedIds);      
-      alert("Requerimientos importados");
+      alert("Imported requirements successfully");
     } catch (err) {
-      console.error("Error importando requerimientos", err);
+      console.error("Error while importing requirements", err);
     }
   };
-
-
-
-
-
-
 
   return (
     <>

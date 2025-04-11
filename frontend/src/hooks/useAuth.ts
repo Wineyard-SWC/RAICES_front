@@ -60,7 +60,7 @@ export const useAuth = () => {
       setUserId(userCredential.user.uid);
 
       await validateTokenWithBackend(token);
-      router.push('/dashboard');
+      router.push('/projects');
     } catch (err: any) {
       setError('Error logging in: ' + err.message);
     } finally {
@@ -80,7 +80,7 @@ export const useAuth = () => {
       setUserId(userCredential.user.uid);
 
       await validateTokenWithBackend(token);
-      router.push('/dashboard');
+      router.push('/projects');
     } catch (err: any) {
       setError('Error logging in: ' + err.message);
     } finally {

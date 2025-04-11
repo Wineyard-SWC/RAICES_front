@@ -54,10 +54,7 @@ export default function ProjectCard({
 }: Props) {
   const router = useRouter()
   const { userId } = useUser()
-  const { isOwner, isMember, loading: loadingRole } = useUserProjectRole(userId, id)
-
-  console.log("mis ids: ", userId, id);
-  console.log("mis roles: ", isOwner, isMember);
+  const { isOwner, isMember } = useUserProjectRole(userId, id)
 
   const [menuOpen, setMenuOpen] = useState(false)
   const [showInviteModal, setShowInviteModal] = useState(false)
@@ -75,12 +72,11 @@ export default function ProjectCard({
     return new Date(dateStr).toLocaleDateString("en-US", options)
   }
 
-  // Si el usuario hace clic en la card (pero no en el menú)
   const handleCardClick = (e: React.MouseEvent) => {
+    // Evita que el click en el menú abra la tarjeta
     if ((e.target as HTMLElement).closest(".project-menu")) {
       return
     }
-
     router.push(`/dashboard?projectId=${id}`)
     localStorage.setItem("currentProjectId", id)
   }
@@ -117,17 +113,25 @@ export default function ProjectCard({
   return (
     <>
       {/* --- CARD PRINCIPAL --- */}
-      <div className={cardStyles.wrapper} onClick={handleCardClick}>
+      <div
+        onClick={handleCardClick}
+        /*
+          Fíjate en estas clases. 
+          - h-80 -> Ajusta la altura fija que quieras (puedes cambiar a h-72, h-96, etc. según necesites).
+          - overflow-hidden -> Para que no se "rompa" el layout si algo se excede del alto.
+        */
+        className={`relative bg-white rounded-md shadow-md p-4 cursor-pointer transition-transform hover:scale-[1.02] h-90 overflow-hidden ${cardStyles.wrapper}`}
+      >
         <div className={cardStyles.header}>
           <h2 className={cardStyles.title}>{title}</h2>
+
+          {/* Botón de menú */}
           <div className="project-menu relative">
             <button onClick={toggleMenu} className={cardStyles.menu}>
               <MoreVertical size={20} />
             </button>
-
             {menuOpen && (
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 py-1">
-                {/* Solo mostrar si es owner el invite*/}
                 {isOwner && (
                   <button
                     onClick={handleInvite}
@@ -138,7 +142,6 @@ export default function ProjectCard({
                   </button>
                 )}
 
-                {/* Solo mostrar Edit si es dueño */}
                 {isOwner && (
                   <button
                     onClick={handleEdit}
@@ -149,7 +152,6 @@ export default function ProjectCard({
                   </button>
                 )}
 
-                {/* Mostrar "Delete" si es dueño, "Leave" si es miembro */}
                 {isOwner ? (
                   <button
                     onClick={handleDelete}
@@ -174,6 +176,7 @@ export default function ProjectCard({
           </div>
         </div>
 
+        {/* Etiquetas de status y priority */}
         <div className="flex space-x-2">
           <span
             className={`${cardStyles.badge} ${statusColor[status as "Active" | "Completed" | "On Hold"]}`}
@@ -187,8 +190,19 @@ export default function ProjectCard({
           </span>
         </div>
 
-        <p className={cardStyles.description}>{description}</p>
+        {/* 
+          Descripción truncada:
+          - line-clamp-3 -> Sólo mostrar 3 líneas de texto.
+          - overflow-hidden, text-ellipsis -> Para poner "..." cuando sobrepase.
+          - break-words (o break-all) -> Para manejar cortes de palabras si la línea es muy larga.
+        */}
+        <p
+          className={`mt-2 line-clamp-3 overflow-hidden text-ellipsis break-words ${cardStyles.description}`}
+        >
+          {description}
+        </p>
 
+        {/* Barra de progreso */}
         <div>
           <p className={cardStyles.progressLabel}>Progress</p>
           <div className={cardStyles.progressBarContainer}>
@@ -200,6 +214,7 @@ export default function ProjectCard({
           <p className={cardStyles.progressPercent}>{progress}%</p>
         </div>
 
+        {/* Fechas y equipo */}
         <div className={cardStyles.infoRow}>
           <div className={cardStyles.infoBlock}>
             <FaCalendarAlt className="text-[#4A2B4A]" />
@@ -221,6 +236,7 @@ export default function ProjectCard({
           </div>
         </div>
 
+        {/* Footer con Tasks y Completion */}
         <div className={cardStyles.footer}>
           <div className={cardStyles.footerItem}>
             <MdBarChart className="text-[#4A2B4A]" />
@@ -243,11 +259,6 @@ export default function ProjectCard({
 
       {/* --- PORTAL PARA MODALES --- */}
       <Portal>
-        {/* 
-          Cada modal se renderiza en el portal y comprueba 
-          si debe mostrarse o no internamente con "if (!isOpen) return null"
-        */}
-
         <InviteCodeModal
           isOpen={showInviteModal}
           onClose={() => setShowInviteModal(false)}

@@ -16,7 +16,7 @@ import { useSelectedEpicsContext } from '@/contexts/selectedepics';
 import { useSelectedUserStoriesContext } from '@/contexts/selecteduserstories';
 import { Epic } from '@/types/epic';
 import LoadingScreen from '@/components/loading';
-import Navbar from '@/components/navbar';
+import Navbar from '@/components/NavBar';
 import { postUserStories } from '@/utils/postUserStories';
 import { getProjectEpics } from '@/utils/getProjectEpics';
 import { getProjectRequirements } from '@/utils/getProjectRequirements';
@@ -105,9 +105,9 @@ export default function GenerateUserStoriesPage() {
       }));
   
       await postUserStories(cleaned, selectedProject!);
-      alert('Historias de usuario guardadas con éxito!');
+      alert('User stories saved successfully!');
     } catch (err) {
-      console.error('Error al guardar historias:', err);
+      console.error('Error while saving user stories:', err);
     }
   };
   
@@ -135,9 +135,9 @@ export default function GenerateUserStoriesPage() {
       const ids = epicsWithReqs.map(e => e.id);
       setSelectedEpicIds(ids);
   
-      alert("Épicas (con requerimientos asociados) importadas!");
+      alert("Epics imported successfully!");
     } catch (err) {
-      console.error("Error importando épicas y requerimientos:", err);
+      console.error("Error while importing epics and requirements:", err);
     }
   };
 

@@ -11,7 +11,7 @@ import { useRequirementContext } from '@/contexts/requirementcontext';
 import { useProjectContext } from '@/contexts/projectcontext';
 import { useSelectedRequirementContext } from '@/contexts/selectedrequirements';
 import LoadingScreen from '@/components/loading';
-import Navbar from '@/components/navbar';
+import Navbar from '@/components/NavBar';
 import { postRequirements } from '@/utils/postRequirements';
 
 export default function RequirementsPage() {
@@ -71,9 +71,9 @@ export default function RequirementsPage() {
         projectRef: selectedProject
       }));
       await postRequirements(cleaned, selectedProject!);
-      alert('Requerimientos guardados con éxito!');
+      alert('Requirements saved successfully!');
     } catch (error) {
-      console.error('Error al guardar requerimientos:', error);
+      console.error('Error while saving requirements:', error);
     }
   };
   

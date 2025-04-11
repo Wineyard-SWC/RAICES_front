@@ -84,7 +84,7 @@ const GeneratorView = <T,>({
   }, [pathname]);
 
   return (
-    <div className="min-h-screen bg-[#EBE5EB] px-4 py-10">
+    <div className="min-h-screen bg-[#EBE5EB]/30 px-4 py-10">
       <div className="mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-screen-xl min-h-[60vh]">
       
         {/* Input panel */}
