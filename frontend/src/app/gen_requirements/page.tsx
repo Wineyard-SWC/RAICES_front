@@ -11,7 +11,7 @@ import { useRequirementContext } from '@/contexts/requirementcontext';
 import { useProjectContext } from '@/contexts/projectcontext';
 import { useSelectedRequirementContext } from '@/contexts/selectedrequirements';
 import LoadingScreen from '@/components/loading';
-import Navbar from '@/components/Navbar';
+import Navbar from '@/components/navbar';
 import { postRequirements } from '@/utils/postRequirements';
 
 export default function RequirementsPage() {
