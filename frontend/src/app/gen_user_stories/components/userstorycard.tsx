@@ -20,7 +20,7 @@ type Props = Pick<UserStory,
 > & {
   editMode?:boolean;
   onUpdate: (updated:UserStory)=>void;
-  availableEpics:string[];
+  availableEpics:{ id: string; title: string }[];
   isSelected?: boolean;
   onToggleSelect?: () => void;
   onDelete: (id: string) => void;

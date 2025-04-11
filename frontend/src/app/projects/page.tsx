@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import type { Project } from "@/types/project"
 import SearchBar from "@/components/search_bar"
-import NavBar from "@/components/NavBar"
+import NavBar from "@/components/Navbar"
 import { useProjects } from "@/hooks/useProjects"
 import { useUser } from "@/contexts/usercontext"
 import { useCreateProject } from "@/hooks/useCreateProject"

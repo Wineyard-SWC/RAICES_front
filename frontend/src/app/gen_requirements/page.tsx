@@ -11,7 +11,7 @@ import { useRequirementContext } from '@/contexts/requirementcontext';
 import { useProjectContext } from '@/contexts/projectcontext';
 import { useSelectedRequirementContext } from '@/contexts/selectedrequirements';
 import LoadingScreen from '@/components/loading';
-import Navbar from '@/components/NavBar';
+import Navbar from '@/components/Navbar';
 import { postRequirements } from '@/utils/postRequirements';
 
 export default function RequirementsPage() {
@@ -19,7 +19,7 @@ export default function RequirementsPage() {
   const [ editMode, setEditMode ] = useState(false);
   const { requirements, setRequirements } = useRequirementContext();
   const { selectedIds, setSelectedIds } = useSelectedRequirementContext();
-  const selectedProject = "vi9cZ4luTp2T8IADZ5b0" 
+  const selectedProject = localStorage.getItem("currentProjectId") 
   const {
     generate,
     isLoading,
@@ -70,20 +70,20 @@ export default function RequirementsPage() {
         epicRef: "", 
         projectRef: selectedProject
       }));
-      await postRequirements(cleaned, selectedProject);
+      await postRequirements(cleaned, selectedProject!);
       alert('Requerimientos guardados con éxito!');
     } catch (error) {
       console.error('Error al guardar requerimientos:', error);
     }
   };
   
-  /*<Navbar projectSelected={!!selectedProject} />*/
 
   return (
     
     <>
       <LoadingScreen isLoading={isLoading} generationType="requirements" />
     
+      <Navbar projectSelected={true} />
 
       <GeneratorView
         showInput={true}

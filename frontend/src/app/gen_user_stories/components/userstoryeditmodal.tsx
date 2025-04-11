@@ -9,7 +9,7 @@ type Props = {
   onClose: () => void;
   onSave: (updated: UserStory) => void;
   userStory: UserStory;
-  availableEpics: string[]; 
+  availableEpics: { id: string; title: string }[]; 
   onDelete: (id: string) => void;
 };
 
@@ -176,7 +176,9 @@ const UserStoryEditModal = ({ open, onClose, userStory, onSave, availableEpics, 
               aria-label="Edit epic relationship"
             >
               {availableEpics.map((epic) => (
-                <option key={epic} value={epic}>{epic}</option>
+                <option key={epic.id} value={epic.id}>
+                  {epic.id} - {epic.title}
+                </option>
               ))}
             </select>
           </div>

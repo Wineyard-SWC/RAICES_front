@@ -14,6 +14,7 @@ const ManualEpicForm = ({ onSubmit, onCancel, nextId, availableRequirements }: P
   const [selectedReqs, setSelectedReqs] = useState<string[]>([]);
   const [errors, setErrors] = useState<{ title?: string; description?: string }>({});
 
+
   const handleAdd = () => {
     const errs: typeof errors = {};
     if (!title.trim()) errs.title = 'Title is required';
@@ -22,7 +23,7 @@ const ManualEpicForm = ({ onSubmit, onCancel, nextId, availableRequirements }: P
     if (Object.keys(errs).length) return;
 
     const relatedRequirements = availableRequirements.filter(req => selectedReqs.includes(req.idTitle));
-
+    
     onSubmit({
       id: `EPIC-${nextId.toString().padStart(3, '0')}`,
       idTitle: `EPIC-${nextId.toString().padStart(3, '0')}`,
@@ -58,13 +59,14 @@ const ManualEpicForm = ({ onSubmit, onCancel, nextId, availableRequirements }: P
         onChange={(e) =>
           setSelectedReqs(Array.from(e.target.selectedOptions).map(o => o.value))
         }
-        className="bg-white w-full border p-2 rounded-md h-32"
+        className="bg-white w-full border p-2 rounded-md"
       >
         {availableRequirements.map((req) => (
           <option key={req.idTitle} value={req.idTitle}>
             {req.idTitle} - {req.title}
           </option>
         ))}
+        
       </select>
 
       <div className="flex justify-end gap-2">

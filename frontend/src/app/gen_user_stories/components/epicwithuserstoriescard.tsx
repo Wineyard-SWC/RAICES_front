@@ -14,7 +14,7 @@ type Props = {
   userStories: UserStory[];
   editMode?: boolean;
   onUpdate: (updated: UserStory) => void;
-  availableEpics: string[];
+  availableEpics: { id: string; title: string }[];
   onDelete:  (id: string) => void;
 };
 

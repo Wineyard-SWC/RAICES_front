@@ -16,7 +16,7 @@ import { useSelectedEpicsContext } from '@/contexts/selectedepics';
 import { useSelectedUserStoriesContext } from '@/contexts/selecteduserstories';
 import { Epic } from '@/types/epic';
 import LoadingScreen from '@/components/loading';
-import Navbar from '@/components/NavBar';
+import Navbar from '@/components/Navbar';
 import { postUserStories } from '@/utils/postUserStories';
 import { getProjectEpics } from '@/utils/getProjectEpics';
 import { getProjectRequirements } from '@/utils/getProjectRequirements';
@@ -28,7 +28,7 @@ export default function GenerateUserStoriesPage() {
   const { epics,setEpics } = useEpicContext();
   const {selectedEpicIds,setSelectedEpicIds } = useSelectedEpicsContext();
   const { selectedUserStoriesIds, setSelectedUserStoriesIds} = useSelectedUserStoriesContext();
-  const selectedProject = "vi9cZ4luTp2T8IADZ5b0" //Hardcodeado cambiar
+  const selectedProject = localStorage.getItem("currentProjectId")
 
 
 
@@ -72,6 +72,10 @@ export default function GenerateUserStoriesPage() {
   
   const groupedByEpic = groupUserStoriesByEpic(userStories ?? []);
   const allEpicIds = Object.keys(groupedByEpic);
+  const allEpicOptions = epics.map(e => ({
+    id: e.idTitle,
+    title: e.title
+  }));
 
   const handleUpdateStory = (updated: UserStory) => {
     setUserStories(prev => {
@@ -100,7 +104,7 @@ export default function GenerateUserStoriesPage() {
         assigned_epic: s.assigned_epic
       }));
   
-      await postUserStories(cleaned, selectedProject);
+      await postUserStories(cleaned, selectedProject!);
       alert('Historias de usuario guardadas con éxito!');
     } catch (err) {
       console.error('Error al guardar historias:', err);
@@ -110,8 +114,8 @@ export default function GenerateUserStoriesPage() {
   const handleImportEpics = async () => {
     try {
       const [importedEpics, importedRequirements] = await Promise.all([
-        getProjectEpics(selectedProject),
-        getProjectRequirements(selectedProject)
+        getProjectEpics(selectedProject!),
+        getProjectRequirements(selectedProject!)
       ]);
   
       const epicsWithReqs = importedEpics.map(epic => {
@@ -143,11 +147,11 @@ export default function GenerateUserStoriesPage() {
     setSelectedUserStoriesIds(prev => prev.filter(id => id !== storyId));
   };
   
-  /*<Navbar projectSelected={!!selectedProject} />*/
   return (
     <>
       <LoadingScreen isLoading={isLoading} generationType="userStories" />
       
+      <Navbar projectSelected={true} />
       
 
       <GeneratorView
@@ -174,7 +178,7 @@ export default function GenerateUserStoriesPage() {
             userStories={stories ?? []}
             editMode={editMode}
             onUpdate={handleUpdateStory}
-            availableEpics={allEpicIds}
+            availableEpics={allEpicOptions}
             onDelete={handleDeleteStory}
           />
         )}

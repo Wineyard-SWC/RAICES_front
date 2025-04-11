@@ -87,22 +87,22 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
         break
       case "Dashboard":
         if (currentProjectId) {
-          router.push(/dashboard?projectId=${currentProjectId})
+          router.push(`/dashboard?projectId=${currentProjectId}`)
         }
         break
       case "Roadmap":
         if (currentProjectId) {
-          router.push(/roadmap?projectId=${currentProjectId})
+          router.push(`/roadmap?projectId=${currentProjectId}`)
         }
         break
       case "Team":
         if (currentProjectId) {
-          router.push(/team?projectId=${currentProjectId})
+          router.push(`/team?projectId=${currentProjectId}`)
         }
         break
       case "Generate":
         if (currentProjectId) {
-          router.push(/generate?projectId=${currentProjectId})
+          router.push(`/generate?projectId=${currentProjectId}`)
         }
         break
     }
@@ -142,7 +142,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
     <nav className="flex items-center justify-between px-4 py-2 border-b border-[#ebe5eb] bg-white">
       {/* Logo */}
       <div className="flex-shrink-0 h-[60px] flex items-center justify-center">
-        <Link href="/projects" className="mr-8 flex items-center justify-center">
+        <Link href="/" className="mr-8 flex items-center justify-center">
           <div className="flex items-center justify-center">
             <Image
               src="/img/raicesinvertido.png"
@@ -166,7 +166,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
                 <div key={tab} className="relative inline-flex" ref={dropdownRef}>
                   {/* Botón principal (Generate) */}
                   <button
-                    className={${getTabClasses(tab)} rounded-r-none}
+                    className={`${getTabClasses(tab)} rounded-r-none`}
                     onClick={() => handleTabClick(tab)}
                     disabled={!projectSelected}
                   >
@@ -175,7 +175,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
 
                   {/* Botón flecha desplegable */}
                   <button
-                    className={${getTabClasses(tab)} rounded-l-none px-2 border-l-0}
+                    className={`${getTabClasses(tab)} rounded-l-none px-2 border-l-0`}
                     onClick={handleDropdownToggle}
                     disabled={!projectSelected}
                     aria-label="Mostrar opciones de generación"
@@ -190,7 +190,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
                         <button
                           onClick={() => {
                             setGenerateOpen(false)
-                            router.push(/gen_requirements?projectId=${localStorage.getItem("currentProjectId")})
+                            router.push(`/gen_requirements?projectId=${localStorage.getItem("currentProjectId")}`)
                           }}
                           className="block w-full text-left px-4 py-2 text-sm text-[#4a2b4a] hover:bg-[#ebe5eb]"
                           disabled={!projectSelected}
@@ -200,7 +200,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
                         <button
                           onClick={() => {
                             setGenerateOpen(false)
-                            router.push(/gen_epics?projectId=${localStorage.getItem("currentProjectId")})
+                            router.push(`/gen_epics?projectId=${localStorage.getItem("currentProjectId")}`)
                           }}
                           className="block w-full text-left px-4 py-2 text-sm text-[#4a2b4a] hover:bg-[#ebe5eb]"
                           disabled={!projectSelected}
@@ -210,7 +210,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
                         <button
                           onClick={() => {
                             setGenerateOpen(false)
-                            router.push(/gen_user_stories?projectId=${localStorage.getItem("currentProjectId")})
+                            router.push(`/gen_user_stories?projectId=${localStorage.getItem("currentProjectId")}`)
                           }}
                           className="block w-full text-left px-4 py-2 text-sm text-[#4a2b4a] hover:bg-[#ebe5eb]"
                           disabled={!projectSelected}
@@ -252,7 +252,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
           <button className="flex items-center">
             <div className="h-8 w-8 rounded-full bg-[#ebe5eb] overflow-hidden">
               <img
-                src="/placeholder.svg?height=32&width=32"
+                /*src="/placeholder.svg?height=32&width=32"*/
                 alt="User avatar"
                 className="h-full w-full object-cover"
               />
@@ -265,4 +265,4 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
   )
 }
 //
-export default Navbar
+export default Navbar

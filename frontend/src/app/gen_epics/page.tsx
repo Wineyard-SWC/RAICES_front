@@ -14,7 +14,7 @@ import { useSelectedRequirementContext } from '@/contexts/selectedrequirements';
 import { useSelectedEpicsContext } from '@/contexts/selectedepics';
 import RequirementCard from '../gen_requirements/components/requirementcard';
 import LoadingScreen from '@/components/loading';
-import Navbar from '@/components/NavBar';
+import Navbar from '@/components/Navbar';
 import { postEpics } from '@/utils/postEpics';
 import { getProjectRequirements } from '@/utils/getProjectRequirements';
 
@@ -128,7 +128,7 @@ export default function GenerateEpicsPage() {
   };
 
 
-/*<Navbar projectSelected={!!selectedProject} />*/
+
 
 
 
@@ -137,6 +137,7 @@ export default function GenerateEpicsPage() {
     <>
       <LoadingScreen isLoading={isLoading} generationType="epics"/>
     
+      <Navbar projectSelected={true} />
 
       <GeneratorView
         inputTitle="📄 Requirements Input"

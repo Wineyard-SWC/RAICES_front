@@ -252,7 +252,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
           <button className="flex items-center">
             <div className="h-8 w-8 rounded-full bg-[#ebe5eb] overflow-hidden">
               <img
-                src="/placeholder.svg?height=32&width=32"
+                /*src="/placeholder.svg?height=32&width=32"*/
                 alt="User avatar"
                 className="h-full w-full object-cover"
               />

@@ -248,7 +248,7 @@ const GeneratorView = <T,>({
                 nextId={nextId}
                 availableRequirements={requirements.map((r) => ({
                   idTitle: r.idTitle,
-                  title: r.idTitle,
+                  title: r.title,
                   description: r.description,
                 }))}
               />
@@ -261,7 +261,7 @@ const GeneratorView = <T,>({
                 onSubmit={onSubmit}
                 onCancel={onCancel}
                 nextId={nextId}
-                availableEpics={epics.map((e) => e.idTitle)}
+                availableEpics={epics.map((e) => e.idTitle+"-"+e.title)}
               />
             );
           }
