@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button"
 import Navbar from "@/components/NavBar"
 
 export default function GeneratePage() {
+  //<Navbar />
   return (
     <div className="min-h-screen bg-[#ebe5eb]/30">
       {/* Navigation Bar */}
+
       <Navbar projectSelected={true} />
 
       {/* Main Content */}

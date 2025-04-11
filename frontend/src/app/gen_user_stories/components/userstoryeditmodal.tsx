@@ -10,9 +10,10 @@ type Props = {
   onSave: (updated: UserStory) => void;
   userStory: UserStory;
   availableEpics: string[]; 
+  onDelete: (id: string) => void;
 };
 
-const UserStoryEditModal = ({ open, onClose, userStory, onSave, availableEpics }: Props) => {
+const UserStoryEditModal = ({ open, onClose, userStory, onSave, availableEpics, onDelete }: Props) => {
   const [title, setTitle] = useState(userStory.title);
   const [description, setDescription] = useState(userStory.description);
   const [priority, setPriority] = useState<UserStory['priority']>(userStory.priority);
@@ -200,28 +201,43 @@ const UserStoryEditModal = ({ open, onClose, userStory, onSave, availableEpics }
                   </button>
                 </div>
               ))}
-              <button
-                onClick={addCriterion}
-                className="text-sm text-[#4A2B4A] underline mt-1"
-              >
-                + Add another criterion
-              </button>
+               <div className="flex justify-center">  
+                <button
+                  onClick={addCriterion}
+                  className="text-sm text-[#4A2B4A] underline mt-1"
+                >
+                  + Add another criterion
+                </button>
+               </div>
             </div>
           </div>
           
-          <div className="flex justify-end gap-2 pt-4">
-            <button 
-              onClick={handleTryClose} 
-              className="px-4 py-2 border border-gray-300 rounded-md"
+          <div className="flex justify-between items-center pt-4">
+            <button
+              onClick={() => {
+                if (confirm("Are you sure you want to delete this user story?")) {
+                  onDelete(userStory.id);
+                  onClose();
+                }
+              }}
+              className="px-4 py-2 bg-red-500 text-white rounded-md"
             >
-              Cancel
+              Delete
             </button>
-            <button 
-              onClick={handleSave} 
-              className="px-4 py-2 bg-[#4A2B4A] text-white rounded-md"
-            >
-              Save
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleTryClose}
+                className="px-4 py-2 border border-gray-300 rounded-md text-black"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                className="px-4 py-2 bg-[#4A2B4A] text-white rounded-md"
+              >
+                Save
+              </button>
+            </div>
           </div>
         </DialogPanel>
       </div>

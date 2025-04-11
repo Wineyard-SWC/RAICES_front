@@ -10,9 +10,10 @@ type Props = {
   onClose: () => void;
   onSave: (updated: Requirement) => void;
   requirement: Pick<Requirement, 'id' | 'idTitle' | 'title' | 'description' | 'priority'>;
+  onDelete: (id: string) => void;
 };
 
-const RequirementEditModal = ({ open, onClose, requirement, onSave }: Props) => {
+const RequirementEditModal = ({ open, onClose, requirement, onSave, onDelete }: Props) => {
   const [title, setTitle] = useState(requirement.title);
   const [description, setDescription] = useState(requirement.description);
   const [priority, setPriority] = useState<Requirement['priority']>(requirement.priority);
@@ -130,19 +131,32 @@ const RequirementEditModal = ({ open, onClose, requirement, onSave }: Props) => 
             </select>
           </div>
 
-          <div className="flex justify-end space-x-2 pt-4">
+          <div className="flex justify-between items-center pt-4">
             <button
-              onClick={handleTryClose}
-              className="px-4 py-2 rounded-md border border-gray-300 text-black"
+              onClick={() => {
+                if (confirm("Are you sure you want to delete this requirement?")) {
+                  onDelete(requirement.id);
+                  onClose();
+                }
+              }}
+              className="px-4 py-2 bg-red-500 text-white rounded-md"
             >
-              Cancel
+              Delete
             </button>
-            <button
-              onClick={handleSave}
-              className="px-4 py-2 rounded-md bg-[#4A2B4A] text-white"
-            >
-              Save
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleTryClose}
+                className="px-4 py-2 border border-gray-300 rounded-md text-black"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                className="px-4 py-2 bg-[#4A2B4A] text-white rounded-md"
+              >
+                Save
+              </button>
+            </div>
           </div>
         </DialogPanel>
       </div>

@@ -11,6 +11,7 @@ type Props = Pick<Requirement, 'id' | 'idTitle' | 'title' | 'description' | 'pri
   editMode?: boolean;
   isSelected?: boolean;
   onToggleSelect?: () => void;
+  onDelete: (id: string) => void;
 };
 
 const RequirementCard = ({
@@ -22,14 +23,18 @@ const RequirementCard = ({
     isSelected = false,
     onToggleSelect,
     onUpdate,
-    editMode
+    editMode,
+    onDelete,
 }: Props) =>{
   const [openEdit, setOpenEdit] = useState(false)
   
 
    return (
     <>
-      <div className={styles.wrapper}>
+      <div 
+        className={`${styles.wrapper} ${!editMode ? 'hover:bg-[#EBE5EB] cursor-pointer' : ''}`}
+        onClick={!editMode && onToggleSelect ? onToggleSelect : undefined}
+      >
         <div className="flex flex-col w-full">
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center space-x-3">
@@ -40,27 +45,25 @@ const RequirementCard = ({
           <p className={styles.description}>{description}</p>
         </div>
         {editMode && (
-              <button 
-              onClick={() => setOpenEdit(true)} 
-              aria-label="Edit requirement">
-                <Pencil size={16} className="text-[#4A2B4A]" />
-              </button>
-            )}
-        {!editMode && (
-          <button 
+          <button
             onClick={(e) => {
-              e.stopPropagation(); 
-              if (onToggleSelect) onToggleSelect();
-            }} 
-            aria-label={isSelected ? "Deselect requirement" : "Select requirement"}
-            className="flex items-center justify-center"
+              e.stopPropagation();
+              setOpenEdit(true);
+            }}
+            aria-label="Edit requirement"
           >
+            <Pencil size={16} className="text-[#4A2B4A]" />
+          </button>
+        )}
+
+        {!editMode && (
+          <div className="flex items-center justify-center">
             {isSelected ? (
               <Check size={16} className={`${styles.icon} bg-[#4A2B4A] text-white rounded-full`} />
             ) : (
               <Circle size={16} className={styles.icon} />
             )}
-          </button>
+          </div>
         )}
       </div>
 
@@ -70,6 +73,10 @@ const RequirementCard = ({
         requirement={{ id, idTitle, title, description, priority }}
         onSave={(updated) => {
           onUpdate(updated);
+          setOpenEdit(false);
+        }}
+        onDelete={(deletedId) => {
+          onDelete(deletedId);
           setOpenEdit(false);
         }}
       />

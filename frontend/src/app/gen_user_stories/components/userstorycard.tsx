@@ -23,6 +23,7 @@ type Props = Pick<UserStory,
   availableEpics:string[];
   isSelected?: boolean;
   onToggleSelect?: () => void;
+  onDelete: (id: string) => void;
 };
 
 const UserStoryCard = ({
@@ -38,14 +39,18 @@ const UserStoryCard = ({
     onUpdate,
     availableEpics,
     onToggleSelect,
-    isSelected
+    isSelected,
+    onDelete,
 
 }: Props) => {
     const [openEdit, setOpenEdit] = useState(false);
 
     return (
       <>
-        <div className={styles.wrapper}>
+        <div 
+          className={`${styles.wrapper} ${!editMode ? 'hover:bg-[#EBE5EB] cursor-pointer' : ''}`}
+          onClick={!editMode && onToggleSelect ? onToggleSelect : undefined}
+        >
           <div className={styles.header}>
             <div className={styles.leftHeader}>
               <span className={`${styles.badge} ${styles.badgeID}`}>{idTitle}</span>
@@ -53,29 +58,26 @@ const UserStoryCard = ({
             </div>
             
             {editMode && (
-            <button 
-              className={styles.plusIcon} 
-              onClick={() => setOpenEdit(true)}
-              aria-label="Edit"
-              >
-              <Pencil size={16} />
-            </button>
-            )}
-            {!editMode && (
-              <button 
+              <button
+                className={styles.plusIcon}
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (onToggleSelect) onToggleSelect();
-                }} 
-                aria-label={isSelected ? "Deselect user story" : "Select user story"}
-                className="flex items-center justify-center"
+                  setOpenEdit(true);
+                }}
+                aria-label="Edit"
               >
+                <Pencil size={16} />
+              </button>
+            )}
+
+            {!editMode && (
+              <div className="flex items-center justify-center">
                 {isSelected ? (
                   <Check size={16} className={`${styles.icon} bg-[#4A2B4A] text-white rounded-full`} />
                 ) : (
                   <Circle size={16} className={styles.icon} />
                 )}
-              </button>
+              </div>
             )}
           </div>
     
@@ -110,6 +112,10 @@ const UserStoryCard = ({
         availableEpics={availableEpics}
         onSave={(updated) => {
           onUpdate(updated);
+          setOpenEdit(false);
+        }}
+        onDelete={(deletedId) => {
+          onDelete(deletedId);
           setOpenEdit(false);
         }}
       />

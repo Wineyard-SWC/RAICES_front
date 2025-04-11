@@ -9,7 +9,7 @@ const tabs = [
   { label: 'User Stories', href: '/gen_user_stories', icon: '📖' },
 ];
 
-export const FlowTabs = ({ currentPath, onTabChange }) => {
+export const FlowTabs = ({ currentPath, onTabChange, isLoading }) => {
   const pathname = currentPath || usePathname();
 
   return (
@@ -29,6 +29,7 @@ export const FlowTabs = ({ currentPath, onTabChange }) => {
               borderRight: 'none' 
             }}
             onClick={() => onTabChange && onTabChange(tab.href)}
+            disabled={isLoading}
           >
             <span className="text-lg">{tab.icon}</span> {tab.label}
           </button>

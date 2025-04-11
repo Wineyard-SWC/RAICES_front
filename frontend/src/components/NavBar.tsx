@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import type React from "react"
+import { useEffect, useState, useRef } from "react"
 import Link from "next/link"
 import { Bell, ChevronDown } from "lucide-react"
 import Image from "next/image"
@@ -21,12 +22,14 @@ const PATH_TO_TAB: Record<string, TabType> = {
   "/projects": "Projects",
   "/roadmap": "Roadmap",
   "/team": "Team",
+  "/generate": "Generate",
 }
 
 const Navbar = ({ projectSelected = false }: NavbarProps) => {
   const router = useRouter()
   const searchParams = useSearchParams()
   const pathname = usePathname()
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   const [activeTab, setActiveTab] = useState<TabType>("Projects")
   const [generateOpen, setGenerateOpen] = useState(false)
@@ -54,6 +57,20 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
     }
   }, [pathname, searchParams, router])
 
+  // Efecto para cerrar el menú desplegable al hacer clic fuera de él
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setGenerateOpen(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [])
+
   // Función para manejar el clic en una pestaña
   const handleTabClick = (tab: TabType) => {
     // Si no hay proyecto seleccionado, solo permitimos navegar a "Projects"
@@ -61,13 +78,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
       return
     }
 
-    // Si es la pestaña "Generate", solo mostramos el menú desplegable
-    if (tab === "Generate") {
-      setGenerateOpen(!generateOpen)
-      return
-    }
-
-    // Para las demás pestañas, navegamos a la ruta correspondiente
+    // Para las pestañas, navegamos a la ruta correspondiente
     const currentProjectId = localStorage.getItem("currentProjectId")
 
     switch (tab) {
@@ -76,17 +87,22 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
         break
       case "Dashboard":
         if (currentProjectId) {
-          router.push(`/dashboard?projectId=${currentProjectId}`)
+          router.push(/dashboard?projectId=${currentProjectId})
         }
         break
       case "Roadmap":
         if (currentProjectId) {
-          router.push(`/roadmap?projectId=${currentProjectId}`)
+          router.push(/roadmap?projectId=${currentProjectId})
         }
         break
       case "Team":
         if (currentProjectId) {
-          router.push(`/team?projectId=${currentProjectId}`)
+          router.push(/team?projectId=${currentProjectId})
+        }
+        break
+      case "Generate":
+        if (currentProjectId) {
+          router.push(/generate?projectId=${currentProjectId})
         }
         break
     }
@@ -116,11 +132,17 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
     return classes
   }
 
+  // Función para manejar el clic en el botón de despliegue (Generate)
+  const handleDropdownToggle = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setGenerateOpen(!generateOpen)
+  }
+
   return (
     <nav className="flex items-center justify-between px-4 py-2 border-b border-[#ebe5eb] bg-white">
       {/* Logo */}
       <div className="flex-shrink-0 h-[60px] flex items-center justify-center">
-        <Link href="/" className="mr-8 flex items-center justify-center">
+        <Link href="/projects" className="mr-8 flex items-center justify-center">
           <div className="flex items-center justify-center">
             <Image
               src="/img/raicesinvertido.png"
@@ -139,6 +161,69 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
           {TABS.map((tab) => {
             const isGenerate = tab === "Generate"
 
+            if (isGenerate) {
+              return (
+                <div key={tab} className="relative inline-flex" ref={dropdownRef}>
+                  {/* Botón principal (Generate) */}
+                  <button
+                    className={${getTabClasses(tab)} rounded-r-none}
+                    onClick={() => handleTabClick(tab)}
+                    disabled={!projectSelected}
+                  >
+                    {tab}
+                  </button>
+
+                  {/* Botón flecha desplegable */}
+                  <button
+                    className={${getTabClasses(tab)} rounded-l-none px-2 border-l-0}
+                    onClick={handleDropdownToggle}
+                    disabled={!projectSelected}
+                    aria-label="Mostrar opciones de generación"
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+
+                  {/* Menú desplegable */}
+                  {generateOpen && (
+                    <div className="absolute right-0 mt-10 w-48 bg-white rounded-md shadow-lg z-10">
+                      <div className="py-1">
+                        <button
+                          onClick={() => {
+                            setGenerateOpen(false)
+                            router.push(/gen_requirements?projectId=${localStorage.getItem("currentProjectId")})
+                          }}
+                          className="block w-full text-left px-4 py-2 text-sm text-[#4a2b4a] hover:bg-[#ebe5eb]"
+                          disabled={!projectSelected}
+                        >
+                          Generate Requirements
+                        </button>
+                        <button
+                          onClick={() => {
+                            setGenerateOpen(false)
+                            router.push(/gen_epics?projectId=${localStorage.getItem("currentProjectId")})
+                          }}
+                          className="block w-full text-left px-4 py-2 text-sm text-[#4a2b4a] hover:bg-[#ebe5eb]"
+                          disabled={!projectSelected}
+                        >
+                          Generate Epics
+                        </button>
+                        <button
+                          onClick={() => {
+                            setGenerateOpen(false)
+                            router.push(/gen_user_stories?projectId=${localStorage.getItem("currentProjectId")})
+                          }}
+                          className="block w-full text-left px-4 py-2 text-sm text-[#4a2b4a] hover:bg-[#ebe5eb]"
+                          disabled={!projectSelected}
+                        >
+                          Generate User Stories
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            }
+
             return (
               <div key={tab} className="relative">
                 <button
@@ -147,35 +232,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
                   disabled={!projectSelected && tab !== "Projects"}
                 >
                   {tab}
-                  {isGenerate && <ChevronDown className="ml-2 h-4 w-4" />}
                 </button>
-
-                {isGenerate && generateOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
-                    <div className="py-1">
-                      <button
-                        onClick={() => {
-                          setGenerateOpen(false)
-                          router.push(`/generate/report?projectId=${localStorage.getItem("currentProjectId")}`)
-                        }}
-                        className="block w-full text-left px-4 py-2 text-sm text-[#4a2b4a] hover:bg-[#ebe5eb]"
-                        disabled={!projectSelected}
-                      >
-                        Generate Report
-                      </button>
-                      <button
-                        onClick={() => {
-                          setGenerateOpen(false)
-                          router.push(`/generate/timeline?projectId=${localStorage.getItem("currentProjectId")}`)
-                        }}
-                        className="block w-full text-left px-4 py-2 text-sm text-[#4a2b4a] hover:bg-[#ebe5eb]"
-                        disabled={!projectSelected}
-                      >
-                        Generate Timeline
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
             )
           })}
@@ -194,7 +251,11 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
         <div className="relative">
           <button className="flex items-center">
             <div className="h-8 w-8 rounded-full bg-[#ebe5eb] overflow-hidden">
-              <img src="/placeholder.svg?height=32&width=32" alt="User avatar" className="h-full w-full object-cover" />
+              <img
+                src="/placeholder.svg?height=32&width=32"
+                alt="User avatar"
+                className="h-full w-full object-cover"
+              />
             </div>
             <ChevronDown className="ml-1 h-4 w-4 text-[#4a2b4a]" />
           </button>
@@ -203,5 +264,5 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
     </nav>
   )
 }
-
-export default Navbar
+//
+export default Navbar

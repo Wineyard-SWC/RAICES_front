@@ -9,9 +9,10 @@ type Props = {
   onClose: () => void;
   epic: Pick<Epic, 'id' | 'idTitle' | 'title' | 'description' | 'relatedRequirements'>;
   onSave: (updated: Epic) => void;
+  onDelete: (id:string) => void;
 };
 
-const EpicEditModal = ({ open, onClose, epic, onSave }: Props) => {
+const EpicEditModal = ({ open, onClose, epic, onSave, onDelete }: Props) => {
   const [title, setTitle] = useState(epic.title);
   const [description, setDescription] = useState(epic.description);
   const [relatedRequirements, setRelatedRequirements] = useState(epic.relatedRequirements);
@@ -22,6 +23,8 @@ const EpicEditModal = ({ open, onClose, epic, onSave }: Props) => {
     description?: string;
     relatedRequirements?: string[];
   }>({});
+
+
 
   useEffect(() => {
     const changed = 
@@ -174,29 +177,45 @@ const EpicEditModal = ({ open, onClose, epic, onSave }: Props) => {
                     )}
                   </div>
                 ))}
-                <button
-                  className="text-sm text-[#4A2B4A] underline mt-1"
-                  onClick={handleAddRequirement}
-                >
-                  + Add another requirement
-                </button>
+                <div className="flex justify-center">
+                  <button
+                    className="text-sm text-[#4A2B4A] underline mt-1"
+                    onClick={handleAddRequirement}
+                  >
+                    + Add another requirement
+                  </button>
+                </div>
+                
               </div>
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
+          <div className="flex justify-between items-center pt-4">
             <button
-              onClick={handleTryClose}
-              className="px-4 py-2 rounded-md border border-gray-300 text-black"
+              onClick={() => {
+                if (confirm("Are you sure you want to delete this epic?")) {
+                  onDelete(epic.id);
+                  onClose();
+                }
+              }}
+              className="px-4 py-2 bg-red-500 text-white rounded-md"
             >
-              Cancel
+              Delete Epic
             </button>
-            <button
-              onClick={handleSave}
-              className="px-4 py-2 rounded-md bg-[#4A2B4A] text-white"
-            >
-              Save
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleTryClose}
+                className="px-4 py-2 rounded-md border border-gray-300 text-black"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                className="px-4 py-2 rounded-md bg-[#4A2B4A] text-white"
+              >
+                Save
+              </button>
+            </div>
           </div>
         </DialogPanel>
       </div>

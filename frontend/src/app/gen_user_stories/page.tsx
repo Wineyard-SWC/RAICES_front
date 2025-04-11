@@ -136,6 +136,12 @@ export default function GenerateUserStoriesPage() {
       console.error("Error importando épicas y requerimientos:", err);
     }
   };
+
+  const handleDeleteStory = (storyId: string) => {
+    setUserStories(prev => prev.filter(story => story.id !== storyId));
+    
+    setSelectedUserStoriesIds(prev => prev.filter(id => id !== storyId));
+  };
   
   /*<Navbar projectSelected={!!selectedProject} />*/
   return (
@@ -169,6 +175,7 @@ export default function GenerateUserStoriesPage() {
             editMode={editMode}
             onUpdate={handleUpdateStory}
             availableEpics={allEpicIds}
+            onDelete={handleDeleteStory}
           />
         )}
         renderLeftContent={() => (
@@ -176,7 +183,7 @@ export default function GenerateUserStoriesPage() {
             <div className="flex items-baseline justify-between">
               <label className={inputproject.label}>Selected Epics</label>
               <button 
-              className="text-[#4A2B4A] text-lg font-medium hover:underline"
+              className="text-[#4A2B4A] text-sm font-medium hover:underline"
               onClick={handleImportEpics}
             >
               Import from project's epics
@@ -189,7 +196,8 @@ export default function GenerateUserStoriesPage() {
                   isSelected = {true}
                   {...epic}
                   editMode={false}
-                  onUpdate={() => {}} 
+                  onUpdate={() => {}}
+                  onDelete={() => {}}
                 />
               ))}
             </div>
