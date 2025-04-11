@@ -264,5 +264,5 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
     </nav>
   )
 }
-
+//
 export default Navbar
