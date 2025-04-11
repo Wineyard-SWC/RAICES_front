@@ -16,14 +16,19 @@ import { useSelectedEpicsContext } from '@/contexts/selectedepics';
 import { useSelectedUserStoriesContext } from '@/contexts/selecteduserstories';
 import { Epic } from '@/types/epic';
 import LoadingScreen from '@/components/loading';
+import Navbar from '@/components/NavBar';
+import { postUserStories } from '@/utils/postUserStories';
+import { getProjectEpics } from '@/utils/getProjectEpics';
+import { getProjectRequirements } from '@/utils/getProjectRequirements';
 
 export default function GenerateUserStoriesPage() {
   const [epicDescription, setEpicDescription] = useState('');
   const [editMode, setEditMode] = useState(false);
   const { userStories, setUserStories } = useUserStoryContext();
-  const { epics } = useEpicContext();
-  const {selectedEpicIds} = useSelectedEpicsContext();
+  const { epics,setEpics } = useEpicContext();
+  const {selectedEpicIds,setSelectedEpicIds } = useSelectedEpicsContext();
   const { selectedUserStoriesIds, setSelectedUserStoriesIds} = useSelectedUserStoriesContext();
+  const selectedProject = "vi9cZ4luTp2T8IADZ5b0" //Hardcodeado cambiar
 
 
 
@@ -81,11 +86,63 @@ export default function GenerateUserStoriesPage() {
     setSelectedUserStoriesIds(allUserStoryIds);
   };
 
+  const handleSave = async () => {
+    try {
+      const selected = userStories.filter(story => selectedUserStoriesIds.includes(story.id));
+  
+      const cleaned = selected.map(s => ({
+        idTitle: s.idTitle,
+        title: s.title,
+        description: s.description,
+        priority: s.priority,
+        points: s.points,
+        acceptance_criteria: s.acceptance_criteria,
+        assigned_epic: s.assigned_epic
+      }));
+  
+      await postUserStories(cleaned, selectedProject);
+      alert('Historias de usuario guardadas con éxito!');
+    } catch (err) {
+      console.error('Error al guardar historias:', err);
+    }
+  };
+  
+  const handleImportEpics = async () => {
+    try {
+      const [importedEpics, importedRequirements] = await Promise.all([
+        getProjectEpics(selectedProject),
+        getProjectRequirements(selectedProject)
+      ]);
+  
+      const epicsWithReqs = importedEpics.map(epic => {
+        const related = importedRequirements.filter(r => r.epicRef === epic.idTitle);
+        return {
+          ...epic,
+          relatedRequirements: related.map(r => ({
+            idTitle: r.idTitle,
+            title: r.idTitle,
+            description: r.description
+          }))
+        };
+      });
+  
+      setEpics(epicsWithReqs);
+  
+      const ids = epicsWithReqs.map(e => e.id);
+      setSelectedEpicIds(ids);
+  
+      alert("Épicas (con requerimientos asociados) importadas!");
+    } catch (err) {
+      console.error("Error importando épicas y requerimientos:", err);
+    }
+  };
+  
+  /*<Navbar projectSelected={!!selectedProject} />*/
   return (
     <>
       <LoadingScreen isLoading={isLoading} generationType="userStories" />
       
-
+      
 
       <GeneratorView
         inputTitle="📦 Epics Input"
@@ -115,20 +172,32 @@ export default function GenerateUserStoriesPage() {
           />
         )}
         renderLeftContent={() => (
-          <div className="space-y-5 max-h-[60vh] overflow-y-auto">
-            <label className={inputproject.label}>Project's Epics</label>
-            {selectedEpics.map((epic) => (
-              <EpicCard
-                key={epic.id}
-                isSelected = {true}
-                {...epic}
-                editMode={false}
-                onUpdate={() => {}} 
-              />
-            ))}
+          <div>
+            <div className="flex items-baseline justify-between">
+              <label className={inputproject.label}>Selected Epics</label>
+              <button 
+              className="text-[#4A2B4A] text-lg font-medium hover:underline"
+              onClick={handleImportEpics}
+            >
+              Import from project's epics
+            </button>
+            </div>
+            <div className="space-y-5 max-h-[60vh] overflow-y-auto">
+              {selectedEpics.map((epic) => (
+                <EpicCard
+                  key={epic.id}
+                  isSelected = {true}
+                  {...epic}
+                  editMode={false}
+                  onUpdate={() => {}} 
+                />
+              ))}
+            </div>
           </div>
+          
         )}
         onSelectAll={handleSelectAll}
+        onSave={handleSave}
       />
     </>
   );

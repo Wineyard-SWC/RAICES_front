@@ -14,15 +14,18 @@ import { useSelectedRequirementContext } from '@/contexts/selectedrequirements';
 import { useSelectedEpicsContext } from '@/contexts/selectedepics';
 import RequirementCard from '../gen_requirements/components/requirementcard';
 import LoadingScreen from '@/components/loading';
-
+import Navbar from '@/components/NavBar';
+import { postEpics } from '@/utils/postEpics';
+import { getProjectRequirements } from '@/utils/getProjectRequirements';
 
 export default function GenerateEpicsPage() {
   const [reqDescription, setReqDescription] = useState('');
   const [editMode, setEditMode] = useState(false);
   const {epics, setEpics} = useEpicContext();
-  const { requirements } = useRequirementContext();
-  const { selectedIds } = useSelectedRequirementContext();
+  const { requirements, setRequirements } = useRequirementContext();
+  const { selectedIds, setSelectedIds } = useSelectedRequirementContext();
   const {selectedEpicIds, setSelectedEpicIds} = useSelectedEpicsContext();
+  const selectedProject = "vi9cZ4luTp2T8IADZ5b0" //Hardcodeado cambiar
 
   const selectedRequirements = requirements.filter(req => selectedIds.includes(req.id));
 
@@ -84,6 +87,47 @@ export default function GenerateEpicsPage() {
     setSelectedEpicIds(allEpicsIds);
   };
 
+
+  const handleSave = async () => {
+    try {
+      const selected = epics.filter(e => selectedEpicIds.includes(e.id));
+  
+      const cleaned = selected.map(e => ({
+        idTitle: e.idTitle,
+        title: e.title,
+        description: e.description,
+        relatedRequirements: e.relatedRequirements.map(r => ({
+          idTitle: r.idTitle,
+          title: r.title,
+          description: r.description
+        }))
+      }));
+  
+      await postEpics(cleaned, selectedProject);
+      alert('Épicas guardadas con éxito!');
+    } catch (err) {
+      console.error('Error al guardar épicas:', err);
+    }
+  };
+
+  const handleImportRequirements = async () => {
+    try {
+      const importedReqs = await getProjectRequirements(selectedProject);
+      setRequirements(importedReqs);
+      const importedIds = importedReqs.map((r) => r.id);
+      setSelectedIds(importedIds);      
+      alert("Requerimientos importados");
+    } catch (err) {
+      console.error("Error importando requerimientos", err);
+    }
+  };
+
+
+/*<Navbar projectSelected={!!selectedProject} />*/
+
+
+
+
   return (
     <>
       <LoadingScreen isLoading={isLoading} generationType="epics"/>
@@ -116,23 +160,34 @@ export default function GenerateEpicsPage() {
           />
         )}
         renderLeftContent={() => (
-
+          <div>
+            <div className="flex items-baseline  justify-between">
+            <label className={input.label}>Selected Requirements</label>
+            <button 
+              className="text-[#4A2B4A] text-lg font-medium hover:underline"
+              onClick={handleImportRequirements}
+            >
+              Import from project's requirements
+            </button>
+            </div>
           <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-            <label className={input.label}>Project's Requirements</label>
-
+          
             {selectedRequirements.map((req) => (
               <RequirementCard
                 key={req.id}
                 {...req}
                 isSelected = {true}
-                idTitle={req.id}
+                idTitle={req.idTitle}
                 editMode={false}
                 onUpdate={() => {}} 
               />
             ))}
           </div>
+          </div>
+          
         )}
         onSelectAll={handleSelectAll}
+        onSave={handleSave}
       />
     </>
   );
