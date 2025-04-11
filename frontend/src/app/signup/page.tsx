@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react';
 import { FaGithub } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
-import { createUserWithEmailAndPassword, signInWithPopup, sendEmailVerification, updateProfile } from 'firebase/auth';
-import { auth, googleProvider, githubProvider } from '@/utils/firebaseConfig';
+import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from 'firebase/auth';
+import { auth } from '@/utils/firebaseConfig';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FaEye, FaEyeSlash } from 'react-icons/fa'
+import { useAuth } from "@/hooks/useAuth"
 
 export default function CreateAccountPage() {
   const [firstName, setFirstName] = useState('');
@@ -20,6 +21,8 @@ export default function CreateAccountPage() {
   const [showPassword, setShowPassword] = useState(false); 
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { loginWithGoogle, loginWithGithub } = useAuth()
 
   const router = useRouter();
 
@@ -71,60 +74,6 @@ export default function CreateAccountPage() {
       setError('Error creating account: ' + (err as Error).message); // Encerré el err y le añadí "as Error"
     } finally {
       setTimeout(() => setIsSubmitting(false), 3000); // Rehabilitar botón después de 3s
-    }
-  };
-  
-  
-  
-  const handleGoogleSignup = async () => {
-    try {
-      const userCredential = await signInWithPopup(auth, googleProvider);
-      const token = await userCredential.user.getIdToken(); // Obtener el token JWT
-      localStorage.setItem("authToken", token); // Guardar el token en localStorage
-      
-      const response = await fetch(`${API_URL}/token`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-    
-      if (!response.ok) {
-        throw new Error(`Server returned error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log(data);
-
-      router.push('/dashboard');
-    } catch (err) {
-      setError('Error logging in with Google: ' + (err as Error).message);
-    }
-  };
-  
-  const handleGithubSignup = async () => {
-    try {
-      const userCredential = await signInWithPopup(auth, githubProvider);
-      const token = await userCredential.user.getIdToken(); // Obtener el token JWT
-      localStorage.setItem("authToken", token); // Guardar el token en localStorage
-
-      const response = await fetch(`${API_URL}/token`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Server returned error: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log(data);
-
-      router.push('/dashboard');
-    } catch (err) {
-      setError('Error logging in with GitHub: ' + (err as Error).message);
     }
   };
   
@@ -263,14 +212,14 @@ export default function CreateAccountPage() {
             <button 
               className="flex items-center justify-center w-full sm:w-1/2 py-2 rounded-lg hover:bg-gray-200"
               style={{ color: '#000000', border: '2px solid #694969' }}
-              onClick={handleGoogleSignup}
+              onClick={loginWithGoogle}
             >
               <FcGoogle className="mr-2"/> Google
             </button>
             <button 
               className="flex items-center justify-center w-full sm:w-1/2 py-2 rounded-lg hover:bg-gray-200"
               style={{ color: '#000000', border: '2px solid #694969' }}
-              onClick={handleGithubSignup}
+              onClick={loginWithGithub}
             >
               <FaGithub className="mr-2" /> Github
             </button>
