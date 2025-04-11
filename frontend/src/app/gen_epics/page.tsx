@@ -14,7 +14,7 @@ import { useSelectedRequirementContext } from '@/contexts/selectedrequirements';
 import { useSelectedEpicsContext } from '@/contexts/selectedepics';
 import RequirementCard from '../gen_requirements/components/requirementcard';
 import LoadingScreen from '@/components/loading';
-import Navbar from '@/components/Navbar';
+import Navbar from '@/components/navbar';
 import { postEpics } from '@/utils/postEpics';
 import { getProjectRequirements } from '@/utils/getProjectRequirements';
 

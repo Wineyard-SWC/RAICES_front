@@ -16,7 +16,7 @@ import { useSelectedEpicsContext } from '@/contexts/selectedepics';
 import { useSelectedUserStoriesContext } from '@/contexts/selecteduserstories';
 import { Epic } from '@/types/epic';
 import LoadingScreen from '@/components/loading';
-import Navbar from '@/components/Navbar';
+import Navbar from '@/components/navbar';
 import { postUserStories } from '@/utils/postUserStories';
 import { getProjectEpics } from '@/utils/getProjectEpics';
 import { getProjectRequirements } from '@/utils/getProjectRequirements';
