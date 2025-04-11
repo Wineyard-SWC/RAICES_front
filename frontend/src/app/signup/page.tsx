@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { FaGithub } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
-import { createUserWithEmailAndPassword, signInWithPopup, sendEmailVerification } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithPopup, sendEmailVerification, updateProfile } from 'firebase/auth';
 import { auth, googleProvider, githubProvider } from '@/utils/firebaseConfig';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -54,6 +54,10 @@ export default function CreateAccountPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
   
+      await updateProfile(user, {
+        displayName: `${firstName} ${lastName}`,
+      });    
+
       await sendEmailVerification(user);
       setError('Verification email sent. Please check your inbox.');
   
