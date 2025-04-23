@@ -1,130 +1,44 @@
 'use client';
 
-import { UserStory } from "@/types/userstory";
-import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
+import { UserStory } from "@/types/userstory";
+import { useUserStoryEditLogic } from '../hooks/useUserStoryEditLogic';
+
 
 type Props = {
   open: boolean;
   onClose: () => void;
   onSave: (updated: UserStory) => void;
   userStory: UserStory;
-  availableEpics: { id: string; title: string }[]; 
-  onDelete: (id: string) => void;
+  availableEpics: { uuid:string; id: string; title: string }[]; 
+  onDelete: (uuid: string) => void;
 };
 
 const UserStoryEditModal = ({ open, onClose, userStory, onSave, availableEpics, onDelete }: Props) => {
-  const [title, setTitle] = useState(userStory.title);
-  const [description, setDescription] = useState(userStory.description);
-  const [priority, setPriority] = useState<UserStory['priority']>(userStory.priority);
-  const [acceptance_criteria, setAcceptanceCriteria] = useState(userStory.acceptance_criteria);
-  const [assigned_epic, setEpicId] = useState(userStory.assigned_epic);
-  const [hasChanges, setHasChanges] = useState(false);
-  const [showConfirmation, setShowConfirmation] = useState(false);
-  const [errors, setErrors] = useState<{
-    title?: string;
-    description?: string;
-  }>({});
+  const {
+    title,
+    setTitle,
+    description,
+    setDescription,
+    priority,
+    setPriority,
+    assigned_epic,
+    setEpicId,
+    acceptance_criteria,
+    addCriterion,
+    removeCriterion,
+    updateCriterion,
+    handleTryClose,
+    handleConfirmClose,
+    handleCancelClose,
+    handleSave,
+    handleDelete,
+    showConfirmation,
+    errors
+  } = useUserStoryEditLogic(userStory, onSave, onClose, onDelete);
 
-  useEffect(() => {
-    const originalValues = {
-      title: userStory.title,
-      description: userStory.description,
-      priority: userStory.priority,
-      acceptance_criteria: userStory.acceptance_criteria,
-      assigned_epic: userStory.assigned_epic
-    };
-
-    const currentValues = {
-      title,
-      description,
-      priority,
-      acceptance_criteria,
-      assigned_epic
-    };
-    
-    const changed = 
-      originalValues.title !== currentValues.title ||
-      originalValues.description !== currentValues.description ||
-      originalValues.priority !== currentValues.priority ||
-      JSON.stringify(originalValues.acceptance_criteria) !== JSON.stringify(currentValues.acceptance_criteria) ||
-      originalValues.assigned_epic !== currentValues.assigned_epic;
-    
-    setHasChanges(changed);
-  }, [title, description, priority, acceptance_criteria, assigned_epic, userStory]);
-
-  const addCriterion = () => {
-    setAcceptanceCriteria([...acceptance_criteria, '']);
-  };
-  
-  const removeCriterion = (index: number) => {
-    const updated = [...acceptance_criteria];
-    updated.splice(index, 1);
-    setAcceptanceCriteria(updated);
-  };
-
-  const updateCriterion = (index: number, value: string) => {
-    const updated = [...acceptance_criteria];
-    updated[index] = value;
-    setAcceptanceCriteria(updated);
-  };
-
-  const handleTryClose = () => {
-    if (hasChanges) {
-      setShowConfirmation(true);
-    } else {
-      onClose();
-    }
-  };
-  
-  const handleConfirmClose = () => {
-    setShowConfirmation(false);
-    onClose();
-  };
-  
-  const handleCancelClose = () => {
-    setShowConfirmation(false);
-  };
-
-  const validateForm = () => {
-    const newErrors: {title?: string; description?: string} = {};
-    let isValid = true;
-    
-    if (!title.trim()) {
-      newErrors.title = "Title cannot be empty";
-      isValid = false;
-    }
-    
-    if (!description.trim()) {
-      newErrors.description = "Description cannot be empty";
-      isValid = false;
-    }
-    
-    const hasEmptyCriteria = acceptance_criteria.some(c => !c.trim());
-    if (hasEmptyCriteria) {
-      alert("Please complete or remove empty acceptance criteria");
-      isValid = false;
-    }
-    
-    setErrors(newErrors);
-    return isValid;
-  };
-
-  const handleSave = () => {
-    if (!validateForm()) return;
-    
-    onSave({
-      ...userStory,
-      title,
-      description,
-      priority,
-      acceptance_criteria: acceptance_criteria.filter(c => c.trim() !== ''),
-      assigned_epic,
-    });
-    onClose();
-  };
-
-  return (
+  const modalContent = (
     <Dialog open={open} onClose={handleTryClose} className="relative z-50">
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
       <div className="fixed inset-0 flex items-center justify-center p-4">
@@ -176,7 +90,7 @@ const UserStoryEditModal = ({ open, onClose, userStory, onSave, availableEpics, 
               aria-label="Edit epic relationship"
             >
               {availableEpics.map((epic) => (
-                <option key={epic.id} value={epic.id}>
+                <option key={epic.uuid} value={epic.id}>
                   {epic.id} - {epic.title}
                 </option>
               ))}
@@ -218,7 +132,7 @@ const UserStoryEditModal = ({ open, onClose, userStory, onSave, availableEpics, 
             <button
               onClick={() => {
                 if (confirm("Are you sure you want to delete this user story?")) {
-                  onDelete(userStory.id);
+                  onDelete(userStory.uuid);
                   onClose();
                 }
               }}
@@ -272,6 +186,11 @@ const UserStoryEditModal = ({ open, onClose, userStory, onSave, availableEpics, 
       )}
     </Dialog>
   );
+
+  const modalRoot = typeof window !== 'undefined' ? document.getElementById('modal-root') : null;
+    
+  return modalRoot ? createPortal(modalContent, modalRoot) : null;
+
 };
 
 export default UserStoryEditModal;

@@ -11,13 +11,16 @@ export async function postEpics(epics: Omit<Epic, 'id'>[], projectId: string) {
     },
     body: JSON.stringify(
       epics.map((e) => ({
+        uuid: e.uuid,
         idTitle: e.idTitle,
         title: e.title,
         description: e.description,
         projectRef: projectId,
         relatedRequirements: e.relatedRequirements.map((req) => ({
           idTitle: req.idTitle,
+          title:req.title,
           description: req.description,
+          uuid: req.uuid
         })),
       }))
     ),

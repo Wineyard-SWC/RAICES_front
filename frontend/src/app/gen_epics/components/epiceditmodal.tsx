@@ -1,123 +1,67 @@
 'use client';
 
-import { Epic } from '@/types/epic';
-import React, { useState , useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
+import { Epic } from '@/types/epic';
+import { Requirement } from '@/types/requirement';
+import { useEpicEditLogic } from '../hooks/useEpicEditLogic'; 
 
 type Props = {
   open: boolean;
   onClose: () => void;
-  epic: Pick<Epic, 'id' | 'idTitle' | 'title' | 'description' | 'relatedRequirements'>;
+  epic: Pick<Epic, 'uuid'| 'id' | 'idTitle' | 'title' | 'description' | 'relatedRequirements'>;
   onSave: (updated: Epic) => void;
-  onDelete: (id:string) => void;
+  onDelete: (uuid: string) => void;
+  allRequirements?: Requirement[];
+  onAddNewRequirement?: (r: Requirement) => void;
 };
 
-const EpicEditModal = ({ open, onClose, epic, onSave, onDelete }: Props) => {
-  const [title, setTitle] = useState(epic.title);
-  const [description, setDescription] = useState(epic.description);
-  const [relatedRequirements, setRelatedRequirements] = useState(epic.relatedRequirements);
-  const [hasChanges, setHasChanges] = useState(false);
-  const [showConfirmation, setShowConfirmation] = useState(false);
-  const [errors, setErrors] = useState<{
-    title?: string;
-    description?: string;
-    relatedRequirements?: string[];
-  }>({});
+const EpicEditModal = ({
+  open,
+  onClose,
+  epic,
+  onSave,
+  onDelete,
+  allRequirements,
+  onAddNewRequirement
+}: Props) => {
+  const logic = useEpicEditLogic(epic, allRequirements, onAddNewRequirement);
 
+  const {
+    title,
+    description,
+    relatedRequirements,
+    searchTerm,
+    searchResults,
+    errors,
+    hasChanges,
+    showConfirmation,
+    setTitle,
+    setDescription,
+    setSearchTerm,
+    setShowConfirmation,
+    handleRequirementChange,
+    handleAddRequirement,
+    handleAddExistingRequirement,
+    handleRemoveRequirement,
+    handleSave,
+    resetForm
+  } = logic;
 
-
-  useEffect(() => {
-    const changed = 
-      epic.title !== title ||
-      epic.description !== description ||
-      JSON.stringify(epic.relatedRequirements) !== JSON.stringify(relatedRequirements);
-    
-    setHasChanges(changed);
-  }, [title, description, relatedRequirements, epic]);
-
-  const handleRequirementChange = (index: number, field: 'title' | 'description', value: string) => {
-    const updated = [...relatedRequirements];
-    updated[index] = { ...updated[index], [field]: value };
-    setRelatedRequirements(updated);
-  };
-
-  const handleAddRequirement = () => {
-    setRelatedRequirements([...relatedRequirements, { idTitle: '', title: '', description: ''}]);
-  };
-
-  const handleRemoveRequirement = (index: number) => {
-    const updated = [...relatedRequirements];
-    updated.splice(index, 1);
-    setRelatedRequirements(updated);
-  };
-  
   const handleTryClose = () => {
-    if (hasChanges) {
-      setShowConfirmation(true);
-    } else {
-      onClose();
-    }
+    if (hasChanges) setShowConfirmation(true);
+    else onClose();
   };
-  
+
   const handleConfirmClose = () => {
+    resetForm();
     setShowConfirmation(false);
     onClose();
   };
-  
-  const handleCancelClose = () => {
-    setShowConfirmation(false);
-  };
-  
-  const validateForm = () => {
-    const newErrors: {
-      title?: string;
-      description?: string;
-      relatedRequirements?: string[];
-    } = {};
-    let isValid = true;
-    
-    if (!title.trim()) {
-      newErrors.title = "Title cannot be empty";
-      isValid = false;
-    }
-    
-    if (!description.trim()) {
-      newErrors.description = "Description cannot be empty";
-      isValid = false;
-    }
 
-    const reqErrors: string[] = [];
-    relatedRequirements.forEach((req, index) => {
-      if (!req.title.trim() || !req.description.trim()) {
-        reqErrors[index] = "Title and description cannot be empty";
-        isValid = false;
-      }
-    });
-    
-    if (reqErrors.length > 0) {
-      newErrors.relatedRequirements = reqErrors;
-    }
-    
-    setErrors(newErrors);
-    return isValid;
-  };
+  const handleCancelClose = () => setShowConfirmation(false);
 
-  const handleSave = () => {
-    if (!validateForm()) return;
-    
-    onSave({
-      id: epic.id,
-      idTitle: epic.idTitle,
-      title,
-      description,
-      relatedRequirements: relatedRequirements.filter(
-        req => req.title.trim() !== '' && req.description.trim() !== ''
-      ),
-    });
-    onClose();
-  };
-
-  return (
+  const modalContent = (
     <Dialog open={open} onClose={handleTryClose} className="relative z-50">
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
       <div className="fixed inset-0 flex items-center justify-center p-4">
@@ -160,6 +104,9 @@ const EpicEditModal = ({ open, onClose, epic, onSave, onDelete }: Props) => {
                     >
                       ✕
                     </button>
+
+                    <span className="text-sm font-semibold text-gray-600">{req.idTitle}</span>
+
                     <input
                       className={`w-full border p-1 rounded-md text-sm bg-white ${errors.relatedRequirements?.[index] ? 'border-red-500' : 'border-gray-300'}`}
                       value={req.title}
@@ -175,7 +122,20 @@ const EpicEditModal = ({ open, onClose, epic, onSave, onDelete }: Props) => {
                     {errors.relatedRequirements?.[index] && (
                       <p className="text-red-500 text-xs">{errors.relatedRequirements[index]}</p>
                     )}
+                    <div className="mt-2">
+                      <label className="text-sm font-medium text-black">Requirement Type</label>
+                      <select 
+                        value={req.category}
+                        onChange={(e) => handleRequirementChange(index, 'category', e.target.value)}
+                        className="w-full border border-gray-300 bg-white rounded-md p-2"
+                        aria-label="Edit Requirement Category"
+                      >
+                        <option value="Funcional">Functional</option>
+                        <option value="No Funcional">Non-Functional</option>
+                      </select>
+                    </div>
                   </div>
+                  
                 ))}
                 <div className="flex justify-center">
                   <button
@@ -186,6 +146,29 @@ const EpicEditModal = ({ open, onClose, epic, onSave, onDelete }: Props) => {
                   </button>
                 </div>
                 
+                <div className="space-y-2 mt-4">
+                  <label className="text-sm font-medium text-black">Add Existing Requirement</label>
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search requirements by title"
+                    className="w-full border border-gray-300 p-2 rounded-md bg-white"
+                  />
+                  {searchResults.length > 0 && (
+                    <ul className="border border-gray-300 bg-white rounded-md mt-2 max-h-40 overflow-y-auto">
+                      {searchResults.map((req) => (
+                        <li
+                          key={req.uuid}
+                          className="px-3 py-2 text-sm hover:bg-purple-100 cursor-pointer"
+                          onClick={() => handleAddExistingRequirement(req)}
+                        >
+                          <span className="font-semibold">{req.idTitle}</span>: {req.title}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -194,7 +177,7 @@ const EpicEditModal = ({ open, onClose, epic, onSave, onDelete }: Props) => {
             <button
               onClick={() => {
                 if (confirm("Are you sure you want to delete this epic?")) {
-                  onDelete(epic.id);
+                  onDelete(epic.uuid);
                   onClose();
                 }
               }}
@@ -210,7 +193,7 @@ const EpicEditModal = ({ open, onClose, epic, onSave, onDelete }: Props) => {
                 Cancel
               </button>
               <button
-                onClick={handleSave}
+                onClick={() => logic.handleSave(onSave, onClose)}
                 className="px-4 py-2 rounded-md bg-[#4A2B4A] text-white"
               >
                 Save
@@ -248,6 +231,11 @@ const EpicEditModal = ({ open, onClose, epic, onSave, onDelete }: Props) => {
       )}
     </Dialog>
   );
+
+  const modalRoot = typeof window !== 'undefined' ? document.getElementById('modal-root') : null;
+      
+  return modalRoot ? createPortal(modalContent, modalRoot) : null;
+
 };
 
 export default EpicEditModal;

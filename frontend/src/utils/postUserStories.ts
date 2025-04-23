@@ -10,6 +10,7 @@ export async function postUserStories(stories: Omit<UserStory, 'id' | 'selected'
     },
     body: JSON.stringify(
       stories.map((s) => ({
+        uuid: s.uuid,
         idTitle: s.idTitle,
         title: s.title,
         description: s.description,
@@ -17,7 +18,8 @@ export async function postUserStories(stories: Omit<UserStory, 'id' | 'selected'
         points: s.points,
         acceptanceCriteria: s.acceptance_criteria,
         epicRef: s.assigned_epic,
-        projectRef: projectId
+        projectRef: projectId,
+        comments: []
       }))
     ),
   });

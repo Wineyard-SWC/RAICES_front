@@ -3,18 +3,22 @@
 import { Epic } from '@/types/epic';
 import { epicCardStyles as styles } from '../styles/epic.module';
 import { CheckCircle, Check, Pencil, Circle } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import EpicEditModal from './epiceditmodal';
+import { useRequirementContext } from '@/contexts/requirementcontext';
+import { useSelectedRequirementContext } from '@/contexts/selectedrequirements';
 
-type Props = Pick<Epic, 'id' | 'title' | 'idTitle' | 'description' | 'relatedRequirements'> & {
+
+type Props = Pick<Epic, 'uuid'| 'id' | 'title' | 'idTitle' | 'description' | 'relatedRequirements'> & {
   editMode?: boolean;
   onUpdate: (updated: Epic) => void;
   isSelected?: boolean;
-  onDelete: (id: string) => void;
+  onDelete: (uuid: string) => void;
   onToggleSelect?: () => void;
 };
 
 const EpicCard = ({
+  uuid,
   id,
   idTitle,
   title,
@@ -27,7 +31,25 @@ const EpicCard = ({
   onDelete,
 }: Props) => {
   const [openEdit, setOpenEdit] = useState(false);
-  
+  const {requirements, setRequirements} = useRequirementContext()
+  const { selectedIds, setSelectedIds } = useSelectedRequirementContext();
+
+
+  useEffect(() => {
+    if (relatedRequirements.length > 0) {
+      const relatedIds = relatedRequirements.map(req => req.uuid);
+      
+      setSelectedIds(prevIds => {
+        const newIds = [...prevIds];
+        relatedIds.forEach(id => {
+          if (!newIds.includes(id)) {
+            newIds.push(id);
+          }
+        });
+        return newIds;
+      });
+    }
+  }, [relatedRequirements, setSelectedIds]);
 
   return (
     <>
@@ -69,7 +91,7 @@ const EpicCard = ({
           <p className={styles.relatedTitle}>Related Requirements</p>
           <ul className="space-y-1">
             {relatedRequirements.map((req) => (
-              <li key={req.title} className={styles.requirementItem}>
+              <li key={req.uuid} className={styles.requirementItem}>
                 <CheckCircle size={14} className={styles.requirementCheck} />
                 <span>{req.title}: {req.description}</span>
               </li>
@@ -81,14 +103,24 @@ const EpicCard = ({
       <EpicEditModal
         open={openEdit}
         onClose={() => setOpenEdit(false)}
-        epic={{ id, idTitle, title, description, relatedRequirements }}
+        epic={{ uuid, id, idTitle, title, description, relatedRequirements }}
         onSave={(updated) => {
           onUpdate(updated);
           setOpenEdit(false);
         }}
-        onDelete={(id) => {
-          onDelete(id);
+        onDelete={(uuid) => {
+          onDelete(uuid);
           setOpenEdit(false);
+        }}
+        allRequirements={requirements}
+        onAddNewRequirement={(req) => {
+          setRequirements(prev => {
+            const exists = prev.find(r => r.uuid === req.uuid);
+            if (exists) {
+              return prev.map(r => r.uuid === req.uuid ? { ...r, ...req } : r);
+            }
+            return [...prev, req];
+          });
         }}
       />
     </>

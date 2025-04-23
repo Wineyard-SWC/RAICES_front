@@ -9,6 +9,7 @@ import React, {useState} from 'react';
 
 
 type Props = Pick<UserStory,
+    | 'uuid'
     | 'id'
     | 'idTitle'
     | 'title'
@@ -20,13 +21,14 @@ type Props = Pick<UserStory,
 > & {
   editMode?:boolean;
   onUpdate: (updated:UserStory)=>void;
-  availableEpics:{ id: string; title: string }[];
+  availableEpics:{ uuid: string; id: string; title: string }[];
   isSelected?: boolean;
   onToggleSelect?: () => void;
-  onDelete: (id: string) => void;
+  onDelete: (uuid: string) => void;
 };
 
 const UserStoryCard = ({
+    uuid,
     id,
     assigned_epic,
     idTitle,
@@ -100,6 +102,7 @@ const UserStoryCard = ({
         open={openEdit}
         onClose={() => setOpenEdit(false)}
         userStory={{
+          uuid,
           id,
           idTitle,
           title,

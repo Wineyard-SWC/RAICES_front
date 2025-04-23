@@ -4,16 +4,19 @@ import { useState } from "react";
 import { Epic, EpicResponse } from "@/types/epic";
 import { Requirement } from "@/types/requirement";
 import { useSessionContext } from "@/contexts/sessioncontext";
-
+import { useLanguageContext } from "@/contexts/languagecontext";
 
 export const useGenerateEpics = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [generatedOutput, setGeneratedOutput] = useState<EpicResponse | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const apiUrl = process.env.NEXT_PUBLIC_EPIC_ROUTE!  
     const { sessionId, setSessionId} = useSessionContext();
+    const { language, setLanguage} = useLanguageContext();
+
+    const apiUrl = process.env.NEXT_PUBLIC_EPIC_ROUTE!  
 
     const currentSession_id = sessionId
+    const lang = language
 
     const generate = async (requirementDescription: {
       funcionales: any[];
@@ -29,7 +32,8 @@ export const useGenerateEpics = () => {
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
               "requirements_description": requirementDescription,
-              "session_id": currentSession_id 
+              "session_id": currentSession_id,
+              "lang": lang || "en"
           })
       
       });

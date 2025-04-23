@@ -9,16 +9,18 @@ import { UserStory } from '@/types/userstory';
 import { useSelectedUserStoriesContext } from '@/contexts/selecteduserstories';
 
 type Props = {
+  uuid: string;
   id: string;
   idTitle: string;
   userStories: UserStory[];
   editMode?: boolean;
   onUpdate: (updated: UserStory) => void;
-  availableEpics: { id: string; title: string }[];
-  onDelete:  (id: string) => void;
+  availableEpics: {uuid: string, id: string; title: string }[];
+  onDelete:  (uuid: string) => void;
 };
 
 const EpicUserStoryGroup = ({
+  uuid,
   id,
   idTitle,
   userStories,
@@ -31,17 +33,17 @@ const EpicUserStoryGroup = ({
   
   const { selectedUserStoriesIds, setSelectedUserStoriesIds } = useSelectedUserStoriesContext();
 
-  const toggleSelectStory = (id: string) => {
+  const toggleSelectStory = (uuid: string) => {
     setSelectedUserStoriesIds((prev) =>
-      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
+      prev.includes(uuid) ? prev.filter((s) => s !== uuid) : [...prev, uuid]
     );
   };
 
-  const handleDelete = (storyId: string) => {
-    setSelectedUserStoriesIds((prev) => prev.filter((id) => id !== storyId));
+  const handleDelete = (storyUuid: string) => {
+    setSelectedUserStoriesIds((prev) => prev.filter((uuid) => uuid !== storyUuid));
     
     if (onDelete) {
-      onDelete(storyId);
+      onDelete(storyUuid);
     }
   };
 
@@ -61,12 +63,12 @@ const EpicUserStoryGroup = ({
         <div className={styles.list}>
           {userStories?.map((story) => (
             <UserStoryCard
-            key={story.id}
+            key={story.uuid}
             {...story}
             onUpdate={onUpdate}
             editMode={editMode}
-            isSelected={selectedUserStoriesIds.includes(story.id)}
-            onToggleSelect={() => toggleSelectStory(story.id)}
+            isSelected={selectedUserStoriesIds.includes(story.uuid)}
+            onToggleSelect={() => toggleSelectStory(story.uuid)}
             availableEpics={availableEpics}
             onDelete={handleDelete}
            />

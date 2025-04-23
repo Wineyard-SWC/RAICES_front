@@ -1,85 +1,45 @@
 'use client';
 
-import RequirementCard from './components/requirementcard';
-import { Requirement } from '@/types/requirement';
-import { useState, useEffect } from 'react';
-import GeneratorView from '@/components/generatorview';
-import { useGenerateRequirements } from '@/hooks/useGenerateRequirements';
-import { parseRequirementsFromAPI } from '@/utils/parseRequirementsFromApi';
-import { projectInputStyles as input } from './styles/projectinput.module';
-import { useRequirementContext } from '@/contexts/requirementcontext';
-import { useProjectContext } from '@/contexts/projectcontext';
-import { useSelectedRequirementContext } from '@/contexts/selectedrequirements';
+
 import LoadingScreen from '@/components/loading';
+import { FileText } from "lucide-react";
 import Navbar from '@/components/NavBar';
-import { postRequirements } from '@/utils/postRequirements';
+import RequirementCard from './components/requirementcard';
+import GeneratorView from '@/components/generatorview';
+import { useState, useEffect } from 'react';
+import { useProjectContext } from '@/contexts/projectcontext';
+import toggleSelectRequirement from './utils/toggleSelectRequirement';
+import handleSelectAll from './utils/handleSelectAll';
+import handleSave from './utils/handleSave';
+import handleDeleteRequirement from './utils/handleDeleteRequirement';
+import { useRequirementsLogic } from './hooks/useRequirementsLogic';
+import { useEpicContext } from '@/contexts/epiccontext';
+import ConfirmDialog from '@/components/confimDialog';
+
 
 export default function RequirementsPage() {
   const { projectDescription, setProjectDescription } = useProjectContext();
-  const [ editMode, setEditMode ] = useState(false);
-  const { requirements, setRequirements } = useRequirementContext();
-  const { selectedIds, setSelectedIds } = useSelectedRequirementContext();
-  const selectedProject = localStorage.getItem("currentProjectId") 
+  const [editMode, setEditMode] = useState(false);
+  const { setEpics} = useEpicContext();
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+
+
+
   const {
-    generate,
+    requirements,
+    setRequirements,
+    selectedIds,
+    setSelectedIds,
+    selectedProject,
     isLoading,
-    generatedOutput,
-    error
-  } = useGenerateRequirements();
+    error,
+    handleGenerate,
+    handleClear
+  } = useRequirementsLogic({ projectDescription, setProjectDescription });
 
-  useEffect(() => {
-    if (generatedOutput && generatedOutput?.content) {
-
-      try {
-        const parsed = parseRequirementsFromAPI(generatedOutput);
-        setRequirements(parsed);
-      } 
-      catch (err) {
-      }
-    }
-  }, [generatedOutput, setRequirements]);
-
-  const handleGenerate = () => {
-    if (projectDescription.trim() === "") return;
-    generate(projectDescription);
-  };
-
-  const toggleSelectRequirement = (reqId: string) => {
-    setSelectedIds(prev =>
-      prev.includes(reqId) ? prev.filter(id => id !== reqId) : [...prev, reqId]
-    );
-  };
-
-  const handleSelectAll = () => {
-    const allRequirementsIds = requirements.map(req => req.id);
-    
-    setSelectedIds(allRequirementsIds);
-  };
-
-
-  const handleSave = async () => {
-    try {
-      const selectedRequirements = requirements.filter(req => selectedIds.includes(req.id));
-
-
-      const cleaned = requirements.map(r => ({
-        idTitle: r.idTitle,
-        title: r.title,
-        description: r.description,
-        priority: r.priority,
-        epicRef: "", 
-        projectRef: selectedProject
-      }));
-      await postRequirements(cleaned, selectedProject!);
-      alert('Requirements saved successfully!');
-    } catch (error) {
-      console.error('Error while saving requirements:', error);
-    }
-  };
   
-
   return (
-    
     <>
       <LoadingScreen isLoading={isLoading} generationType="requirements" />
     
@@ -87,14 +47,18 @@ export default function RequirementsPage() {
 
       <GeneratorView
         showInput={true}
-        inputTitle="📱 Project Input"
+        inputTitle={
+          <div className="flex items-center gap-2 text-[#4A2B4D]">
+            <FileText className="w-8 h-8" />
+            <span>Project Input</span>
+          </div>
+        }
         inputLabel="Project's Description"
         inputValue={projectDescription}
         onInputChange={setProjectDescription}
         onGenerate={handleGenerate}
         onClear={() => {
-          setProjectDescription("");
-          setRequirements([]);
+          setShowClearConfirm(true)
         }}
         generatedTitle="Generated Requirements"
         isEditMode={editMode}
@@ -102,27 +66,55 @@ export default function RequirementsPage() {
         items={requirements}
         renderItem={(req) => (
           <RequirementCard
-            key={req.id}
+            key={req.uuid}
             {...req}
             idTitle={`${req.idTitle}`}
-            isSelected={selectedIds.includes(req.id)}
-            onToggleSelect={() => toggleSelectRequirement(req.id)}
+            isSelected={selectedIds.includes(req.uuid)}
+            onToggleSelect={() => toggleSelectRequirement(req.uuid,setSelectedIds)}
             onUpdate={(updated) =>
               setRequirements((prev) =>
-                prev.map((r) => (r.id === updated.id ? updated : r))
+                prev.map((r) => (r.uuid === updated.uuid ? updated : r))
               )
             }
             editMode={editMode}
-            onDelete={(deletedId) =>
-              setRequirements((prev) => prev.filter((r) => r.id !== deletedId))
-            } 
+            onDelete={(deletedId) => handleDeleteRequirement(deletedId, setRequirements, setSelectedIds, setEpics)}
           />
         )}
-        onSelectAll={handleSelectAll}
+        onSelectAll={() => handleSelectAll(requirements, setSelectedIds)}
         isLoading={isLoading}
         error={error}
-        onSave={handleSave}
+        onSave={() => setShowSaveConfirm(true)}
+        />    
+      
+      {showClearConfirm && (
+      <ConfirmDialog
+        open={showClearConfirm}
+        title="Clear Requirements Section"
+        message="Are you sure you want to clear the requirements and description?  This will reset all your progress in this section."
+        onCancel={() => setShowClearConfirm(false)}
+        onConfirm={() => {
+          handleClear();
+          setShowClearConfirm(false);
+        }}
       />
+      )}
+
+      {showSaveConfirm && (
+        <ConfirmDialog
+          open={showSaveConfirm}
+          title="Save Requirements"
+          message={`Only the selected requirements will be saved.\nUnselected ones will remain archived in the project history.`}
+          onCancel={() => setShowSaveConfirm(false)}
+          onConfirm={async () => {
+            await handleSave(requirements, selectedIds, selectedProject);
+            setShowSaveConfirm(false);
+          }}
+        />
+      )}
+
+
     </>
+
+
   );
 }

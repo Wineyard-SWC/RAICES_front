@@ -1,133 +1,47 @@
 'use client';
 
+import { useState } from 'react';
+import { Layers } from "lucide-react";
 import GeneratorView from '@/components/generatorview';
 import EpicCard from './components/epiccard';
-import { Requirement } from '@/types/requirement';
-import { useState, useEffect } from 'react';
-import { Epic } from '@/types/epic';
-import { useGenerateEpics } from '@/hooks/useGenerateEpics';
-import { parseEpicsFromAPI } from '@/utils/parseEpicsFromAPI';
-import { useEpicContext } from '@/contexts/epiccontext';
-import { useRequirementContext } from '@/contexts/requirementcontext';
-import { projectInputStyles as input } from '../gen_requirements/styles/projectinput.module';
-import { useSelectedRequirementContext } from '@/contexts/selectedrequirements';
-import { useSelectedEpicsContext } from '@/contexts/selectedepics';
 import RequirementCard from '../gen_requirements/components/requirementcard';
 import LoadingScreen from '@/components/loading';
 import Navbar from '@/components/NavBar';
-import { postEpics } from '@/utils/postEpics';
-import { getProjectRequirements } from '@/utils/getProjectRequirements';
+import { projectInputStyles as input } from '../gen_requirements/styles/projectinput.module';
+import { useGenerateEpicsLogic } from './hooks/useGenerateEpicLogic';
+import ConfirmDialog from '@/components/confimDialog';
+
 
 export default function GenerateEpicsPage() {
   const [reqDescription, setReqDescription] = useState('');
   const [editMode, setEditMode] = useState(false);
-  const {epics, setEpics} = useEpicContext();
-  const { requirements, setRequirements } = useRequirementContext();
-  const { selectedIds, setSelectedIds } = useSelectedRequirementContext();
-  const {selectedEpicIds, setSelectedEpicIds} = useSelectedEpicsContext();
-  const selectedProject = localStorage.getItem("currentProjectId")
-  const selectedRequirements = requirements.filter(req => selectedIds.includes(req.id));
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+  const [showImportConfirm, setShowImportConfirm] = useState(false);
+
 
   const {
-    generate,
+    epics,
+    requirements,
+    selectedIds,
+    selectedEpicIds,
+    selectedRequirements,
     isLoading,
-    generatedOutput,
-    error
-  } = useGenerateEpics();
-
-  useEffect(() => {
-
-    if (generatedOutput && generatedOutput?.content && epics.length === 0) {
-      const parsed = parseEpicsFromAPI(generatedOutput);
-      setEpics(parsed); 
-    }
-  }, [generatedOutput]);
-
-  const handleGenerate = () => {
-
-    const grouped = groupRequirementsForAPI(selectedRequirements);
-
-    generate(grouped);
-  };
-
-  const handleUpdateEpic = (updated: Epic) => {
-    setEpics((prev) =>
-      prev.map((epic) => (epic.id === updated.id ? updated : epic))
-    );
-  }
-
-  const toggleSelectEpic = (reqId: string) => {
-    setSelectedEpicIds(prev =>
-      prev.includes(reqId) ? prev.filter(id => id !== reqId) : [...prev, reqId]
-    );
-  };
-
-  const groupRequirementsForAPI = (reqs: Requirement[]) => {
-
-    const mapClean = (r: Requirement) => {
-      const category = r.category || (r.idTitle?.includes('-NF-') ? 'No Funcional' : 'Funcional');
-      
-      return {
-        id: r.idTitle,
-        title: r.title,
-        description: r.description,
-        category: category,
-        priority: r.priority.toLowerCase() === 'high' ? 'Alta' :
-                  r.priority.toLowerCase() === 'medium' ? 'Media' :
-                  r.priority.toLowerCase() === 'low' ? 'Baja' : 'Media',        
-      };
-    }; 
-    const processedReqs = reqs.map(mapClean);
-
-
-    return {
-      funcionales: processedReqs.filter(r => r.category === 'Funcional'),
-      no_funcionales: processedReqs.filter(r => r.category === 'No Funcional'),
-    };
-  };
-
-  const handleSelectAll = () => {
-    const allEpicsIds = epics.map(epic => epic.id);
-    
-    setSelectedEpicIds(allEpicsIds);
-  };
-
-
-  const handleSave = async () => {
-    try {
-      const selected = epics.filter(e => selectedEpicIds.includes(e.id));
+    error,
+    handleGenerate,
+    handleUpdateEpic,
+    handleSave,
+    handleSelectAll,
+    handleDeleteEpic,
+    handleClear,
+    toggleSelectEpic,
+    handleImportRequirements,
+    setRequirements,
+    setEpics,
+    setSelectedIds,
+    setSelectedEpicIds,
+  } = useGenerateEpicsLogic(reqDescription, setReqDescription);
   
-      const cleaned = selected.map(e => ({
-        idTitle: e.idTitle,
-        title: e.title,
-        description: e.description,
-        relatedRequirements: e.relatedRequirements.map(r => ({
-          idTitle: r.idTitle,
-          title: r.title,
-          description: r.description
-        }))
-      }));
-  
-      await postEpics(cleaned, selectedProject!);
-      alert('Epics saved successfully!');
-
-    } catch (err) {
-      console.error('Error while saving the epics:', err);
-    }
-  };
-
-  const handleImportRequirements = async () => {
-    try {
-      const importedReqs = await getProjectRequirements(selectedProject!);
-      setRequirements(importedReqs);
-      const importedIds = importedReqs.map((r) => r.id);
-      setSelectedIds(importedIds);      
-      alert("Imported requirements successfully");
-    } catch (err) {
-      console.error("Error while importing requirements", err);
-    }
-  };
-
   return (
     <>
       <LoadingScreen isLoading={isLoading} generationType="epics"/>
@@ -135,14 +49,18 @@ export default function GenerateEpicsPage() {
       <Navbar projectSelected={true} />
 
       <GeneratorView
-        inputTitle="📄 Requirements Input"
+        inputTitle={
+          <div className="flex items-center gap-2 text-[#4A2B4D]">
+            <Layers className="w-8 h-8" />
+            <span>Requirements Input</span>
+          </div>
+        }
         inputLabel="List your requirements"
         inputValue={reqDescription}
         onInputChange={setReqDescription}
         onGenerate={handleGenerate}
         onClear={() => {
-          setReqDescription('');
-          setEpics([]);
+          setShowClearConfirm(true)
         }}
         generatedTitle="Generated Epics"
         isEditMode={editMode}
@@ -152,15 +70,14 @@ export default function GenerateEpicsPage() {
         items={epics}
         renderItem={(epic) => (
           <EpicCard
-            key={epic.id}
+            key={epic.uuid}
             {...epic}
-            isSelected={selectedEpicIds.includes(epic.id)}
-            onToggleSelect={() => toggleSelectEpic(epic.id)}
+            isSelected={selectedEpicIds.includes(epic.uuid)}
+            onToggleSelect={() => toggleSelectEpic(epic.uuid)}
             editMode={editMode}
             onUpdate={handleUpdateEpic}
-            onDelete={(id) => {
-              setEpics((prev) => prev.filter((epic) => epic.id !== id));
-              setSelectedEpicIds((prev) => prev.filter((epicId) => epicId !== id));
+            onDelete={(uuid) => {
+              handleDeleteEpic(uuid)
             }}
           />
         )}
@@ -170,8 +87,8 @@ export default function GenerateEpicsPage() {
             <label className={input.label}>Selected Requirements</label>
             <button 
               className="text-[#4A2B4A] text-sm font-medium hover:underline"
-              onClick={handleImportRequirements}
-            >
+              onClick={() => setShowImportConfirm(true)}
+              >
               Import from project's requirements
             </button>
             </div>
@@ -179,9 +96,9 @@ export default function GenerateEpicsPage() {
           
             {selectedRequirements.map((req) => (
               <RequirementCard
-                key={req.id}
+                key={req.uuid}
                 {...req}
-                isSelected = {true}
+                isSelected = {selectedIds.includes(req.uuid)}
                 idTitle={req.idTitle}
                 editMode={false}
                 onUpdate={() => {}} 
@@ -193,8 +110,47 @@ export default function GenerateEpicsPage() {
           
         )}
         onSelectAll={handleSelectAll}
-        onSave={handleSave}
+        onSave={() => setShowSaveConfirm(true)}
       />
+
+      {showClearConfirm && (
+        <ConfirmDialog
+          open={showClearConfirm}
+          title="Clear Epics Section"
+          message={`Are you sure you want to clear the epics and requirements?\nThis will reset all your progress in this and previous sections.`}
+          onCancel={() => setShowClearConfirm(false)}
+          onConfirm={() => {
+            handleClear();
+            setShowClearConfirm(false);
+          }}
+      />
+      )}
+
+      {showSaveConfirm && (
+        <ConfirmDialog
+          open={showSaveConfirm}
+          title="Save Epics"
+          message={`The epics you didn't select will not be included.\nYou can still access them as archived versions of the project.`}
+          onCancel={() => setShowSaveConfirm(false)}
+          onConfirm={async () => {
+            await handleSave();
+            setShowSaveConfirm(false);
+          }}
+        />
+      )}
+
+      {showImportConfirm && (
+        <ConfirmDialog
+          open={showImportConfirm}
+          title="Import Requirements"
+          message={`Importing from the database will overwrite the current selection.\nDo you want to continue?`}
+          onCancel={() => setShowImportConfirm(false)}
+          onConfirm={async () => {
+            await handleImportRequirements();
+            setShowImportConfirm(false);
+          }}
+        />
+      )}
     </>
   );
 }

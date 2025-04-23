@@ -1,4 +1,5 @@
 import { Requirement } from "@/types/requirement";
+import {v4 as uuid4} from "uuid";
 
 export function parseRequirementsFromAPI(data: any): Requirement[] {
     const normalizePriority = (priority: string): Requirement['priority'] => {
@@ -24,6 +25,7 @@ export function parseRequirementsFromAPI(data: any): Requirement[] {
       description: req.description,
       priority: normalizePriority(req.priority),
       category: req.category,
+      uuid: req.uuid || uuid4()
     });
   
     return [...funcionales.map(mapToRequirement), ...noFuncionales.map(mapToRequirement)];

@@ -1,89 +1,40 @@
 'use client';
 
+import { createPortal } from 'react-dom';
 import { Requirement } from "@/types/requirement";
 import React, { useState } from 'react';
 import { Dialog,DialogPanel, DialogTitle } from "@headlessui/react";
-import { useEffect } from "react";
+import { useRequirementEditLogic } from '../hooks/useRequirementEditLogic';
 
 type Props = {
   open: boolean;
   onClose: () => void;
   onSave: (updated: Requirement) => void;
-  requirement: Pick<Requirement, 'id' | 'idTitle' | 'title' | 'description' | 'priority'>;
-  onDelete: (id: string) => void;
+  requirement: Pick<Requirement, 'id' | 'idTitle' | 'title' | 'description' | 'priority'| 'category'|'uuid'>;
+  onDelete: (uuid: string) => void;
 };
 
 const RequirementEditModal = ({ open, onClose, requirement, onSave, onDelete }: Props) => {
-  const [title, setTitle] = useState(requirement.title);
-  const [description, setDescription] = useState(requirement.description);
-  const [priority, setPriority] = useState<Requirement['priority']>(requirement.priority);
-  const [hasChanges, setHasChanges] = useState(false);
-  const [showConfirmation, setShowConfirmation] = useState(false);
-  const [errors, setErrors] = useState<{
-    title?: string;
-    description?: string;
-  }>({});
-
-  useEffect(() => {
-    const changed = 
-      requirement.title !== title ||
-      requirement.description !== description ||
-      requirement.priority !== priority;
-    
-    setHasChanges(changed);
-  }, [title, description, priority, requirement]);
   
-  const handleTryClose = () => {
-    if (hasChanges) {
-      setShowConfirmation(true);
-    } else {
-      onClose();
-    }
-  };
-  
-  const handleConfirmClose = () => {
-    setShowConfirmation(false);
-    onClose();
-  };
-  
-  const handleCancelClose = () => {
-    setShowConfirmation(false);
-  };
-  
-  const validateForm = () => {
-    const newErrors: {title?: string; description?: string} = {};
-    let isValid = true;
-    
-    if (!title.trim()) {
-      newErrors.title = "Title cannot be empty";
-      isValid = false;
-    }
-    
-    if (!description.trim()) {
-      newErrors.description = "Description cannot be empty";
-      isValid = false;
-    }
-    
-    setErrors(newErrors);
-    return isValid;
-  };
+  const {
+    title,
+    description,
+    priority,
+    category,
+    errors,
+    showConfirmation,
+    setTitle,
+    setDescription,
+    setPriority,
+    setCategory,
+    handleSave,
+    handleTryClose,
+    handleConfirmClose,
+    handleCancelClose,
+    handleDelete
+  } = useRequirementEditLogic(requirement, onSave, onClose, onDelete);
 
-  const handleSave = () => {
-    if (!validateForm()) return;
-
-    const updatedRequirement: Requirement = {
-        ...requirement,
-        title,
-        description,
-        priority,
-    };
-
-    onSave(updatedRequirement);
-    
-    onClose();
-};
-
-  return (
+  const modalContent =  (
     <Dialog open={open} onClose={handleTryClose} className="relative z-50">
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
 
@@ -122,12 +73,25 @@ const RequirementEditModal = ({ open, onClose, requirement, onSave, onDelete }: 
               id="prioritySelect"
               value={priority}
               onChange={(e) => setPriority(e.target.value as Requirement['priority'])}
-              className="w-full border border-gray-300 rounded-md p-2"
+              className="w-full border border-gray-300 bg-white rounded-md p-2"
             >
-              <option value="">Select priority</option>
               <option>High</option>
               <option>Medium</option>
               <option>Low</option>
+            </select>
+          </div>
+
+          <div className="space-y-1">
+            <label htmlFor="categorySelect" className="text-sm font-medium text-black">Category</label>
+            <select
+              id="categorySelect"
+              value={category}
+              onChange={(e) => setCategory(e.target.value as Requirement['category'])}
+              className="w-full border border-gray-300 bg-white rounded-md p-2"
+              required
+            >
+              <option value="Funcional">Functional</option>
+              <option value="No Funcional">Non Functional</option>
             </select>
           </div>
 
@@ -135,7 +99,7 @@ const RequirementEditModal = ({ open, onClose, requirement, onSave, onDelete }: 
             <button
               onClick={() => {
                 if (confirm("Are you sure you want to delete this requirement?")) {
-                  onDelete(requirement.id);
+                  onDelete(requirement.uuid);
                   onClose();
                 }
               }}
@@ -189,6 +153,11 @@ const RequirementEditModal = ({ open, onClose, requirement, onSave, onDelete }: 
       )}
     </Dialog>
   );
+
+  const modalRoot = typeof window !== 'undefined' ? document.getElementById('modal-root') : null;
+  
+  return modalRoot ? createPortal(modalContent, modalRoot) : null;
+  
 };
 
 export default RequirementEditModal;

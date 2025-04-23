@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useSessionContext } from "@/contexts/sessioncontext";
+import { useLanguageContext } from "@/contexts/languagecontext";
 
 
 export const useGenerateRequirements = () => {
@@ -9,8 +10,11 @@ export const useGenerateRequirements = () => {
     const [generatedOutput, setGeneratedOutput] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
     const { sessionId, setSessionId} = useSessionContext();
+    const { language, setLanguage} = useLanguageContext();
 
     const apiUrl = process.env.NEXT_PUBLIC_REQUIREMENT_ROUTE!;
+
+    const lang = language
 
     const generate = async (projectDescription: string) => {
       setIsLoading(true);
@@ -28,7 +32,8 @@ export const useGenerateRequirements = () => {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
                 "message": projectDescription,
-                "session_id": sessionId || ""
+                "session_id": sessionId || "",
+                "lang": lang || "en"
             })
         });
         

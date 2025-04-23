@@ -48,9 +48,6 @@ export const useCreateProject = (userId: string | null) => {
       }
 
       const newProject = await projectResponse.json()
-      console.log("-----------------------------------------------------****************************")
-      console.log(newProject);
-      console.log("-----------------------------------------------------****************************")
       
       await fetch(`${API_URL}/project_users`, {
         method: "POST",
