@@ -1,33 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserStory } from '@/types/userstory';
+import { createPortal } from 'react-dom';
+import { v4 as uuid4} from 'uuid';
+
 
 type Props = {
   onSubmit: (s: UserStory) => void;
   onCancel: () => void;
   nextId: number;
-  availableEpics: string[];
+  availableEpics: { uuid: string; title: string; idTitle: string }[];
 };
 
 const ManualUserStoryForm = ({ onSubmit, onCancel, nextId, availableEpics }: Props) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<UserStory['priority']>('Medium');
-  const [epic, setEpic] = useState(availableEpics[0] ?? '');
+  const [epic, setEpic] = useState(availableEpics[0]?.uuid ?? '');
   const [criteria, setCriteria] = useState<string[]>(['']);
-  const [errors, setErrors] = useState<{ title?: string; description?: string }>({});
+  const [errors, setErrors] = useState<{ criteria?:string; title?: string; description?: string }>({});
+
+  useEffect(() => {
+    if (!epic && availableEpics.length > 0) {
+      setEpic(availableEpics[0].uuid);
+    }
+  }, [availableEpics]);
+
 
   const handleAdd = () => {
     const errs: typeof errors = {};
     if (!title.trim()) errs.title = 'Title is required';
     if (!description.trim()) errs.description = 'Description is required';
-    if (criteria.some(c => !c.trim())) {
-      alert('Please complete or remove empty acceptance criteria');
-      return;
-    }
+    if (criteria.some(c => !c.trim())) errs.criteria = 'Criteria is required';
+    
     setErrors(errs);
     if (Object.keys(errs).length) return;
 
     onSubmit({
+      uuid: uuid4(),
       id: `US-${nextId.toString().padStart(3, '0')}`,
       idTitle: `US-${nextId.toString().padStart(3, '0')}`,
       title,
@@ -39,7 +48,7 @@ const ManualUserStoryForm = ({ onSubmit, onCancel, nextId, availableEpics }: Pro
     });
   };
 
-  return (
+  const modalContent = (
     <div className="space-y-4">
       <input
         placeholder="User Story title"
@@ -77,8 +86,8 @@ const ManualUserStoryForm = ({ onSubmit, onCancel, nextId, availableEpics }: Pro
         onChange={(e) => setEpic(e.target.value)}
       >
         {availableEpics.map((e) => (
-          <option key={e} value={e}>
-            {e}
+          <option key={e.uuid} value={e.idTitle}>
+            {e.idTitle}-{e.title}
           </option>
         ))}
       </select>
@@ -119,6 +128,10 @@ const ManualUserStoryForm = ({ onSubmit, onCancel, nextId, availableEpics }: Pro
       </div>
     </div>
   );
+
+
+  return modalContent
+
 };
 
 export default ManualUserStoryForm;

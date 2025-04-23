@@ -1,17 +1,23 @@
+import { createPortal } from 'react-dom';
 import React, { useState } from 'react';
 import { Requirement } from '@/types/requirement';
+import { v4 as uuidv4 } from 'uuid';
+
+import { generateNextRequirementId } from '@/app/gen_epics/utils/relatedRequirementCategory';
+import { useRequirementContext } from '@/contexts/requirementcontext';
 
 type Props = {
   onSubmit: (r: Requirement) => void;
   onCancel: () => void;
-  nextId: number;
 };
 
-const ManualRequirementForm = ({ onSubmit, onCancel, nextId }: Props) => {
+const ManualRequirementForm = ({ onSubmit, onCancel }: Props) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<Requirement['priority']>('Medium');
+  const [category, setCategory] = useState<Requirement['category']>('Funcional');
   const [errors, setErrors] = useState<{ title?: string; description?: string }>({});
+  const { requirements } = useRequirementContext();
 
   const handleAdd = () => {
     const errs: typeof errors = {};
@@ -20,16 +26,20 @@ const ManualRequirementForm = ({ onSubmit, onCancel, nextId }: Props) => {
     setErrors(errs);
     if (Object.keys(errs).length) return;
 
+    const newId = generateNextRequirementId(requirements, category as 'Funcional' | 'No Funcional');
+
     onSubmit({
-      id: `REQ-${nextId.toString().padStart(3, '0')}`,
-      idTitle: `REQ-${nextId.toString().padStart(3, '0')}`,
+      id: newId,
+      uuid: uuidv4(),
+      idTitle: newId,
       title,
       description,
       priority,
+      category,
     });
   };
 
-  return (
+  const modalContent = (
     <div className="space-y-4">
       <input
         placeholder="Requirement title"
@@ -59,12 +69,28 @@ const ManualRequirementForm = ({ onSubmit, onCancel, nextId }: Props) => {
         <option>Low</option>
       </select>
 
+      <div className="space-y-1">
+        <label htmlFor="categorySelect" className="text-sm font-medium text-black">Category</label>
+          <select
+          id="categorySelect"
+          value={category}
+          onChange={(e) => setCategory(e.target.value as Requirement['category'])}
+          className="w-full border border-gray-300 bg-white rounded-md p-2"
+          required
+        >
+          <option value="Funcional">Functional</option>
+          <option value="No Funcional">Non Functional</option>
+          </select>
+      </div>
+
       <div className="flex justify-end gap-2">
         <button onClick={onCancel} className="px-4 py-2 border rounded-md">Cancel</button>
         <button onClick={handleAdd} className="px-4 py-2 bg-[#4A2B4A] text-white rounded-md">Add</button>
       </div>
     </div>
   );
+
+  return modalContent
 };
 
 export default ManualRequirementForm;

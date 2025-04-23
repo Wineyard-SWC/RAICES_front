@@ -1,17 +1,26 @@
 import React, { useState } from 'react';
 import { Epic } from '@/types/epic';
+import { createPortal } from 'react-dom';
+import { v4 as uuidv4} from 'uuid'
+
+type Requirement = {
+  idTitle: string;
+  title: string;
+  description: string;
+  uuid: string;
+};
 
 type Props = {
   onSubmit: (e: Epic) => void;
   onCancel: () => void;
   nextId: number;
-  availableRequirements: { idTitle: string; title: string; description: string }[];
+  availableRequirements: Requirement[];
 };
 
 const ManualEpicForm = ({ onSubmit, onCancel, nextId, availableRequirements }: Props) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedReqs, setSelectedReqs] = useState<string[]>([]);
+  const [selectedReqs, setSelectedReqs] = useState<Requirement[]>([]);
   const [errors, setErrors] = useState<{ title?: string; description?: string }>({});
 
 
@@ -21,19 +30,29 @@ const ManualEpicForm = ({ onSubmit, onCancel, nextId, availableRequirements }: P
     if (!description.trim()) errs.description = 'Description is required';
     setErrors(errs);
     if (Object.keys(errs).length) return;
-
-    const relatedRequirements = availableRequirements.filter(req => selectedReqs.includes(req.idTitle));
     
     onSubmit({
+      uuid: uuidv4(),
       id: `EPIC-${nextId.toString().padStart(3, '0')}`,
       idTitle: `EPIC-${nextId.toString().padStart(3, '0')}`,
       title,
       description,
-      relatedRequirements,
+      relatedRequirements: selectedReqs,
     });
   };
 
-  return (
+  const handleAddRequirement = (uuid: string) => {
+    const req = availableRequirements.find(r => r.uuid === uuid);
+    if (req && !selectedReqs.some(r => r.uuid === uuid)) {
+      setSelectedReqs(prev => [...prev, req]);
+    }
+  };
+
+  const handleRemoveRequirement = (uuid: string) => {
+    setSelectedReqs(prev => prev.filter(r => r.uuid !== uuid));
+  };
+
+  const modalContent = (
     <div className="space-y-4">
       <input
         placeholder="Epic title"
@@ -52,22 +71,39 @@ const ManualEpicForm = ({ onSubmit, onCancel, nextId, availableRequirements }: P
       {errors.description && <p className="text-sm text-red-500">{errors.description}</p>}
 
       <label htmlFor="requirementSelect" className="block text-sm font-medium">Related Requirements</label>
-      <select
-        id="requirementSelect"
-        multiple
-        value={selectedReqs}
-        onChange={(e) =>
-          setSelectedReqs(Array.from(e.target.selectedOptions).map(o => o.value))
-        }
-        className="bg-white w-full border p-2 rounded-md"
-      >
-        {availableRequirements.map((req) => (
-          <option key={req.idTitle} value={req.idTitle}>
-            {req.idTitle} - {req.title}
-          </option>
+      <div className="space-y-2">
+        {selectedReqs.map((req) => (
+          <div key={req.uuid} className="flex items-center gap-2">
+            <span className="flex-1 bg-gray-100 px-2 py-1 rounded-md text-sm">
+              {req.idTitle} - {req.title}
+            </span>
+            <button
+              className="text-red-500 hover:underline text-sm"
+              onClick={() => handleRemoveRequirement(req.uuid)}
+            >
+              ✕
+            </button>
+          </div>
         ))}
-        
-      </select>
+
+        <select
+          aria-label="Select a requirement to add"
+          className="bg-white border p-2 rounded-md w-full"
+          onChange={(e) => {
+            handleAddRequirement(e.target.value);
+            e.target.value = '';
+          }}
+        >
+          <option value="">+ Add another requirement</option>
+          {availableRequirements
+            .filter(req => !selectedReqs.some(s => s.uuid === req.uuid))
+            .map((req) => (
+              <option key={req.uuid} value={req.uuid}>
+                {req.idTitle} - {req.title}
+              </option>
+            ))}
+        </select>
+      </div>
 
       <div className="flex justify-end gap-2">
         <button onClick={onCancel} className="px-4 py-2 border rounded-md">Cancel</button>
@@ -75,6 +111,9 @@ const ManualEpicForm = ({ onSubmit, onCancel, nextId, availableRequirements }: P
       </div>
     </div>
   );
+
+  return modalContent
+
 };
 
 export default ManualEpicForm;

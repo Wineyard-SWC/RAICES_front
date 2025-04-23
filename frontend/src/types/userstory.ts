@@ -1,4 +1,5 @@
 export interface UserStory {
+    uuid: string;
     assigned_epic: string;
     id: string; 
     idTitle: string;

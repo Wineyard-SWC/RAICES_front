@@ -9,16 +9,16 @@ import EpicCard from '@/app/gen_epics/components/epiccard';
 import AddManualModal from './addManualModal';
 import ManualEpicForm from '@/app/gen_epics/components/ManualEpicForm';
 import ManualRequirementForm from '@/app/gen_requirements/components/ManualRequirementForm';
-import ManualUserStoryForm from './ManualUserStoryForm';
-
+import ManualUserStoryForm from '@/app/gen_user_stories/components/ManualUserStoryForm';
 import { useRequirementContext } from '@/contexts/requirementcontext';
 import { useEpicContext } from '@/contexts/epiccontext';
 import { useUserStoryContext } from '@/contexts/userstorycontext';
+import { ClipboardList, Download, RefreshCcw } from 'lucide-react';
 
 
 type GeneratorViewProps<T> = {
   showInput?: boolean;
-  inputTitle?: string;
+  inputTitle?: string | React.ReactNode;
   inputLabel?: string;
   inputValue?: string;
   onInputChange: (val: string) => void;
@@ -90,9 +90,13 @@ const GeneratorView = <T,>({
         {/* Input panel */}
         <div className={`${input.wrapper} flex flex-col justify-between h-full min-h-[60vh]`}>
           <div>
-            <h2 className={input.title}>
-              <span className="text-2xl"></span> {inputTitle}
-            </h2>
+          <h2 className={input.title}>
+              {typeof inputTitle === 'string' ? (
+                <span>{inputTitle}</span>
+              ) : (
+                inputTitle
+              )}
+          </h2>
             
             <FlowTabs currentPath={currentTab} onTabChange={setCurrentTab} isLoading={isLoading}/>
             
@@ -118,7 +122,7 @@ const GeneratorView = <T,>({
           </div>
           
           <div className={input.actions}>
-            {error && <p className="text-sm text-red-600 font-medium mb-2">{error}</p>}
+            {error && <p className="text-xs text-red-600 font-medium mb-2">{error}</p>}
             <div className="flex gap-4 w-full">
               <button 
                 className={input.generateButton} 
@@ -175,35 +179,38 @@ const GeneratorView = <T,>({
           <div className="flex justify-center mt-1 mb-10 ">
             <button
               onClick={() => setShowAddModal(true)}
-              className="text-sm text-[#4A2B4A] underline hover:text-[#2d1a2d]"
+              className="text-m text-[#4A2B4A] underline hover:text-[#2d1a2d]"
             >
               {!isEditMode ? '' : '+ Add manually'} 
             </button>
           </div>
 
           <div className={`${gen.actions} w-full grid grid-cols-3 gap-3`}>
-            
             <button 
-              className={`${gen.button} w-full flex justify-center`}
+              className={`${gen.button} w-full flex justify-center items-center gap-2`}
               onClick={onSelectAll}
               disabled={!isItemSelectable || items.length === 0}
-              >
-              <span className="text-lg mr-2">📋</span> Select all
+            >
+              <ClipboardList className="w-5 h-5 text-[#4A2B4A]" />
+              Select all
             </button>
 
-            <button className={`${gen.button} w-full flex justify-center`}
-                onClick={onSave}
-                disabled={!isItemSelectable || items.length === 0}
-              >
-              <span className="text-lg mr-2">⬇️</span> Save 
-              
+            <button 
+              className={`${gen.button} w-full flex justify-center items-center gap-2`}
+              onClick={onSave}
+              disabled={!isItemSelectable || items.length === 0}
+            >
+              <Download className="w-5 h-5 text-[#4A2B4A]" />
+              Save
             </button>
 
-            <button className={`${gen.button} w-full flex justify-center`}
+            <button 
+              className={`${gen.button} w-full flex justify-center items-center gap-2`}
               onClick={onGenerate}
               disabled={isLoading}
             >
-              <span className="text-lg mr-2">🔄</span> Regenerate
+              <RefreshCcw className="w-5 h-5 text-[#4A2B4A]" />
+              Regenerate
             </button>
           </div>
 
@@ -235,7 +242,6 @@ const GeneratorView = <T,>({
               <ManualRequirementForm
                 onSubmit={onSubmit}
                 onCancel={onCancel}
-                nextId={nextId}
               />
             );
           }
@@ -250,6 +256,7 @@ const GeneratorView = <T,>({
                   idTitle: r.idTitle,
                   title: r.title,
                   description: r.description,
+                  uuid: r.uuid,
                 }))}
               />
             );
@@ -261,7 +268,11 @@ const GeneratorView = <T,>({
                 onSubmit={onSubmit}
                 onCancel={onCancel}
                 nextId={nextId}
-                availableEpics={epics.map((e) => e.idTitle+"-"+e.title)}
+                availableEpics={epics.map(e => ({
+                  uuid: e.uuid,
+                  idTitle: e.idTitle,
+                  title: e.title
+                }))}
               />
             );
           }

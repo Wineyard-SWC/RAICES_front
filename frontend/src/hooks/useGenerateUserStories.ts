@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { UserStoryResponse } from "@/types/userstory";
 import { useSessionContext } from "@/contexts/sessioncontext";
+import { useLanguageContext } from "@/contexts/languagecontext";
 
 
 export const useGenerateUserStories = () => {
@@ -9,10 +10,14 @@ export const useGenerateUserStories = () => {
   const [generatedOutput, setGeneratedOutput] = useState<UserStoryResponse| null>(null);
   const [error, setError] = useState<string | null>(null);
   const { sessionId, setSessionId} = useSessionContext();
+  const { language, setLanguage} = useLanguageContext();
   
+
   const route = process.env.NEXT_PUBLIC_USER_STORY_ROUTE!
   
   const currentSession_id = sessionId
+  const lang = language
+
 
   const generate = async (epicDescription: {
     content: any[];
@@ -26,7 +31,8 @@ export const useGenerateUserStories = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           "epic_description": epicDescription,
-          "session_id": currentSession_id 
+          "session_id": currentSession_id,
+          "lang": lang || "en"
       })
       });
     

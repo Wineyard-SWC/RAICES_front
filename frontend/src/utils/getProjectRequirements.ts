@@ -1,4 +1,6 @@
 import { Requirement } from "@/types/requirement";
+import { v4 as uuidv4 } from 'uuid';
+
 
 const apiURL = process.env.NEXT_PUBLIC_API_URL!
 
@@ -25,13 +27,16 @@ export async function getProjectRequirements(projectId: string): Promise<Require
     return "Medium"; 
   };
 
-  return data.map((r: any) => ({
-    id: r.id,
-    idTitle: r.idTitle,
-    title: r.title,
-    description: r.description,
-    epicRef: r.epicRef,
-    priority: normalizePriority(r.priority),
-    projectRef: r.projectRef,
-  }));
+  return data
+    .map((r: any) => ({
+      id: r.id,
+      uuid: r.uuid ||uuidv4(),
+      idTitle: r.idTitle,
+      title: r.title,
+      description: r.description,
+      epicRef: r.epicRef,
+      priority: normalizePriority(r.priority),
+      projectRef: r.projectRef,
+    }))
+    .sort((a:any, b:any) => a.idTitle.localeCompare(b.idTitle));
 }

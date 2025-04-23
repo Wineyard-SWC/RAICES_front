@@ -1,152 +1,55 @@
 'use client';
 
+import { useState } from 'react';
+import { Book } from "lucide-react";
 import EpicUserStoryGroup from './components/epicwithuserstoriescard';
 import GeneratorView from '@/components/generatorview';
 import { epicInputStyles as input } from "./styles/epicinput.module";
 import { projectInputStyles as inputproject } from '../gen_requirements/styles/projectinput.module';
-import { useState, useEffect } from 'react';
-import { UserStory } from '@/types/userstory';
-import { useGenerateUserStories } from '@/hooks/useGenerateUserStories'; 
-import { parseUserStoriesFromAPI } from '@/utils/parseUserStoriesFromApi'; 
-import { groupUserStoriesByEpic } from '@/utils/groupUserStoriesByEpic'; 
-import { useEpicContext } from '@/contexts/epiccontext';
 import EpicCard from '../gen_epics/components/epiccard';
-import { useUserStoryContext } from '@/contexts/userstorycontext';
-import { useSelectedEpicsContext } from '@/contexts/selectedepics';
-import { useSelectedUserStoriesContext } from '@/contexts/selecteduserstories';
-import { Epic } from '@/types/epic';
 import LoadingScreen from '@/components/loading';
 import Navbar from '@/components/NavBar';
-import { postUserStories } from '@/utils/postUserStories';
-import { getProjectEpics } from '@/utils/getProjectEpics';
-import { getProjectRequirements } from '@/utils/getProjectRequirements';
+import { useGenerateUserStoriesLogic } from './hooks/useGenerateUserStoriesLogic';
+import { UserStory } from '@/types/userstory';
+import ConfirmDialog from '@/components/confimDialog';
 
 export default function GenerateUserStoriesPage() {
-  const [epicDescription, setEpicDescription] = useState('');
-  const [editMode, setEditMode] = useState(false);
-  const { userStories, setUserStories } = useUserStoryContext();
-  const { epics,setEpics } = useEpicContext();
-  const {selectedEpicIds,setSelectedEpicIds } = useSelectedEpicsContext();
-  const { selectedUserStoriesIds, setSelectedUserStoriesIds} = useSelectedUserStoriesContext();
-  const selectedProject = localStorage.getItem("currentProjectId")
-
-
-
-  const selectedEpics = epics.filter(epic => selectedEpicIds.includes(epic.id));
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+  const [showImportConfirm, setShowImportConfirm] = useState(false);
 
   const {
-    generate,
-    isLoading,
-    generatedOutput,
-    error
-  } = useGenerateUserStories(); 
+    epicDescription,
+    setEpicDescription,
+    editMode,
+    setEditMode,
+    handleGenerate,
+    handleSave,
+    handleImportEpics,
+    handleDeleteStory,
+    handleUpdateStory,
+    handleSelectAll,
+    handleClear,
+    selectedEpics,
+    selectedEpicIds,
+    userStories,
+    groupedByEpic,
+    allEpicOptions,
+    error,
+    isLoading
+  } = useGenerateUserStoriesLogic();
+  
+  const unassignedTuple: [string, UserStory[]] | null = userStories.some(
+    us => us.assigned_epic === 'UNASSIGNED'
+  )
+    ? ['UNASSIGNED', userStories.filter(us => us.assigned_epic === 'UNASSIGNED')]
+    : null;
+  
+  const allItems: [string, UserStory[]][] = [
+    ...Object.entries(groupedByEpic),
+    ...(unassignedTuple ? [unassignedTuple] : [])
+  ];
 
-  useEffect(() => {
-    if (generatedOutput && generatedOutput?.content && userStories.length === 0) {
-      const parsed = parseUserStoriesFromAPI(generatedOutput);
-      setUserStories(parsed);
-    }
-  }, [generatedOutput]);
-
-  const handleGenerate = () => {
-    const grouped = groupEpicsForAPI(selectedEpics);
-    if (selectedEpics.length === 0) return;
-    generate(grouped);
-  };
-
-  const groupEpicsForAPI = (epics: Epic[]) => {
-    const mapRequirement = (req: any) => ({
-      id: req.idTitle || req.id || '',
-      description: req.description || ''
-    });
-  
-    return {
-      content: epics.map((epic) => ({
-        id: epic.idTitle || epic.id,
-        title: epic.title,
-        description: epic.description,
-        related_requirements: (epic.relatedRequirements || []).map(mapRequirement)
-      }))
-    };
-  };
-  
-  const groupedByEpic = groupUserStoriesByEpic(userStories ?? []);
-  const allEpicIds = Object.keys(groupedByEpic);
-  const allEpicOptions = epics.map(e => ({
-    id: e.idTitle,
-    title: e.title
-  }));
-
-  const handleUpdateStory = (updated: UserStory) => {
-    setUserStories(prev => {
-      const withoutOld = prev.filter(s => s.id !== updated.id);
-      return [...withoutOld, updated];
-  });
-  };
-
-  const handleSelectAll = () => {
-    const allUserStoryIds = userStories.map(story => story.id);
-    
-    setSelectedUserStoriesIds(allUserStoryIds);
-  };
-
-  const handleSave = async () => {
-    try {
-      const selected = userStories.filter(story => selectedUserStoriesIds.includes(story.id));
-  
-      const cleaned = selected.map(s => ({
-        idTitle: s.idTitle,
-        title: s.title,
-        description: s.description,
-        priority: s.priority,
-        points: s.points,
-        acceptance_criteria: s.acceptance_criteria,
-        assigned_epic: s.assigned_epic
-      }));
-  
-      await postUserStories(cleaned, selectedProject!);
-      alert('User stories saved successfully!');
-    } catch (err) {
-      console.error('Error while saving user stories:', err);
-    }
-  };
-  
-  const handleImportEpics = async () => {
-    try {
-      const [importedEpics, importedRequirements] = await Promise.all([
-        getProjectEpics(selectedProject!),
-        getProjectRequirements(selectedProject!)
-      ]);
-  
-      const epicsWithReqs = importedEpics.map(epic => {
-        const related = importedRequirements.filter(r => r.epicRef === epic.idTitle);
-        return {
-          ...epic,
-          relatedRequirements: related.map(r => ({
-            idTitle: r.idTitle,
-            title: r.idTitle,
-            description: r.description
-          }))
-        };
-      });
-  
-      setEpics(epicsWithReqs);
-  
-      const ids = epicsWithReqs.map(e => e.id);
-      setSelectedEpicIds(ids);
-  
-      alert("Epics imported successfully!");
-    } catch (err) {
-      console.error("Error while importing epics and requirements:", err);
-    }
-  };
-
-  const handleDeleteStory = (storyId: string) => {
-    setUserStories(prev => prev.filter(story => story.id !== storyId));
-    
-    setSelectedUserStoriesIds(prev => prev.filter(id => id !== storyId));
-  };
-  
   return (
     <>
       <LoadingScreen isLoading={isLoading} generationType="userStories" />
@@ -155,49 +58,58 @@ export default function GenerateUserStoriesPage() {
       
 
       <GeneratorView
-        inputTitle="📦 Epics Input"
+        inputTitle={
+          <div className="flex items-center gap-2 text-[#4A2B4D]">
+            <Book className="w-8 h-8" />
+            <span>Epics Input</span>
+          </div>
+        }
         inputLabel="Describe your epics"
         inputValue={epicDescription}
         onInputChange={setEpicDescription}
         onGenerate={handleGenerate}
         onClear={() => {
-          setEpicDescription('');
-          setUserStories([]);
+          setShowClearConfirm(true)
         }}
         generatedTitle="Generated User Stories"
         isEditMode={editMode}
         onToggleEdit={() => setEditMode(!editMode)}
         isLoading={isLoading}
         error={error}
-        items={Object.entries(groupedByEpic)}
+        items={allItems}
         renderItem={([epicId, stories]) => (
-          <EpicUserStoryGroup
-            key={epicId}
-            id={epicId}
-            idTitle={epicId}
-            userStories={stories ?? []}
-            editMode={editMode}
-            onUpdate={handleUpdateStory}
-            availableEpics={allEpicOptions}
-            onDelete={handleDeleteStory}
-          />
+          <>
+            <EpicUserStoryGroup
+              key={epicId}
+              id={epicId}
+              uuid={epicId}
+              idTitle={epicId === 'UNASSIGNED' ? 'Unassigned' : epicId}    
+              userStories={stories ?? []}
+              editMode={editMode}
+              onUpdate={handleUpdateStory}
+              availableEpics={allEpicOptions}
+              onDelete={handleDeleteStory}
+            />
+            
+          </>
         )}
+        
         renderLeftContent={() => (
           <div>
             <div className="flex items-baseline justify-between">
               <label className={inputproject.label}>Selected Epics</label>
               <button 
               className="text-[#4A2B4A] text-sm font-medium hover:underline"
-              onClick={handleImportEpics}
-            >
+              onClick={() => setShowImportConfirm(true)}
+              >
               Import from project's epics
             </button>
             </div>
-            <div className="space-y-5 max-h-[60vh] overflow-y-auto">
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto">
               {selectedEpics.map((epic) => (
                 <EpicCard
-                  key={epic.id}
-                  isSelected = {true}
+                  key={epic.uuid}
+                  isSelected = {selectedEpicIds.includes(epic.uuid)}
                   {...epic}
                   editMode={false}
                   onUpdate={() => {}}
@@ -209,8 +121,49 @@ export default function GenerateUserStoriesPage() {
           
         )}
         onSelectAll={handleSelectAll}
-        onSave={handleSave}
+        onSave={() => setShowSaveConfirm(true)}
       />
+
+      {showClearConfirm && (
+        <ConfirmDialog
+          open={showClearConfirm}
+          title="Clear User Stories Section"
+          message={`Are you sure you want to clear the user stories and epics?\nThis will reset all your progress in this and previous sections.`}
+          onCancel={() => setShowClearConfirm(false)}
+          onConfirm={() => {
+            handleClear();
+            setShowClearConfirm(false);
+          }}
+      />
+      )}
+
+      {showSaveConfirm && (
+        <ConfirmDialog
+          open={showSaveConfirm}
+          title="Save User Stories"
+          message={`The stories you didn't select will not be included.\nYou can still access them later as part of the archived project.`}
+          onCancel={() => setShowSaveConfirm(false)}
+          onConfirm={async () => {
+            await handleSave();
+            setShowSaveConfirm(false);
+          }}
+        />
+      )}
+
+
+      {showImportConfirm && (
+        <ConfirmDialog
+          open={showImportConfirm}
+          title="Import Epics"
+          message={`Importing from the database will overwrite the current epics.\nAre you sure you want to continue?`}
+          onCancel={() => setShowImportConfirm(false)}
+          onConfirm={async () => {
+            await handleImportEpics();
+            setShowImportConfirm(false);
+          }}
+        />
+      )}
+
     </>
   );
 }

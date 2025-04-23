@@ -12,8 +12,9 @@ export async function postRequirements(requirements: Omit<Requirement, 'id'>[], 
     body: JSON.stringify(
       requirements.map((r) => ({
         ...r,
-        "projectRef":projectId,
-        "epicRef": ""
+        "projectRef": projectId,
+        "epicRef": r.epicRef,
+        "uuid": r.uuid
       }))
     ),
   });

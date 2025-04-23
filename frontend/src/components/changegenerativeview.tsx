@@ -2,11 +2,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { projectInputStyles as input } from '@/app/gen_requirements/styles/projectinput.module';
+import { FileText, Layers, Book } from 'lucide-react';
 
 const tabs = [
-  { label: 'Requirements', href: '/gen_requirements', icon: '📄' },
-  { label: 'Epics', href: '/gen_epics', icon: '📦' },
-  { label: 'User Stories', href: '/gen_user_stories', icon: '📖' },
+  { label: 'Requirements', href: '/gen_requirements', icon: <FileText className="w-5 h-5" />},
+  { label: 'Epics', href: '/gen_epics',  icon: <Layers className="w-5 h-5" /> },
+  { label: 'User Stories', href: '/gen_user_stories', icon: <Book className="w-5 h-5" /> },
 ];
 
 export const FlowTabs = ({ currentPath, onTabChange, isLoading }) => {

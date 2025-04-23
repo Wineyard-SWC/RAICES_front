@@ -4,6 +4,7 @@ export const groupUserStoriesByEpic = (
   stories: UserStory[]
 ): Record<string, UserStory[]> => {
   return stories.reduce((acc, story) => {
+    if (story.assigned_epic === 'UNASSIGNED') return acc;
     const epicKey = story.assigned_epic;
     if (!acc[epicKey]) {
       acc[epicKey] = [];
