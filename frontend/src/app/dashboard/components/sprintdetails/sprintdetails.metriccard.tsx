@@ -21,7 +21,7 @@ export default function MetricCard({ icon, title, mainValue, subtitle, progress 
       <div className="text-xl font-bold text-black">{mainValue}</div>
       {subtitle && <div className="text-sm text-gray-600">{subtitle}</div>}
       {progress !== undefined && (
-        <Progress value={progress} className="h-2 bg-[#e5d7e6]" indicatorColor="#4A2B4D" />
+        <Progress value={progress} className="h-2 bg-[#e5d7e6]"  />
       )}
     </div>
   );

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
-import { TaskCard } from "./taskcard"
+import { TaskCard } from "./dashboard.taskcard"
 import { TaskColumns } from "@/types/taskkanban"
 
 interface TasksKanbanProps {
