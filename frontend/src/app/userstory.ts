@@ -1,0 +1,17 @@
+export interface UserStory {
+    assigned_epic: string;
+    id: string; 
+    idTitle: string;
+    title: string;
+    description: string;
+    priority: 'High' | 'Medium' | 'Low';
+    points: number;
+    acceptance_criteria: string[];
+    selected?: boolean;
+    projectRef: string;
+};
+
+
+export type UserStoryResponse = {
+    content: UserStory[];
+};
