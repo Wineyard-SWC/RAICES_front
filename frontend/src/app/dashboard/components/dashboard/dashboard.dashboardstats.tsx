@@ -68,7 +68,7 @@ const DashboardStats = ({ onViewSprintDetails }: Props) => {
               >
                 View Sprint Details
               </Button>
-            }
+            } 
           >
             <div className="space-y-4 mb-20">
               <div className="mb-2">

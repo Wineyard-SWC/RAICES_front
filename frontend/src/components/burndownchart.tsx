@@ -41,4 +41,4 @@ const burndownData = [
 ]
 
 <BurndownChart data={burndownData} />
-*/
+ */

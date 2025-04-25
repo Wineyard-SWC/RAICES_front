@@ -1,7 +1,7 @@
 import { BurndownChart } from "@/components/burndownchart"
 import { ChartCard} from "./sprintdetails.chartcard"
 import { VelocityTrendChart } from "@/components/velocitytrend"
-
+ 
 const burndownData = [
   { day: "Day 0", remaining: 100, ideal: 100 },
   { day: "Day 1", remaining: 95, ideal: 90 },
