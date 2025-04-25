@@ -7,6 +7,7 @@ import Navbar from "@/components/NavBar"
 import { ProgressCard } from "./components/progresscard"
 import { TasksKanban } from "./components/taskskanban"
 import { TaskColumns } from "@/types/taskkanban"
+import { BurndownChart } from "@/components/burndownchart"
 
 export default function DashboardPage() {
   // Initial tasks data
@@ -65,11 +66,12 @@ export default function DashboardPage() {
 
                 <div>
                   <h4 className="font-medium mb-2">Burndown Chart</h4>
-                  <div className="h-20 w-full bg-gray-50 rounded-md mb-2 flex items-center justify-center">
-                    <svg width="100%" height="100%" viewBox="0 0 300 80" preserveAspectRatio="none">
-                      <path d="M0,10 L75,30 L150,20 L225,40 L300,35" fill="none" stroke="#4a2b5c" strokeWidth="2" />
-                    </svg>
-                  </div>
+                  <BurndownChart
+                  actualData={[80, 68, 53, 35, 21, 12]}
+                  idealData={[80, 60, 40, 20, 10, 0]}
+                  height={80}
+                  className="w-full"
+                  />
                 </div>
 
                 <div className="space-y-2">
