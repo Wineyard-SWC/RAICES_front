@@ -8,6 +8,7 @@ import { ProgressCard } from "./components/progresscard"
 import { TasksKanban } from "./components/taskskanban"
 import { TaskColumns } from "@/types/taskkanban"
 import { BurndownChart } from "@/components/burndownchart"
+import { VelocityTrendChart } from "@/components/velocitytrend"
 
 export default function DashboardPage() {
   // Initial tasks data
@@ -42,7 +43,6 @@ export default function DashboardPage() {
     ],
     completed: [],
   }
-
   return (
     <>
       <Navbar projectSelected={true} />
