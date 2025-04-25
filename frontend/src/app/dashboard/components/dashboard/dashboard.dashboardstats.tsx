@@ -3,10 +3,24 @@ import { Calendar, Clock, BarChart2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/progress"
 import { dashboardStatsStyles as s } from "../../styles/dashboardstyles"
+import { BurndownChart } from "@/components/burndownchart"
 
 type Props = {
   onViewSprintDetails: () => void;
 }
+
+const burndownData = [
+  { day: "Day 1", remaining: 100, ideal: 90 },
+  { day: "Day 2", remaining: 90,  ideal: 80 },
+  { day: "Day 3", remaining: 82,  ideal: 70 },
+  { day: "Day 4", remaining: 76,  ideal: 60 },
+  { day: "Day 5", remaining: 65,  ideal: 50 },
+  { day: "Day 6", remaining: 58,  ideal: 40 },
+  { day: "Day 7", remaining: 45,  ideal: 30 },
+  { day: "Day 8", remaining: 35,  ideal: 20 },
+  { day: "Day 9", remaining: 24,  ideal: 10 },
+  { day: "Day 10", remaining: 15, ideal: 0  },
+]
 
 const DashboardStats = ({ onViewSprintDetails }: Props) => {
     return (
@@ -27,11 +41,7 @@ const DashboardStats = ({ onViewSprintDetails }: Props) => {
     
               <div>
                 <h4 className="font-medium mb-2">Burndown Chart</h4>
-                <div className={s.chartContainer}>
-                  <svg width="100%" height="100%" viewBox="0 0 300 80" preserveAspectRatio="none">
-                    <path d="M0,10 L75,30 L150,20 L225,40 L300,35" fill="none" stroke="#4a2b5c" strokeWidth="2" />
-                  </svg>
-                </div>
+                <BurndownChart data={burndownData} />
               </div>
     
               <div className="space-y-2">
@@ -58,7 +68,7 @@ const DashboardStats = ({ onViewSprintDetails }: Props) => {
               >
                 View Sprint Details
               </Button>
-            }
+            } 
           >
             <div className="space-y-4 mb-20">
               <div className="mb-2">

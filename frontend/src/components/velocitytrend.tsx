@@ -34,4 +34,4 @@ export function VelocityTrendChart({ data, height = 250 }: VelocityTrendChartPro
     { sprint: "Sprint 3", Planned: 42, Actual: 39 },
     { sprint: "Current",  Planned: 38, Actual: 22 },
   ]
-  <VelocityTrendChart data={velocityData} /> */
+  <VelocityTrendChart data={velocityData} />  */
