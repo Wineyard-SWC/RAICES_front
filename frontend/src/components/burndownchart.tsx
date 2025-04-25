@@ -3,21 +3,24 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts"
 
 interface BurndownChartProps {
-  data: { day: string; remaining: number; ideal: number }[]
+  data: { day: string; Remaining: number; Ideal: number }[]
   height?: number
+  simple?: boolean
 }
 
-export function BurndownChart({ data, height = 250 }: BurndownChartProps) {
+export function BurndownChart({ data, height = 250, simple = false }: BurndownChartProps) {
   return (
     <div className="bg-white rounded-md p-4 shadow-sm">
-      <h3 className="text-lg font-semibold text-[#4a2b5c] mb-2">Burndown Chart</h3>
+      {!simple && (
+        <h3 className="text-lg font-semibold text-[#4a2b5c] mb-2">Burndown Chart</h3>
+      )}
       <ResponsiveContainer width="100%" height={height}>
         <LineChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-          <XAxis dataKey="day" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
+          {!simple && <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />}
+          {!simple && <XAxis dataKey="day" />}
+          {!simple && <YAxis />}
+          {!simple && <Tooltip />}
+          {!simple && <Legend />}
           <Line type="monotone" dataKey="Remaining" stroke="#4a2b5c" strokeWidth={2} dot={{ r: 3 }} />
           <Line type="monotone" dataKey="Ideal" stroke="#b491c8" strokeDasharray="5 5" strokeWidth={2} dot={false} />
         </LineChart>
@@ -27,6 +30,9 @@ export function BurndownChart({ data, height = 250 }: BurndownChartProps) {
 }
 
 /* Uso
+
+Aclaras valores:
+
 const burndownData = [
   { day: "Day 1", remaining: 100, ideal: 90 },
   { day: "Day 2", remaining: 90,  ideal: 80 },
@@ -40,5 +46,6 @@ const burndownData = [
   { day: "Day 10", remaining: 15, ideal: 0  },
 ]
 
-<BurndownChart data={burndownData} />
+Completo: <BurndownChart data={burndownData} />
+Simple: <BurndownChart data={burndownData} simple />
 */
