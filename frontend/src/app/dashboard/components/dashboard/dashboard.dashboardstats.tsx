@@ -19,7 +19,8 @@ const burndownData = [
   { day: "Day 6", Remaining: 58,  Ideal: 40 },
   { day: "Day 7", Remaining: 45,  Ideal: 30 },
   { day: "Day 8", Remaining: 35,  Ideal: 20 },
-
+  { day: "Day 9", Remaining: 24,  Ideal: 10 },
+  { day: "Day 10", Remaining: 15, Ideal: 0  },
 ]
 
 const DashboardStats = ({ onViewSprintDetails }: Props) => {
@@ -46,7 +47,7 @@ const DashboardStats = ({ onViewSprintDetails }: Props) => {
     
               <div>
                 <h4 className="font-medium mb-2">Burndown Chart</h4>
-                <BurndownChart data={burndownData} />
+                <BurndownChart data={burndownData} simple />
               </div>
     
               <div className="space-y-2">
