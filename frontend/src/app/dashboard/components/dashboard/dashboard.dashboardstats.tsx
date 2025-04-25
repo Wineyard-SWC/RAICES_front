@@ -10,19 +10,24 @@ type Props = {
 }
 
 const burndownData = [
-  { day: "Day 1", remaining: 100, ideal: 90 },
-  { day: "Day 2", remaining: 90,  ideal: 80 },
-  { day: "Day 3", remaining: 82,  ideal: 70 },
-  { day: "Day 4", remaining: 76,  ideal: 60 },
-  { day: "Day 5", remaining: 65,  ideal: 50 },
-  { day: "Day 6", remaining: 58,  ideal: 40 },
-  { day: "Day 7", remaining: 45,  ideal: 30 },
-  { day: "Day 8", remaining: 35,  ideal: 20 },
-  { day: "Day 9", remaining: 24,  ideal: 10 },
-  { day: "Day 10", remaining: 15, ideal: 0  },
+  { day: "Day 0", Remaining: 100, Ideal: 100 },
+  { day: "Day 1", Remaining: 95, Ideal: 90 },
+  { day: "Day 2", Remaining: 90,  Ideal: 80 },
+  { day: "Day 3", Remaining: 82,  Ideal: 70 },
+  { day: "Day 4", Remaining: 76,  Ideal: 60 },
+  { day: "Day 5", Remaining: 65,  Ideal: 50 },
+  { day: "Day 6", Remaining: 58,  Ideal: 40 },
+  { day: "Day 7", Remaining: 45,  Ideal: 30 },
+  { day: "Day 8", Remaining: 35,  Ideal: 20 },
+
 ]
 
 const DashboardStats = ({ onViewSprintDetails }: Props) => {
+  const initialHeight = burndownData[0].Remaining;
+  const lastData = burndownData[burndownData.length - 1];
+
+  const actualPercentage = Math.round(((initialHeight - lastData.Remaining) / initialHeight) * 100);
+  const idealPercentage = Math.round(((initialHeight - lastData.Ideal) / initialHeight) * 100);
     return (
         <div className={s.container}>
           <ProgressCard
@@ -46,8 +51,8 @@ const DashboardStats = ({ onViewSprintDetails }: Props) => {
     
               <div className="space-y-2">
                 <div className={s.progressText}>
-                  <span>Actual 70%</span>
-                  <span>Ideal: 83%</span>
+                <span>Actual: {actualPercentage}%</span>
+                <span>Ideal: {idealPercentage}%</span>
                 </div>
     
                 <div className={s.progressLabel}>My workload</div>
@@ -68,7 +73,7 @@ const DashboardStats = ({ onViewSprintDetails }: Props) => {
               >
                 View Sprint Details
               </Button>
-            } 
+            }
           >
             <div className="space-y-4 mb-20">
               <div className="mb-2">
