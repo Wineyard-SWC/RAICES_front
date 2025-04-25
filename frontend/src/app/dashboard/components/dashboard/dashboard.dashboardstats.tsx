@@ -1,10 +1,14 @@
-import { ProgressCard } from "./progresscard"
+import { ProgressCard } from "./dashboard.progresscard"
 import { Calendar, Clock, BarChart2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/progress"
-import { dashboardStatsStyles as s } from "../styles/dashboardstyles"
+import { dashboardStatsStyles as s } from "../../styles/dashboardstyles"
 
-const DashboardStats = () => {
+type Props = {
+  onViewSprintDetails: () => void;
+}
+
+const DashboardStats = ({ onViewSprintDetails }: Props) => {
     return (
         <div className={s.container}>
           <ProgressCard
@@ -47,12 +51,16 @@ const DashboardStats = () => {
             title="Sprint Progress"
             icon={<BarChart2 className={s.icon} />}
             footer={
-              <Button variant="default" className={s.button}>
+              <Button
+                variant="default"
+                className={s.button}
+                onClick={onViewSprintDetails}
+              >
                 View Sprint Details
               </Button>
             }
           >
-            <div className="space-y-4">
+            <div className="space-y-4 mb-20">
               <div className="mb-2">
                 <div className={s.sprintLabel}>Sprint Velocity</div>
                 <Progress value={85} className={`${s.progressBar} mt-1`} indicatorClassName={s.progressBarIndicator} />

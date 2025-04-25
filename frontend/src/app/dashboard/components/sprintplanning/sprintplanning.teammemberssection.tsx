@@ -1,6 +1,6 @@
 import React from "react";
-import TeamMemberCard from "./teammembercard";
-import { AddTeamMemberCard } from "./addteammembercard";
+import TeamMemberCard from "./sprintplanning.teammembercard";
+import { AddTeamMemberCard } from "./sprintplanning.addteammembercard";
 
 const teamData = [
   {
