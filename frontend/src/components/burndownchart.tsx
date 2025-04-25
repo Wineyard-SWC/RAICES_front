@@ -18,8 +18,8 @@ export function BurndownChart({ data, height = 250 }: BurndownChartProps) {
           <YAxis />
           <Tooltip />
           <Legend />
-          <Line type="monotone" dataKey="remaining" stroke="#4a2b5c" strokeWidth={2} dot={{ r: 3 }} />
-          <Line type="monotone" dataKey="ideal" stroke="#b491c8" strokeDasharray="5 5" strokeWidth={2} dot={false} />
+          <Line type="monotone" dataKey="Remaining" stroke="#4a2b5c" strokeWidth={2} dot={{ r: 3 }} />
+          <Line type="monotone" dataKey="Ideal" stroke="#b491c8" strokeDasharray="5 5" strokeWidth={2} dot={false} />
         </LineChart>
       </ResponsiveContainer>
     </div>
@@ -41,4 +41,4 @@ const burndownData = [
 ]
 
 <BurndownChart data={burndownData} />
- */
+*/
