@@ -25,9 +25,9 @@ const velocityData = [
 
 const SprintChartsSection = () => {
   return (
-    <div className="flex gap-4">
+    <div className="flex gap-4 mt-10">
       <div className="w-1/2">
-      <BurndownChart data={burndownData} />
+        <BurndownChart data={burndownData} />
       </div>
       <div className="w-1/2">
         <VelocityTrendChart data={velocityData} />

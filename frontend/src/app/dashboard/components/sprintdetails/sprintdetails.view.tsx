@@ -23,9 +23,11 @@ const SprintDetailsPage = ({ onBack }: Props) => {
                 <ArrowLeft className="text-[#4A2B4A] h-6 w-8" />
                 </button>
                 <h1 className="text-4xl font-bold text-[#1e1e1e]">Sprint Details</h1>
-            </div>
-            <p className="text-[#694969] mt-2">Track sprint progress and manage tasks</p>
+            </div>  
         </div>
+
+        <p className="text-[#694969] mt-2 mb-2">Track sprint progress and manage tasks</p>
+
         {/* Metric Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <MetricCard

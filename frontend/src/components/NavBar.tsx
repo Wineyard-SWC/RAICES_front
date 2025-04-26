@@ -142,7 +142,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
   }
 
   return (
-    <nav className="flex items-center justify-between px-4 py-2 border-b border-black bg-EBE5EB">
+    <nav className="flex items-center justify-between px-4 py-2 border-b border-black bg-[#EBE5EB]/30">
       {/* Logo */}
       <div className="flex-shrink-0 h-[60px] flex items-center justify-center">
         <Link href="/projects" className="mr-8 flex items-center justify-center">

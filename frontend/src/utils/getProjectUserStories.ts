@@ -1,11 +1,10 @@
 import { UserStory } from "@/types/userstory";
+import { v4 as uuidv4 } from 'uuid';
 
 const apiURL = process.env.NEXT_PUBLIC_API_URL!;
 
 export async function getProjectUserStories(projectId: string): Promise<UserStory[]> {
-  console.log(`Calling API to fetch user stories for projectId: ${projectId}`);
-
-  const response = await fetch(`${apiURL}/projects/${projectId}/userstories`, {
+  const response = await fetch(apiURL + `/projects/${projectId}/requirements`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -13,19 +12,26 @@ export async function getProjectUserStories(projectId: string): Promise<UserStor
   });
 
   if (!response.ok) {
-    console.error("API call failed with status:", response.status);
-    throw new Error("Error while obtaining the user stories of the project");
+    throw new Error("Error while obtaining the requirements of the project");
   }
 
-  const data: UserStory[] = await response.json();
+  const data = await response.json();
 
-  console.log("API response data:", data);
-
-  // Verifica si la respuesta es un arreglo
-  if (!Array.isArray(data)) {
-    console.error("Unexpected API response format:", data);
-    return [];
-  }
-
-  return data;
+  return data
+    .map((s: any) => ({
+      id: s.id,
+      uuid: s.uuid || uuidv4(),
+      idTitle: s.idTitle,
+      title: s.title,
+      description: s.description,
+      epicRef: s.epicRef,
+      priority: s.priority,
+      projectRef: s.projectRef,
+      acceptanceCriteria: s.acceptanceCriteria || [], 
+      comments: s.comments || [], 
+      lastUpdated: s.lastUpdated, 
+      points: s.points || 0, 
+      status: s.status, 
+    }))
+    .sort((a: any, b: any) => a.idTitle.localeCompare(b.idTitle));
 }

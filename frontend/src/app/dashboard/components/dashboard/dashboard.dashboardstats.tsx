@@ -7,6 +7,7 @@ import { BurndownChart } from "@/components/burndownchart"
 
 type Props = {
   onViewSprintDetails: () => void;
+  onViewCalendar?: () => void;
 }
 
 const burndownData = [
@@ -23,7 +24,7 @@ const burndownData = [
   { day: "Day 10", Remaining: 15, Ideal: 0  },
 ]
 
-const DashboardStats = ({ onViewSprintDetails }: Props) => {
+const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
   const initialHeight = burndownData[0].Remaining;
   const lastData = burndownData[burndownData.length - 1];
 
@@ -35,7 +36,10 @@ const DashboardStats = ({ onViewSprintDetails }: Props) => {
             title="Calendar & Burndown"
             icon={<Calendar className={s.icon} />}
             footer={
-              <Button variant="default" className={s.button}>
+              <Button variant="default" 
+              className={`${s.button} mt-4`}
+              onClick={onViewCalendar}
+              >
                 View Calendar
               </Button>
             }
@@ -47,7 +51,7 @@ const DashboardStats = ({ onViewSprintDetails }: Props) => {
     
               <div>
                 <h4 className="font-medium mb-2">Burndown Chart</h4>
-                <BurndownChart data={burndownData} simple />
+                <BurndownChart data={burndownData} height={120} simple />
               </div>
     
               <div className="space-y-2">
@@ -69,33 +73,46 @@ const DashboardStats = ({ onViewSprintDetails }: Props) => {
             footer={
               <Button
                 variant="default"
-                className={s.button}
+                className={`${s.button} mt-auto`}
                 onClick={onViewSprintDetails}
               >
                 View Sprint Details
               </Button>
             }
           >
-            <div className="space-y-4 mb-20">
-              <div className="mb-2">
+            <div className={`${s.progressCard} flex flex-col space-y-4`}>
+              <div className="mb-4">
                 <div className={s.sprintLabel}>Sprint Velocity</div>
-                <Progress value={85} className={`${s.progressBar} mt-1`} indicatorClassName={s.progressBarIndicator} />
+                <Progress value={85} className={`${s.progressBar} mt-2 mb-2`} indicatorClassName={s.progressBarIndicator} />
                 <div className={s.sprintStats}>
                   <span>45 SP/Sprint</span>
                 </div>
               </div>
     
-              <div className="grid grid-cols-2 gap-4">
-                <div className={s.statCard}>
-                  <Clock className={s.statIcon} />
-                  <div className={s.statValue}>8</div>
-                  <div className={s.statLabel}>Days Left</div>
+              <div className="mb-4">
+                <div className="flex justify-between">
+                  <div className={s.sprintLabel}>Task Completion</div>
+                  <div className={s.sprintStats}>92%</div>
                 </div>
-    
-                <div className={s.statCard}>
-                  <BarChart2 className={s.statIcon} />
-                  <div className={s.statValue}>92%</div>
-                  <div className={s.statLabel}>Completion</div>
+                <div className="mt-2">
+                  <Progress value={92} className={`${s.progressBar} mt-2 mb-2`} indicatorClassName={s.progressBarIndicator} />
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <div className="grid grid-cols-2 gap-4">
+                
+                  <div className={s.statCard}>
+                    <Clock className={s.statIcon} />
+                    <div className={s.statValue}>8</div>
+                    <div className={s.statLabel}>Days Left</div>
+                  </div>
+      
+                  <div className={s.statCard}>
+                    <BarChart2 className={s.statIcon} />
+                    <div className={s.statValue}>92%</div>
+                    <div className={s.statLabel}>Completion</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -141,16 +158,18 @@ const DashboardStats = ({ onViewSprintDetails }: Props) => {
                 <div className={s.emojiBadge}>😄</div>
               </div>
             </div>
-    
-            <div className={s.taskGrid}>
-              <div className={s.statCard}>
-                <div className={s.statValue}>37</div>
-                <div className={s.statLabel}>Completed Tasks</div>
-              </div>
-    
-              <div className={s.statCard}>
-                <div className={s.statValue}>2</div>
-                <div className={s.statLabel}>In Progress</div>
+            
+            <div className={`${s.progressCard} flex flex-col space-y-4`}>
+              <div className={s.taskGrid}>
+                <div className={s.statCard}>
+                  <div className={s.statValue}>37</div>
+                  <div className={s.statLabel}>Completed Tasks</div>
+                </div>
+      
+                <div className={s.statCard}>
+                  <div className={s.statValue}>2</div>
+                  <div className={s.statLabel}>In Progress</div>
+                </div>
               </div>
             </div>
           </ProgressCard>
