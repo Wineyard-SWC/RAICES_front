@@ -11,9 +11,12 @@ import { TaskColumns } from "@/types/taskkanban"
 
 interface TasksKanbanProps {
   tasks: TaskColumns
+  onNavigate?: () => void;
+  view?: string;
 }
 
-export const TasksKanban = ({ tasks }: TasksKanbanProps) => {
+
+export const TasksKanban = ({ tasks, onNavigate, view }: TasksKanbanProps) => {
   const [taskState, setTaskState] = useState(tasks)
 
   const onDragEnd = (result: any) => {
@@ -72,9 +75,15 @@ export const TasksKanban = ({ tasks }: TasksKanbanProps) => {
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
             <Input placeholder="Search tasks..." className="pl-8 h-9 bg-white" />
           </div>
-          <Button variant="default" className="bg-[#4a2b5c] hover:bg-[#3a2248]">
-            View full Backlog
-          </Button>
+          {view === "dashboard" ? (
+            <Button 
+            variant="default" 
+            className="bg-[#4a2b5c] hover:bg-[#3a2248]"
+            onClick={onNavigate}
+            >
+              View full Backlog
+            </Button>):('')}
+          
         </div>
       </CardHeader>
       <CardContent>

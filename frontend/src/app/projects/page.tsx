@@ -99,10 +99,10 @@ export default function ProjectsPage() {
   }
       //<NavBar projectSelected={!!selectedProject||} />
   return (
-    <div className="min-h-screen bg-[#ebe5eb]/30">
+    <div className="min-h-screen bg-[#EBE5EB]/30">
       <Navbar projectSelected={!!selectedProject} />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-10">
         <div>
           <h1 className="text-4xl font-bold text-[#1e1e1e]">Projects</h1>
           <p className="text-[#694969] mt-2">Manage and track all of your ongoing projects</p>

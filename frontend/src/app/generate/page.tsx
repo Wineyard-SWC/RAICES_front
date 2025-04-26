@@ -14,7 +14,7 @@ export default function GeneratePage() {
       <Navbar projectSelected={true} />
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-10">
         {/* Título y descripción */}
         <div>
           <h1 className="text-4xl font-bold text-[#1e1e1e]">What will we work on today?</h1>

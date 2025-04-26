@@ -37,15 +37,18 @@ import { TaskColumns } from "@/types/taskkanban"
 
 type Props = {
     onNavigateSprintDetails : () => void;
+    onNavigateCalendar?: () => void;
+    onNavigateProductBacklog?: () => void;
+
 }
 
-const DashboardMainPage = ({ onNavigateSprintDetails }: Props) => {
+const DashboardMainPage = ({ onNavigateSprintDetails,onNavigateProductBacklog,onNavigateCalendar}: Props) => {
    return (
         <>
             {/* Dashboard Stats*/}
-            <DashboardStats onViewSprintDetails={onNavigateSprintDetails}/>
+            <DashboardStats onViewSprintDetails={onNavigateSprintDetails} onViewCalendar={onNavigateCalendar}/>
             {/* Tasks Kanban */}
-            <TasksKanban tasks={initialTasks}/>
+            <TasksKanban tasks={initialTasks} onNavigate={onNavigateProductBacklog} view="dashboard"/>
         </>
     );
 }
