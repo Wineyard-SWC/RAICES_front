@@ -76,10 +76,12 @@ export const TasksKanban = ({ tasks, onNavigate, view }: TasksKanbanProps) => {
           {view === "dashboard" ? "My Task" : "All Backlog Items"}
         </CardTitle>
         <div className="flex items-center gap-2">
-          <div className="relative w-64">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
-            <Input placeholder="Search tasks..." className="pl-8 h-9 bg-white" />
-          </div>
+          {view === "dashboard" ? (
+            <div className="relative w-64">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+              <Input placeholder="Search tasks..." className="pl-8 h-9 bg-white" /> 
+            </div> 
+          ):('')}
           {view === "dashboard" ? (
             <Button 
             variant="default" 

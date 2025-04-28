@@ -17,6 +17,9 @@ const ProductBacklogPage: React.FC<ProductBacklogViewProps> = ({ projectId, onBa
   const [backlogItems, setBacklogItems] = useState<UserStory[]>([]);
   const [BacklogactiveView, setBacklogActiveView] = useState<"backlog" | "kanban">("kanban");
   const isAdmin = true; 
+  const [currentPage, setCurrentPage] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+
 
   const initialTasks: TaskColumns = {
     inProgress: [
@@ -104,32 +107,34 @@ const ProductBacklogPage: React.FC<ProductBacklogViewProps> = ({ projectId, onBa
         </button>
       </div>
       
-     
-
       {/* Metric Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <MetricCard
-          icon={<Calendar className="text-[#4A2B4A]" />}
-          title="Start Date"
-          mainValue="Apr 1, 2025"
-        />
-        <MetricCard
-          icon={<Clock className="text-[#4A2B4A]" />}
-          title="End Date"
-          mainValue="Apr 15, 2025"
-        />
-        <MetricCard
-          icon={<BarChart2 className="text-[#4A2B4A]" />}
-          title="Sprint Progress"
-          mainValue="72%"
-          progress={72}
-        />
-        <MetricCard
-          icon={<User className="text-[#4A2B4A]" />}
-          title="Team Size"
-          mainValue="6 Members"
-        />
-      </div>
+      {isAdmin ? (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <MetricCard
+            icon={<Calendar className="text-[#4A2B4A]" />}
+            title="Start Date"
+            mainValue="Apr 1, 2025"
+          />
+          <MetricCard
+            icon={<Clock className="text-[#4A2B4A]" />}
+            title="End Date"
+            mainValue="Apr 15, 2025"
+          />
+          <MetricCard
+            icon={<BarChart2 className="text-[#4A2B4A]" />}
+            title="Sprint Progress"
+            mainValue="72%"
+            progress={72}
+          />
+          <MetricCard
+            icon={<User className="text-[#4A2B4A]" />}
+            title="Team Size"
+            mainValue="6 Members"
+          />
+        </div>
+        ):(<p></p>
+        )}
+      
 
       {/* Search Bar */}
       <div>
@@ -141,33 +146,89 @@ const ProductBacklogPage: React.FC<ProductBacklogViewProps> = ({ projectId, onBa
       {/* Conditional Rendering for Views */}
       {BacklogactiveView === "kanban" ? (
         <TasksKanban tasks={initialTasks} view={"backlogs"} />
-      ) : (
-        // Backlog View Rendering
-        <div className="mt-6">
-          <div className="bg-white border border-[#D3C7D3] shadow rounded-lg px-6 py-6">
-            <h2 className="text-2xl font-bold text-gray-800">Items Under Review</h2>
-            <div className="mt-4">
-              {backlogItems.length === 0 ? (
-                <p className="text-gray-600">No user stories found for this project.</p>
-              ) : (
-                backlogItems.map((item) => (
-                  <BacklogCard
-                    key={item.id}
-                    type="STORY"
-                    priority={item.priority.toLowerCase()}
-                    status="In Review"
-                    title={item.title}
-                    description={item.description}
-                    author="Unknown"
-                    reviewer="Unknown"
-                    progress={10}
-                    comments={0}
-                  />
-                ))
-              )}
-            </div>
+  ) : (
+    // Backlog View Rendering
+    <div className="mt-6">
+      <div className="bg-white border border-[#D3C7D3] shadow rounded-lg px-6 py-6">
+        
+        {/* Header + Selector de Items por página */}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold text-black">Items Under Review</h2>
+
+          <div className="flex items-center gap-2">
+            <span className="text-m text-black">Items per page:</span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value))
+                setCurrentPage(0) 
+              }}
+              title="Items"
+              className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
           </div>
         </div>
+
+        {/* Lista de Backlog Items */}
+        <div className="mt-4">
+          {backlogItems.length === 0 ? (
+            <p className="text-black">No user stories found for this project.</p>
+            ) : (
+              <>
+                {backlogItems
+                  .slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage)
+                  .map((item) => (
+                    <BacklogCard
+                      key={item.id}
+                      type="STORY"
+                      priority={item.priority.toLowerCase()}
+                      status="In Review"
+                      title={item.title}
+                      description={item.description}
+                      author="Unknown"
+                      reviewer="Unknown"
+                      progress={10}
+                      comments={0}
+                    />
+                  ))}
+
+                {/* Paginación */}
+                <div className="flex justify-between items-center mt-6">
+                  <button
+                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 0))}
+                    disabled={currentPage === 0}
+                    className="px-4 py-2 text-m rounded bg-[#4A2B4A] text-white disabled:bg-gray-300"
+                  >
+                    Previous
+                  </button>
+
+                  <span className="text-m text-black">
+                    Page {currentPage + 1} of {Math.ceil(backlogItems.length / itemsPerPage)}
+                  </span>
+
+                  <button
+                    onClick={() =>
+                      setCurrentPage((prev) =>
+                        (prev + 1) * itemsPerPage < backlogItems.length ? prev + 1 : prev
+                      )
+                    }
+                    disabled={(currentPage + 1) * itemsPerPage >= backlogItems.length}
+                    className="px-4 py-2 text-m rounded bg-[#4A2B4A] text-white disabled:bg-gray-300"
+                  >
+                    Next
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+
+        </div>
+      </div>
       )}
     </div>
   );
