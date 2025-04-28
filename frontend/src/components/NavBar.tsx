@@ -34,6 +34,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
   const pathname = usePathname()
   const dropdownRef = useRef<HTMLDivElement>(null)
 
+  const [avatarMenuOpen, setAvatarMenuOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<TabType>("Projects")
   const [generateOpen, setGenerateOpen] = useState(false)
 
@@ -252,16 +253,33 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
         </button>
 
         <div className="relative">
-          <button className="flex items-center">
+          <button
+            className="flex items-center"
+            onClick={() => setAvatarMenuOpen(!avatarMenuOpen)}
+          >
             <div className="h-8 w-8 rounded-full bg-[#ebe5eb] overflow-hidden">
               <img
-                /*src="/placeholder.svg?height=32&width=32"*/
                 alt="User avatar"
                 className="h-full w-full object-cover"
               />
             </div>
             <ChevronDown className="ml-1 h-4 w-4 text-[#4a2b4a]" />
           </button>
+
+          {avatarMenuOpen && (
+            <div className="absolute right-0 mt-2 w-32 bg-white rounded-md shadow-lg z-20">
+              <button
+                onClick={() => {
+                  localStorage.removeItem("userId")
+                  localStorage.removeItem("currentProjectId")
+                  router.push("/login")
+                }}
+                className="block w-full text-left px-4 py-2 text-sm text-[#4a2b4a] hover:bg-[#ebe5eb]"
+              >
+                Sign Out
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </nav>

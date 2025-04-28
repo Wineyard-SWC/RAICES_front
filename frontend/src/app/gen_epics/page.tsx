@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Layers } from "lucide-react";
 import GeneratorView from '@/components/generatorview';
 import EpicCard from './components/epiccard';
@@ -10,7 +10,7 @@ import Navbar from '@/components/NavBar';
 import { projectInputStyles as input } from '../gen_requirements/styles/projectinput.module';
 import { useGenerateEpicsLogic } from './hooks/useGenerateEpicLogic';
 import ConfirmDialog from '@/components/confimDialog';
-
+import { useRouter } from 'next/navigation';
 
 export default function GenerateEpicsPage() {
   const [reqDescription, setReqDescription] = useState('');
@@ -41,6 +41,22 @@ export default function GenerateEpicsPage() {
     setSelectedIds,
     setSelectedEpicIds,
   } = useGenerateEpicsLogic(reqDescription, setReqDescription);
+
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      router.push("/login");
+    } else {
+      setLoading(false);
+    }
+  }, [router]);
+
+  if (loading) {
+    return null; 
+  }
   
   return (
     <>

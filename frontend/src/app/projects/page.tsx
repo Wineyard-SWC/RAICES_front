@@ -10,6 +10,7 @@ import ProjectCard from "./components/projectcard"
 import CreateProjectModal from "./components/create_project_modal"
 import JoinProjectModal from "./components/join_project_modal"
 import Navbar from "@/components/NavBar"
+import { useRouter } from "next/navigation"
 
 export default function ProjectsPage() {
   // Obtén el userId desde el contexto de usuario
@@ -52,6 +53,19 @@ export default function ProjectsPage() {
     setStatusFilter(status)
     filterProjects(searchQuery, status, fetchedProjects)
   }
+
+  const [load, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      router.push("/login");
+    } else {
+      setLoading(false);
+    }
+  }, [router]);
+
 
   const filterProjects = (query: string, status: string, projectsList: Project[]) => {
     let filtered = projectsList
@@ -98,6 +112,11 @@ export default function ProjectsPage() {
     )
   }
       //<NavBar projectSelected={!!selectedProject||} />
+
+  if (load) {
+    return null; 
+  }
+    
   return (
     <div className="min-h-screen bg-[#EBE5EB]/30">
       <Navbar projectSelected={!!selectedProject} />
