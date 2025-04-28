@@ -15,16 +15,17 @@ import handleDeleteRequirement from './utils/handleDeleteRequirement';
 import { useRequirementsLogic } from './hooks/useRequirementsLogic';
 import { useEpicContext } from '@/contexts/epiccontext';
 import ConfirmDialog from '@/components/confimDialog';
-
+import { useRouter } from 'next/navigation';
 
 export default function RequirementsPage() {
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
   const { projectDescription, setProjectDescription } = useProjectContext();
   const [editMode, setEditMode] = useState(false);
   const { setEpics} = useEpicContext();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
-
-
 
   const {
     requirements,
@@ -38,6 +39,18 @@ export default function RequirementsPage() {
     handleClear
   } = useRequirementsLogic({ projectDescription, setProjectDescription });
 
+  useEffect(() => {
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      router.push("/login");
+    } else {
+      setLoading(false);
+    }
+  }, [router]);
+
+  if (loading) {
+    return null; 
+  }
   
   return (
     <>

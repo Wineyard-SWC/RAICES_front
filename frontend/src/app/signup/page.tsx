@@ -5,6 +5,7 @@ import { FaGithub } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
 import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from 'firebase/auth';
 import { auth } from '@/utils/firebaseConfig';
+import { useAuth } from "@/hooks/useAuth"
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FaEye, FaEyeSlash } from 'react-icons/fa'
@@ -25,8 +26,6 @@ export default function CreateAccountPage() {
   const { loginWithGoogle, loginWithGithub } = useAuth()
 
   const router = useRouter();
-
-  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
     setIsClient(true);

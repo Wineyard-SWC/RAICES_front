@@ -1,6 +1,8 @@
 "use client"
 
+import { useEffect } from "react"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 
 import Navbar from "@/components/NavBar"
 import SprintDetailsPage from "./components/sprintdetails/sprintdetails.view"
@@ -8,7 +10,21 @@ import DashboardMainPage from "./components/dashboard/dashboard.view"
 
 export default function DashboardPage() {
   const [activeView, setActiveView] = useState<"dashboard" | "sprint">("dashboard")
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
+  useEffect(() => {
+    const userId = localStorage.getItem("userId")
+    if (!userId) {
+      router.push("/login")
+    } else {
+      setLoading(false) 
+    }
+  }, [router])
+
+  if (loading) {
+    return null 
+  }
 
   return (
     <>

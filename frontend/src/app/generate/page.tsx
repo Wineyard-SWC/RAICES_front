@@ -4,9 +4,26 @@ import Link from "next/link"
 import { FileText, Layers, Book, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Navbar from "@/components/NavBar"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 
 export default function GeneratePage() {
-  //<Navbar />
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      router.push("/login");
+    } else {
+      setLoading(false);
+    }
+  }, [router]);
+
+  if (loading) {
+    return null; 
+  }
+  
   return (
     <div className="min-h-screen bg-[#ebe5eb]/30">
       {/* Navigation Bar */}
