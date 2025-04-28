@@ -55,7 +55,7 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
               <div className="text-center mb-2">
                 <h3 className="text-gray-700">{todayString}</h3>
               </div>
-    
+              
               <div>
                 <h4 className="font-medium mb-2">Burndown Chart</h4>
                 <BurndownChart data={burndownData} height={120} simple />

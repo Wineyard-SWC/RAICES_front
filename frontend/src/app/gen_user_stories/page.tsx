@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Book } from "lucide-react";
 import EpicUserStoryGroup from './components/epicwithuserstoriescard';
 import GeneratorView from '@/components/generatorview';
@@ -12,6 +12,7 @@ import Navbar from '@/components/NavBar';
 import { useGenerateUserStoriesLogic } from './hooks/useGenerateUserStoriesLogic';
 import { UserStory } from '@/types/userstory';
 import ConfirmDialog from '@/components/confimDialog';
+import { useRouter } from 'next/navigation';
 
 export default function GenerateUserStoriesPage() {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -49,6 +50,22 @@ export default function GenerateUserStoriesPage() {
     ...Object.entries(groupedByEpic),
     ...(unassignedTuple ? [unassignedTuple] : [])
   ];
+
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      router.push("/login");
+    } else {
+      setLoading(false);
+    }
+  }, [router]);
+
+  if (loading) {
+    return null; 
+  } 
 
   return (
     <>

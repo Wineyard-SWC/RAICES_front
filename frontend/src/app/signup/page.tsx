@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FaEye, FaEyeSlash } from 'react-icons/fa'
 import Image from "next/image"
+import { useAuth } from "@/hooks/useAuth"
 
 export default function CreateAccountPage() {
   const [firstName, setFirstName] = useState('');
@@ -26,13 +27,11 @@ export default function CreateAccountPage() {
 
   const router = useRouter();
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  const isValidEmail = (email: string): boolean => { // Añadí :string y el booleano
+  const isValidEmail = (email: string): boolean => { 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };  
@@ -71,7 +70,7 @@ export default function CreateAccountPage() {
       auth.signOut(); // Cerrar sesión hasta que verifique el correo
   
     } catch (err) {
-      setError('Error creating account: ' + (err as Error).message); // Encerré el err y le añadí "as Error"
+      setError('Error creating account: ' + (err as Error).message); 
     } finally {
       setTimeout(() => setIsSubmitting(false), 3000); // Rehabilitar botón después de 3s
     }
@@ -150,7 +149,7 @@ export default function CreateAccountPage() {
               <div 
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer"
                 onClick={() => setShowPassword(!showPassword)}
-                style={{ color: '#694969', fontSize: '18px' }}  // Ajuste del color y tamaño del ícono
+                style={{ color: '#694969', fontSize: '18px' }} 
               >
                 {showPassword ? <FaEye /> : <FaEyeSlash />}  {/* El ojo tachado significa que está oculto */}
               </div>
@@ -171,7 +170,7 @@ export default function CreateAccountPage() {
               <div 
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                style={{ color: '#694969', fontSize: '18px' }}  // Ajuste del color y tamaño del ícono
+                style={{ color: '#694969', fontSize: '18px' }}  
               >
                 {showConfirmPassword ? <FaEye /> : <FaEyeSlash />}  {/* El ojo tachado significa que está oculto */}
               </div>
