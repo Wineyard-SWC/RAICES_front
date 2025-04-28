@@ -55,7 +55,7 @@ export const TasksKanban = ({ tasks, onNavigate, view }: TasksKanbanProps) => {
       color: "bg-blue-100 text-blue-800"
     },
     inReview: {
-      count: taskState.inReview.length,
+      count: taskState.inReview.length, 
       header: "In Review",
       color: "bg-yellow-100 text-yellow-800"
     },
@@ -67,9 +67,14 @@ export const TasksKanban = ({ tasks, onNavigate, view }: TasksKanbanProps) => {
   }
 
   return (
-    <Card className="shadow-sm border-gray-100">
+    <Card 
+    className="border border-[#D3C7D3] shadow-sm ">
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
-        <CardTitle className="text-lg font-semibold">My Tasks</CardTitle>
+        <CardTitle 
+          className={view === "dashboard" ? "text-lg font-semibold" : "text-2xl font-bold"}
+        >
+          {view === "dashboard" ? "My Task" : "All Backlog Items"}
+        </CardTitle>
         <div className="flex items-center gap-2">
           <div className="relative w-64">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
@@ -92,7 +97,7 @@ export const TasksKanban = ({ tasks, onNavigate, view }: TasksKanbanProps) => {
             {Object.entries(columnStyles).map(([columnId, column]) => (
               <Droppable key={columnId} droppableId={columnId}>
                 {(provided) => (
-                  <div ref={provided.innerRef} {...provided.droppableProps} className="bg-gray-50 rounded-md p-4">
+                  <div ref={provided.innerRef} {...provided.droppableProps} className="bg-gray-100 rounded-md p-4">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-medium text-gray-700">{column.header}</h3>
                       <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs ${column.color}`}>

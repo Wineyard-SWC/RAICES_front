@@ -9,7 +9,7 @@ interface VelocityTrendChartProps {
 
 export function VelocityTrendChart({ data, height = 250 }: VelocityTrendChartProps) {
   return (
-    <div className="bg-white rounded-md p-4 shadow-sm">
+    <div className="bg-white border border-[#D3C7D3] rounded-md p-4 shadow-sm">
       <h3 className="text-lg font-semibold text-[#4a2b5c] mb-2">Velocity Trend</h3>
       <ResponsiveContainer width="100%" height={height}>
         <BarChart data={data} barCategoryGap="20%">

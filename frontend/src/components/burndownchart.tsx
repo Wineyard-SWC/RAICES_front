@@ -10,7 +10,7 @@ interface BurndownChartProps {
 
 export function BurndownChart({ data, height = 250, simple = false }: BurndownChartProps) {
   return (
-    <div className="bg-white rounded-md p-4 shadow-sm">
+    <div className="bg-white border border-[#D3C7D3] rounded-md p-4 shadow-sm">
       {!simple && (
         <h3 className="text-lg font-semibold text-[#4a2b5c] mb-2">Burndown Chart</h3>
       )}
