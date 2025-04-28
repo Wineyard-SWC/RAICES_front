@@ -8,7 +8,7 @@ interface ProgressCardProps {
 }
 
 export const ProgressCard = ({ title, icon, children, footer }: ProgressCardProps) => (
-  <Card className="shadow-sm border-gray-100 flex flex-col h-full">
+  <Card className="shadow-sm border border-[#D3C7D3] flex flex-col h-full">
     <CardHeader className="pb-2">
       <CardTitle className="text-lg font-semibold flex items-center gap-2">
         {icon}

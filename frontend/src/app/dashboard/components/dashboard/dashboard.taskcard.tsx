@@ -15,7 +15,7 @@ export const TaskCard = ({ task, columnId }: TaskCardProps) => {
   }
 
   return (
-    <div className="bg-white rounded-md p-4 shadow-sm border border-gray-100 mb-3 relative">
+    <div className="hover:bg-[#EBE5EB] cursor-pointer bg-white rounded-md p-4 shadow-sm border border-[#D3C7D3] mb-3 relative">
       <div className="absolute right-2 top-2">
         <Button variant="ghost" size="icon" className="h-8 w-8">
           <MoreVertical className="h-4 w-4" />
@@ -35,7 +35,8 @@ export const TaskCard = ({ task, columnId }: TaskCardProps) => {
               <span>{task.comments}</span>
             </div>
           )}
-          <span className={`px-2 py-1 rounded-full text-xs ${priorityColors[task.priority]}`}>
+          <span 
+            className={`px-2 py-1 min-w-[3vw] rounded-full text-xs ${priorityColors[task.priority]}`}>
             {task.priority}
           </span>
         </div>

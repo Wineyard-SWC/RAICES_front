@@ -5,6 +5,7 @@ import Navbar from "@/components/NavBar"
 import SprintDetailsPage from "./components/sprintdetails/sprintdetails.view"
 import DashboardMainPage from "./components/dashboard/dashboard.view"
 import ProductBacklogPage from "./components/productbacklog/productbacklog.view"
+import CalendarPageView from "./components/sprintcalendar/sprintcalendar.view"
 
 export default function DashboardPage() {
   const [activeView, setActiveView] = useState<"dashboard" | "details" | "planning" | "calendar">("dashboard")
@@ -46,8 +47,8 @@ export default function DashboardPage() {
           {/*---------------------------------------SprintCalendarView-------------------------------------*/}
           
           {/*---------------------------------------SprintCalendarView-------------------------------------*/}
-          {activeView === "dashboard" && (
-            ''//<CalendarView onBack={() => setActiveView("calendar")} /> <-- CalendarView Faltante
+          {activeView === "calendar" && (
+            <CalendarPageView onBack={() => setActiveView("dashboard")}/>
           )}
           {/*---------------------------------------ProductBacklogView-------------------------------------*/}
           {/* Show ProductBacklogView when "backlog" is active */}

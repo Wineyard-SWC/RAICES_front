@@ -15,7 +15,7 @@ interface ProductBacklogViewProps {
 
 const ProductBacklogPage: React.FC<ProductBacklogViewProps> = ({ projectId, onBack }) => {
   const [backlogItems, setBacklogItems] = useState<UserStory[]>([]);
-  const [BacklogactiveView, setBacklogActiveView] = useState<"backlog" | "kanban">("backlog");
+  const [BacklogactiveView, setBacklogActiveView] = useState<"backlog" | "kanban">("kanban");
   const isAdmin = true; 
 
   const initialTasks: TaskColumns = {
@@ -71,38 +71,40 @@ const ProductBacklogPage: React.FC<ProductBacklogViewProps> = ({ projectId, onBa
       <div className="flex items-center justify-between mt-4 mb-4">
       {/* Left section for Back button and title */}
         <div className="flex items-center gap-3">
-          <button
-            onClick={onBack}
-            className="hover:bg-[#e2d4e4] p-2 rounded-full transition"
-            title="Back to Dashboard"
-          >
-            <ArrowLeft className="text-[#4A2B4A] h-6 w-8" />
-          </button>
           <h1 className="text-4xl font-bold text-[#1e1e1e]">Product Backlog</h1>
         </div>
+        
 
       {/* View Selector Button (Aligns to the right) */}
       <div className="flex items-center gap-4">
           {BacklogactiveView === "kanban" ? (
             <button
               onClick={() => setBacklogActiveView("backlog")}
-              className="p-2 rounded-md font-semibold bg-white text-[#4A2B4A] w-[10vw] h-[5vh] border border-[#4A2B4A] hover:bg-[#e2d4e4]"
+              className="p-2 rounded-md font-semibold bg-white text-[#4A2B4A] flex justify-center items-center border border-[#4A2B4A] hover:bg-[#e2d4e4]"
             >
               Show In Review Tasks
             </button>
           ) : (
             <button
               onClick={() => setBacklogActiveView("kanban")}
-              className="p-2 rounded-md font-semibold bg-white text-[#4A2B4A] w-[10vw] h-[5vh] border border-[#4A2B4A] hover:bg-[#e2d4e4]"
+              className="p-2 rounded-md font-semibold bg-white text-[#4A2B4A] flex justify-center items-center border border-[#4A2B4A] hover:bg-[#e2d4e4]"
             >
               Show Full Backlog
             </button>
           )}
         </div>
       </div>
-      
-      <p className="text-[#694969] mt-2 mb-2">Team wide view of all backlog items and their status</p>
 
+      <div className="mb-2">
+        <p className=" text-lg font-semibold text-[#694969] mt-2 mb-2">Team wide view of all backlog items and their status</p>
+        <button
+          onClick={onBack}
+          className="text-[#4A2B4A] text-sm font-medium hover:underline"
+        > {"<- Go back "}
+        </button>
+      </div>
+      
+     
 
       {/* Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -142,7 +144,7 @@ const ProductBacklogPage: React.FC<ProductBacklogViewProps> = ({ projectId, onBa
       ) : (
         // Backlog View Rendering
         <div className="mt-6">
-          <div className="bg-[#f5f0f1] shadow rounded-md px-6 py-6">
+          <div className="bg-white border border-[#D3C7D3] shadow rounded-lg px-6 py-6">
             <h2 className="text-2xl font-bold text-gray-800">Items Under Review</h2>
             <div className="mt-4">
               {backlogItems.length === 0 ? (
@@ -158,7 +160,7 @@ const ProductBacklogPage: React.FC<ProductBacklogViewProps> = ({ projectId, onBa
                     description={item.description}
                     author="Unknown"
                     reviewer="Unknown"
-                    progress={0}
+                    progress={10}
                     comments={0}
                   />
                 ))

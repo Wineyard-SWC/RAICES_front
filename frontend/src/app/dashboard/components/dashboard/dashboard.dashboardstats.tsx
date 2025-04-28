@@ -24,6 +24,13 @@ const burndownData = [
   { day: "Day 10", Remaining: 15, Ideal: 0  },
 ]
 
+const today = new Date()
+const todayString = today.toLocaleDateString('en-US', {
+    weekday: 'long',  
+    month: 'long',    
+    day: 'numeric',   
+})
+
 const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
   const initialHeight = burndownData[0].Remaining;
   const lastData = burndownData[burndownData.length - 1];
@@ -46,7 +53,7 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
           >
             <div className="space-y-4">
               <div className="text-center mb-2">
-                <h3 className="text-gray-700">Friday, March 7</h3>
+                <h3 className="text-gray-700">{todayString}</h3>
               </div>
     
               <div>

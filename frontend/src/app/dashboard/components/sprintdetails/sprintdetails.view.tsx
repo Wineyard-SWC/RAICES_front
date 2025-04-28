@@ -15,18 +15,17 @@ const SprintDetailsPage = ({ onBack }: Props) => {
         {/* Header + Search Placeholder */}
         <div className="flex items-center justify-between mt-4 mb-4">
             <div className="flex items-center gap-3">
-                <button
-                onClick={onBack}
-                className="hover:bg-[#e2d4e4] p-2 rounded-full transition"
-                title="Back to Dashboard"
-                >
-                <ArrowLeft className="text-[#4A2B4A] h-6 w-8" />
-                </button>
                 <h1 className="text-4xl font-bold text-[#1e1e1e]">Sprint Details</h1>
             </div>  
         </div>
-
-        <p className="text-[#694969] mt-2 mb-2">Track sprint progress and manage tasks</p>
+        <div className="mb-2">
+            <p className=" text-lg font-semibold text-[#694969] mt-2 mb-2">Track sprint progress and manage tasks</p>
+            <button
+            onClick={onBack}
+            className="text-[#4A2B4A] text-sm font-medium hover:underline"
+            > {"<- Go back "}
+            </button>
+        </div>
 
         {/* Metric Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -61,7 +60,7 @@ const SprintDetailsPage = ({ onBack }: Props) => {
             </div>
         </div> 
 
-        <div className="bg-[#F5F0F1] shadow-md rounded-xl px-4 py-4">
+        <div className="bg-white border border-[#D3C7D3] shadow-md rounded-xl px-4 py-4">
             {/* Chart Section */}
             <SprintChartsSection />
             

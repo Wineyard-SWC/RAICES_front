@@ -1,5 +1,5 @@
 export const sprintTaskCardStyles = {
-    card: "bg-white p-4 rounded-xl shadow-md flex flex-col gap-2 min-w-[400px]",
+    card: "bg-white p-4 rounded-xl border border-[#D3C7D3] shadow-md flex flex-col gap-2 min-w-[400px]",
   
     header: "flex justify-between items-start",
     title: "text-lg font-semibold text-black",

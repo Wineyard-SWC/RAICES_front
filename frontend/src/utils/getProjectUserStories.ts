@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 const apiURL = process.env.NEXT_PUBLIC_API_URL!;
 
 export async function getProjectUserStories(projectId: string): Promise<UserStory[]> {
-  const response = await fetch(apiURL + `/projects/${projectId}/requirements`, {
+  const response = await fetch(apiURL + `/projects/${projectId}/userstories`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -12,7 +12,7 @@ export async function getProjectUserStories(projectId: string): Promise<UserStor
   });
 
   if (!response.ok) {
-    throw new Error("Error while obtaining the requirements of the project");
+    throw new Error("Error while obtaining the userstories of the project");
   }
 
   const data = await response.json();

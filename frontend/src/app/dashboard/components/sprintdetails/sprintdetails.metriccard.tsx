@@ -13,7 +13,7 @@ type Props = {
 
 export default function MetricCard({ icon, title, mainValue, subtitle, progress }: Props) {
   return (
-    <div className="bg-[#F5F0F1] shadow-md rounded-xl p-4 w-full flex flex-col gap-2">
+    <div className="bg-white border border-[#D3C7D3] shadow-md rounded-xl p-4 w-full flex flex-col gap-2">
       <div className="flex items-center gap-2 text-[#4A2B4D]">
         <div className="w-5 h-5">{icon}</div>
         <span className="text-sm font-medium">{title}</span>
