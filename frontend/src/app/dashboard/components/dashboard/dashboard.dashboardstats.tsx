@@ -45,9 +45,11 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
             }
           >
             <div className="space-y-4">
-              <div className="text-center mb-2">
-                <h3 className="text-gray-700">Friday, March 7</h3>
-              </div>
+            <div className="text-center mb-2">
+              <h3 className="text-gray-700">
+                {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+              </h3>
+            </div>
     
               <div>
                 <h4 className="font-medium mb-2">Burndown Chart</h4>
