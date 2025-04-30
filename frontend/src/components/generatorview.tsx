@@ -13,8 +13,8 @@ import ManualUserStoryForm from '@/app/gen_user_stories/components/ManualUserSto
 import { useRequirementContext } from '@/contexts/requirementcontext';
 import { useEpicContext } from '@/contexts/epiccontext';
 import { useUserStoryContext } from '@/contexts/userstorycontext';
-import { ClipboardList, Download, RefreshCcw } from 'lucide-react';
-
+import { ClipboardList, Download, RefreshCcw, AlertTriangle,CheckCircle} from 'lucide-react';
+import getUserFriendlyErrorMessage from '@/utils/parseFriendlyGenerateErrors';
 
 type GeneratorViewProps<T> = {
   showInput?: boolean;
@@ -65,6 +65,8 @@ const GeneratorView = <T,>({
   const { requirements, setRequirements } = useRequirementContext();
   const { epics, setEpics } = useEpicContext();
   const { userStories, setUserStories } = useUserStoryContext();
+  const userFriendlyError = error ? getUserFriendlyErrorMessage(error) : null;
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const getAvailableRequirements = () => {
     return items.map((item: any) => ({
@@ -82,6 +84,32 @@ const GeneratorView = <T,>({
   useEffect(() => {
     setCurrentTab(pathname);
   }, [pathname]);
+
+
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.innerHTML = `
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes fadeOut {
+        from { opacity: 1; transform: translateY(0); }
+        to { opacity: 0; transform: translateY(-10px); }
+      }
+      .animate-fadeIn {
+        animation: fadeIn 0.3s ease-in-out forwards;
+      }
+      .animate-fadeOut {
+        animation: fadeOut 0.3s ease-in-out forwards;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []); 
 
   return (
     <div className="min-h-screen bg-[#EBE5EB]/30 px-4 py-10">
@@ -122,7 +150,6 @@ const GeneratorView = <T,>({
           </div>
           
           <div className={input.actions}>
-            {error && <p className="text-xs text-red-600 font-medium mb-2">{error}</p>}
             <div className="flex gap-4 w-full">
               <button 
                 className={input.generateButton} 
@@ -161,8 +188,24 @@ const GeneratorView = <T,>({
               </div>
             </div>
 
-              <div className={gen.list}>   
-              {items.length > 0 ? (
+            <div className={gen.list}>   
+              {userFriendlyError ? (
+                <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                  <div className="bg-red-50 rounded-lg p-4 mb-4 max-w-md">
+                    <div className="flex items-center mb-2">
+                      <AlertTriangle className="w-5 h-5 text-red-600 mr-2" />
+                      <span className="font-medium text-red-600">Error</span>
+                    </div>
+                    <p className="text-red-700">{userFriendlyError}</p>
+                  </div>
+                  <button 
+                    onClick={onGenerate}
+                    className="mt-4 px-4 py-2 bg-[#4A2B4A] text-white rounded-md hover:bg-[#3a213a] transition-colors"
+                  >
+                    Try Again
+                  </button>
+                </div>
+              ) : items.length > 0 ? (
                 items.map(renderItem)
               ) : (
                 <div className="text-center py-15 text-gray-500">
@@ -171,11 +214,9 @@ const GeneratorView = <T,>({
                   : `No ${currentTab.includes('epics') ? 'epics' : 'user stories'} generated yet`}
                 </div>
               )}
-              </div>
-      
-
+            </div>
           </div>
-      
+              
           <div className="flex justify-center mt-1 mb-10 ">
             <button
               onClick={() => setShowAddModal(true)}
@@ -185,11 +226,18 @@ const GeneratorView = <T,>({
             </button>
           </div>
 
+          {saveSuccess && (
+            <div className="fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded shadow-md flex items-center transition-opacity duration-500 animate-fadeIn z-50">
+              <CheckCircle className="w-5 h-5 mr-2" />
+              <span className="font-medium">Successfully saved!</span>
+            </div>
+          )}
+
           <div className={`${gen.actions} w-full grid grid-cols-3 gap-3`}>
             <button 
               className={`${gen.button} w-full flex justify-center items-center gap-2`}
               onClick={onSelectAll}
-              disabled={!isItemSelectable || items.length === 0}
+              disabled={!isItemSelectable || items.length === 0 || !!userFriendlyError}
             >
               <ClipboardList className="w-5 h-5 text-[#4A2B4A]" />
               Select all
@@ -197,8 +245,14 @@ const GeneratorView = <T,>({
 
             <button 
               className={`${gen.button} w-full flex justify-center items-center gap-2`}
-              onClick={onSave}
-              disabled={!isItemSelectable || items.length === 0}
+              onClick={() => {
+                if (onSave) {
+                  onSave();
+                  setSaveSuccess(true);
+                  setTimeout(() => setSaveSuccess(false), 3000);
+                }
+              }}
+              disabled={!isItemSelectable || items.length === 0 || !!userFriendlyError}
             >
               <Download className="w-5 h-5 text-[#4A2B4A]" />
               Save

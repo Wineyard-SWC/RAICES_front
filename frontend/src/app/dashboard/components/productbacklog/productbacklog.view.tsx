@@ -71,7 +71,7 @@ const ProductBacklogPage: React.FC<ProductBacklogViewProps> = ({ projectId, onBa
   return (
     <div>
       {/* Top Section with View Selector */}
-      <div className="flex items-center justify-between mt-4 mb-4">
+      <div className="flex items-center justify-between mb-2">
       {/* Left section for Back button and title */}
         <div className="flex items-center gap-3">
           <h1 className="text-4xl font-bold text-[#1e1e1e]">Product Backlog</h1>

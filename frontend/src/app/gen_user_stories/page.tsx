@@ -18,6 +18,7 @@ export default function GenerateUserStoriesPage() {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [showImportConfirm, setShowImportConfirm] = useState(false);
+  const [showGenerateConfirm, setShowGenerateConfirm] = useState(false);
 
   const {
     epicDescription,
@@ -84,7 +85,9 @@ export default function GenerateUserStoriesPage() {
         inputLabel="Describe your epics"
         inputValue={epicDescription}
         onInputChange={setEpicDescription}
-        onGenerate={handleGenerate}
+        onGenerate={() => {
+          setShowGenerateConfirm(true)
+        }}
         onClear={() => {
           setShowClearConfirm(true)
         }}
@@ -181,6 +184,18 @@ export default function GenerateUserStoriesPage() {
         />
       )}
 
+      {showGenerateConfirm && (
+        <ConfirmDialog
+          open={showGenerateConfirm}
+          title="Generating User Stories"
+          message={`Generating user stories will overwrite the current selection and it will be lost if it is not saved.\nDo you want to continue?`}
+          onCancel={() => setShowGenerateConfirm(false)}
+          onConfirm={async () => {
+            await handleGenerate();
+            setShowGenerateConfirm(false);
+          }}
+        />
+      )}
     </>
   );
 }

@@ -49,6 +49,7 @@ const DashboardMainPage = ({ onNavigateSprintDetails,onNavigateProductBacklog,on
             <DashboardStats onViewSprintDetails={onNavigateSprintDetails} onViewCalendar={onNavigateCalendar}/>
             {/* Tasks Kanban */}
             <TasksKanban tasks={initialTasks} onNavigate={onNavigateProductBacklog} view="dashboard"/>
+            
         </>
     );
 }

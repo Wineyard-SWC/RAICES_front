@@ -13,7 +13,7 @@ const SprintDetailsPage = ({ onBack }: Props) => {
   return (
     <div className="">
         {/* Header + Search Placeholder */}
-        <div className="flex items-center justify-between mt-4 mb-4">
+        <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
                 <h1 className="text-4xl font-bold text-[#1e1e1e]">Sprint Details</h1>
             </div>  
