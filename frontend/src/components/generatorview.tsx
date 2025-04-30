@@ -13,7 +13,7 @@ import ManualUserStoryForm from '@/app/gen_user_stories/components/ManualUserSto
 import { useRequirementContext } from '@/contexts/requirementcontext';
 import { useEpicContext } from '@/contexts/epiccontext';
 import { useUserStoryContext } from '@/contexts/userstorycontext';
-import { ClipboardList, Download, RefreshCcw, AlertTriangle,CircleCheck} from 'lucide-react';
+import { ClipboardList, Download, RefreshCcw, AlertTriangle,CheckCircle} from 'lucide-react';
 import getUserFriendlyErrorMessage from '@/utils/parseFriendlyGenerateErrors';
 
 type GeneratorViewProps<T> = {
