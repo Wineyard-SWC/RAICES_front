@@ -11,8 +11,17 @@ export const useAuth = () => {
   const [error, setError] = useState<string | null>(null);
   const { setUserId } = useUser();
   const router = useRouter();
-
   const API_URL = process.env.NEXT_PUBLIC_API_URL!;
+
+  const firebaseErrorMap: { [key: string]: string } = {
+    'auth/user-not-found': 'No user found with this email address.',
+    'auth/wrong-password': 'Incorrect email or password. Please try again.',
+    'auth/invalid-email': 'Please enter a valid email address.',
+    'auth/user-disabled': 'This account has been disabled. Contact support.',
+    'auth/too-many-requests': 'Too many failed attempts. Please try again later.',
+    'auth/network-request-failed': 'Network error. Please check your connection.',
+    'auth/account-exists-with-different-credential': 'Account already in use in other method'
+  };
 
   const loginWithEmail = async (email: string, password: string) => {
     if (!email || !password) {
@@ -41,7 +50,8 @@ export const useAuth = () => {
       await validateTokenWithBackend(token);
       router.push('/projects');
     } catch (err: any) {
-      setError('Error logging in: ' + err.message);
+      const code = err?.code || ''
+      setError(firebaseErrorMap[code] || err.message || 'Something went wrong. Please try again.')
     } finally {
       setIsLoading(false);
     }
@@ -50,6 +60,7 @@ export const useAuth = () => {
   const loginWithGoogle = async () => {
     setIsLoading(true);
     setError(null);
+
     try {
       const userCredential = await signInWithPopup(auth, googleProvider);
       const token = await userCredential.user.getIdToken();
@@ -61,9 +72,16 @@ export const useAuth = () => {
 
       await validateTokenWithBackend(token);
       router.push('/projects');
-    } catch (err: any) {
-      setError('Error logging in: ' + err.message);
-    } finally {
+    } 
+
+    catch (err: any) 
+    {
+      const code = err?.code || ''
+      setError(firebaseErrorMap[code] || err.message || 'Something went wrong. Please try again.')
+    } 
+
+    finally 
+    {
       setIsLoading(false);
     }
   };
@@ -71,6 +89,7 @@ export const useAuth = () => {
   const loginWithGithub = async () => {
     setIsLoading(true);
     setError(null);
+    
     try {
       const userCredential = await signInWithPopup(auth, githubProvider);
       const token = await userCredential.user.getIdToken();
@@ -81,9 +100,16 @@ export const useAuth = () => {
 
       await validateTokenWithBackend(token);
       router.push('/projects');
-    } catch (err: any) {
-      setError('Error logging in: ' + err.message);
-    } finally {
+    } 
+
+    catch (err: any) 
+    {
+      const code = err?.code || ''
+      setError(firebaseErrorMap[code] || err.message || 'Something went wrong. Please try again.')
+    } 
+
+    finally 
+    {
       setIsLoading(false);
     }
   };
@@ -97,7 +123,9 @@ export const useAuth = () => {
     });
 
     if (!response.ok) {
-      throw new Error(`Server returned error: ${response.status}`);
+      const errorData = await response.json().catch(() => ({}))
+      const errorMessage = errorData?.detail || 'Failed to validate session. Please log in again.'
+      throw new Error(errorMessage)
     }
 
     return response.json();

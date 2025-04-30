@@ -15,7 +15,7 @@ export const useUserStoryEditLogic = (
   const [assigned_epic, setEpicId] = useState(userStory.assigned_epic);
   const [hasChanges, setHasChanges] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [errors, setErrors] = useState<{ title?: string; description?: string }>({});
+  const [errors, setErrors] = useState<{ title?: string; description?: string; acceptance_criteria?: string }>({});
 
   useEffect(() => {
     const original = userStory;
@@ -59,10 +59,11 @@ export const useUserStoryEditLogic = (
   };
 
   const resetFields = () => {
-    setTitle('');
-    setDescription('');
-    setPriority('Medium');
-    setAcceptanceCriteria([]);
+    setTitle(userStory.title);
+    setDescription(userStory.description);
+    setPriority(userStory.priority);
+    setAcceptanceCriteria(userStory.acceptance_criteria);
+    setErrors({})
   };
 
   const handleCancelClose = () => setShowConfirmation(false);
@@ -82,7 +83,7 @@ export const useUserStoryEditLogic = (
     }
 
     if (acceptance_criteria.some(c => !c.trim())) {
-      alert("Please complete or remove empty acceptance criteria");
+      newErrors.acceptance_criteria = 'Acceptance criteria cannot be empty';
       valid = false;
     }
 

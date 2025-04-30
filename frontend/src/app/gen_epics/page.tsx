@@ -18,6 +18,7 @@ export default function GenerateEpicsPage() {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [showImportConfirm, setShowImportConfirm] = useState(false);
+  const [showGenerateConfirm, setShowGenerateConfirm] = useState(false);
 
 
   const {
@@ -74,7 +75,9 @@ export default function GenerateEpicsPage() {
         inputLabel="List your requirements"
         inputValue={reqDescription}
         onInputChange={setReqDescription}
-        onGenerate={handleGenerate}
+        onGenerate={() => {
+          setShowGenerateConfirm(true)
+        }}
         onClear={() => {
           setShowClearConfirm(true)
         }}
@@ -164,6 +167,19 @@ export default function GenerateEpicsPage() {
           onConfirm={async () => {
             await handleImportRequirements();
             setShowImportConfirm(false);
+          }}
+        />
+      )}
+
+      {showGenerateConfirm && (
+        <ConfirmDialog
+          open={showGenerateConfirm}
+          title="Generating Epics"
+          message={`Generating epics will overwrite the current selection and it will be lost if it is not saved.\nDo you want to continue?`}
+          onCancel={() => setShowGenerateConfirm(false)}
+          onConfirm={async () => {
+            await handleGenerate();
+            setShowGenerateConfirm(false);
           }}
         />
       )}

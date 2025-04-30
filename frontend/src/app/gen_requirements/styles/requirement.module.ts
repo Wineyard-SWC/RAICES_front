@@ -8,7 +8,7 @@ export const requirementCardStyles = {
 
 
 export const priorityColors = {
-    High: 'text-red-700',
-    Medium: 'text-yellow-700',
-    Low: 'text-green-700',
+    High: 'text-black',
+    Medium: 'text-black',
+    Low: 'text-black',
   };

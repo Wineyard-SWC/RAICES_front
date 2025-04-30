@@ -1,5 +1,5 @@
 export const dashboardStatsStyles = {
-    container: "grid grid-cols-1 md:grid-cols-3 gap-6 mb-6",
+    container: "grid grid-cols-1 md:grid-cols-3 gap-6 mt-2 mb-6",
   
     button: "w-full bg-[#4a2b5c] hover:bg-[#3a2248]",
   

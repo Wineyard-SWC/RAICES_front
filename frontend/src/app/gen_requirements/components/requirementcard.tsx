@@ -56,10 +56,10 @@ const RequirementCard = ({
         {/* Edit or Select indicator */}
         <div className="absolute top-3 right-3 flex items-center gap-2">
           
-          <span className={`text-xs px-2 py-1 rounded-full ${
-            priority === 'High' ? 'bg-red-100 text-red-800' :
-            priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
-            'bg-green-100 text-green-800'
+          <span className={`text-sm px-2 py-1 rounded-full ${
+            priority === 'High' ? 'bg-[#C29BB3] text-black' :
+            priority === 'Medium' ? 'bg-[#EBD8E4] text-black' :
+            'bg-[#E6EDF0] text-black'
           }`}>
             {priority}
           </span>
