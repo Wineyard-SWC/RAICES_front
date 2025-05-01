@@ -122,7 +122,7 @@ export default function ProjectCard({
       <div
         onClick={handleCardClick}
         
-        className={`relative bg-white rounded-md shadow-md p-4 cursor-pointer transition-transform hover:scale-[1.02] w-full h-[480px] flex flex-col justify-between ${cardStyles.wrapper}`}
+        className={`relative bg-white rounded-md shadow-md p-4 cursor-pointer transition-transform hover:scale-[1.02] w-full min-h-[480px] flex flex-col justify-between ${cardStyles.wrapper}`}
       >
         <div className="flex flex-col flex-grow">
           <div className={cardStyles.header}>

@@ -1,7 +1,12 @@
-import { Task } from './task';
+import { BasicTask} from './task';
+import { UserStory } from './userstory';
+
+export type TaskOrStory = BasicTask | UserStory
 
 export interface TaskColumns {
-  inProgress: Task[]
-  inReview: Task[]
-  completed: Task[]
+  backlog: TaskOrStory[]
+  todo: TaskOrStory[]
+  inprogress: TaskOrStory[]
+  inreview: TaskOrStory[]
+  done: TaskOrStory[]
 }

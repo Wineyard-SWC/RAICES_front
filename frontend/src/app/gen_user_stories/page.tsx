@@ -98,7 +98,6 @@ export default function GenerateUserStoriesPage() {
         error={error}
         items={allItems}
         renderItem={([epicId, stories]) => (
-          <>
             <EpicUserStoryGroup
               key={epicId}
               id={epicId}
@@ -110,8 +109,6 @@ export default function GenerateUserStoriesPage() {
               availableEpics={allEpicOptions}
               onDelete={handleDeleteStory}
             />
-            
-          </>
         )}
         
         renderLeftContent={() => (

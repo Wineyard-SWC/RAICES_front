@@ -1,7 +1,8 @@
-import { UserStory } from "@/types/userstory";
+import { UserStory, comments } from "@/types/userstory";
 import { v4 as uuidv4 } from 'uuid';
 
 const apiURL = process.env.NEXT_PUBLIC_API_URL!;
+const Comments : comments[] = [];
 
 export async function getProjectUserStories(projectId: string): Promise<UserStory[]> {
   const response = await fetch(apiURL + `/projects/${projectId}/userstories`, {
@@ -28,10 +29,11 @@ export async function getProjectUserStories(projectId: string): Promise<UserStor
       priority: s.priority,
       projectRef: s.projectRef,
       acceptanceCriteria: s.acceptanceCriteria || [], 
-      comments: s.comments || [], 
+      comments: s.comments || Comments, 
       lastUpdated: s.lastUpdated, 
       points: s.points || 0, 
       status: s.status, 
+      status_khanban: s.status_khaban || 'Backlog'
     }))
     .sort((a: any, b: any) => a.idTitle.localeCompare(b.idTitle));
 }

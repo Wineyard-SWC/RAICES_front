@@ -98,10 +98,10 @@ const GeneratorView = <T,>({
         to { opacity: 0; transform: translateY(-10px); }
       }
       .animate-fadeIn {
-        animation: fadeIn 0.3s ease-in-out forwards;
+        animation: fadeIn 1s ease-in-out forwards;
       }
       .animate-fadeOut {
-        animation: fadeOut 0.3s ease-in-out forwards;
+        animation: fadeOut 1s ease-in-out forwards;
       }
     `;
     document.head.appendChild(style);
