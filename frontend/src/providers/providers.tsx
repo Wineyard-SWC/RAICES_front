@@ -1,42 +1,49 @@
-import { ReactNode } from 'react';
-import { UserProvider } from '@/contexts/usercontext';
-import { RequirementProvider } from "@/contexts/requirementcontext";
-import { EpicProvider } from "@/contexts/epiccontext";
-import { UserStoryProvider } from "@/contexts/userstorycontext";
-import { ProjectProvider } from "@/contexts/projectcontext";
-import { SessionProvider } from "@/contexts/sessioncontext";
-import { SelectedRequirementProvider } from "@/contexts/selectedrequirements";
-import { SelectedEpicProvider } from "@/contexts/selectedepics";
-import { SelectedUserStoriesProvider } from "@/contexts/selecteduserstories";
-import { LanguageProvider } from '@/contexts/languagecontext';
+import type React from "react"
+import type { ReactNode } from "react"
+import { UserProvider } from "@/contexts/usercontext"
+import { RequirementProvider } from "@/contexts/requirementcontext"
+import { EpicProvider } from "@/contexts/epiccontext"
+import { UserStoryProvider } from "@/contexts/userstorycontext"
+import { ProjectProvider } from "@/contexts/projectcontext"
+import { SessionProvider } from "@/contexts/sessioncontext"
+import { SelectedRequirementProvider } from "@/contexts/selectedrequirements"
+import { SelectedEpicProvider } from "@/contexts/selectedepics"
+import { SelectedUserStoriesProvider } from "@/contexts/selecteduserstories"
+import { LanguageProvider } from "@/contexts/languagecontext"
+import { TaskProvider } from "@/contexts/taskcontext"
+import { SprintProvider } from "@/contexts/sprintcontext"
 
 interface ProvidersProps {
-  children: ReactNode;
+  children: ReactNode
 }
 
-export function AllProviders({ children }: { children: ReactNode }) {
+export function AllProviders({ children }: { children: React.ReactNode }) {
   return (
-    <RequirementProvider>
-      <EpicProvider>
-        <UserStoryProvider>
-          <ProjectProvider>
-            <SessionProvider>
-              <SelectedRequirementProvider>
-                <SelectedEpicProvider>
-                  <SelectedUserStoriesProvider>
-                    <UserProvider>
-                      <LanguageProvider>
-                        {children}
-                        <div id="modal-root" />
-                      </LanguageProvider>
-                    </UserProvider>
-                  </SelectedUserStoriesProvider>
-                </SelectedEpicProvider>
-              </SelectedRequirementProvider>
-            </SessionProvider>
-          </ProjectProvider>
-          </UserStoryProvider>
-        </EpicProvider>
-    </RequirementProvider>
-  );
+    <SessionProvider>
+      <UserProvider>
+        <ProjectProvider>
+          <RequirementProvider>
+            <EpicProvider>
+              <UserStoryProvider>
+                <TaskProvider>
+                  <SprintProvider>        
+                    <SelectedRequirementProvider>
+                      <SelectedEpicProvider>
+                        <SelectedUserStoriesProvider>
+                          <LanguageProvider>
+                            {children}
+                            <div id="modal-root" />
+                          </LanguageProvider>
+                        </SelectedUserStoriesProvider>
+                      </SelectedEpicProvider>
+                    </SelectedRequirementProvider>
+                  </SprintProvider>     
+                </TaskProvider>
+              </UserStoryProvider>
+            </EpicProvider>
+          </RequirementProvider>
+        </ProjectProvider>
+      </UserProvider>
+    </SessionProvider>
+  )
 }

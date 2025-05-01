@@ -15,7 +15,7 @@ export interface UserStory {
     description: string;
     priority: 'High' | 'Medium' | 'Low';
     points: number;
-    acceptance_criteria: string[];
+    acceptanceCriteria: string[];
     selected?: boolean
     comments?: comments[];
     status_khanban?: 'Backlog'|'In Progress'|'In Review'|'To Do'|'Done'

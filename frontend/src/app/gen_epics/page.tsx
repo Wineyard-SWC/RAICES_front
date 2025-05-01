@@ -5,7 +5,7 @@ import { Layers } from "lucide-react";
 import GeneratorView from '@/components/generatorview';
 import EpicCard from './components/epiccard';
 import RequirementCard from '../gen_requirements/components/requirementcard';
-import LoadingScreen from '@/components/loading';
+import LoadingScreen from '@/components/animations/loading';
 import Navbar from '@/components/NavBar';
 import { projectInputStyles as input } from '../gen_requirements/styles/projectinput.module';
 import { useGenerateEpicsLogic } from './hooks/useGenerateEpicLogic';

@@ -1,4 +1,4 @@
-'use client'
+"use client"
 
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
@@ -55,12 +55,14 @@ const GeneratorView = <T,>({
   renderLeftContent,
   onSelectAll,
   isItemSelectable = true,
-  onSave
+  onSave,
+  onNext,
+  nextButtonText,
 }: GeneratorViewProps<T>) => {
-  const pathname = usePathname();
-  const [currentTab, setCurrentTab] = useState(pathname);
-  const isRequirementsView = currentTab === '/gen_requirements';
-  const [showAddModal, setShowAddModal] = useState(false);
+  const pathname = usePathname()
+  const [currentTab, setCurrentTab] = useState(pathname)
+  const isRequirementsView = currentTab === "/gen_requirements"
+  const [showAddModal, setShowAddModal] = useState(false)
 
   const { requirements, setRequirements } = useRequirementContext();
   const { epics, setEpics } = useEpicContext();
@@ -72,18 +74,17 @@ const GeneratorView = <T,>({
     return items.map((item: any) => ({
       idTitle: item.idTitle,
       title: item.title,
-      description: item.description
-    }));
-  };
-  
+      description: item.description,
+    }))
+  }
+
   const getAvailableEpicIds = () => {
-    return items.map((item: any) => item.idTitle);
-  };
-  
+    return items.map((item: any) => item.idTitle)
+  }
 
   useEffect(() => {
-    setCurrentTab(pathname);
-  }, [pathname]);
+    setCurrentTab(pathname)
+  }, [pathname])
 
 
   useEffect(() => {
@@ -114,22 +115,15 @@ const GeneratorView = <T,>({
   return (
     <div className="min-h-screen bg-[#EBE5EB]/30 px-4 py-10">
       <div className="mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-screen-xl min-h-[60vh]">
-      
         {/* Input panel */}
         <div className={`${input.wrapper} flex flex-col justify-between h-full min-h-[60vh]`}>
           <div>
-          <h2 className={input.title}>
-              {typeof inputTitle === 'string' ? (
-                <span>{inputTitle}</span>
-              ) : (
-                inputTitle
-              )}
-          </h2>
-            
-            <FlowTabs currentPath={currentTab} onTabChange={setCurrentTab} isLoading={isLoading}/>
-            
+            <h2 className={input.title}>{typeof inputTitle === "string" ? <span>{inputTitle}</span> : inputTitle}</h2>
+
+            <FlowTabs currentPath={currentTab} onTabChange={setCurrentTab} isLoading={isLoading} />
+
             {renderLeftContent ? (
-              renderLeftContent() 
+              renderLeftContent()
             ) : showInput ? (
               <>
                 <label className={input.label}>Project's Description</label>
@@ -137,29 +131,28 @@ const GeneratorView = <T,>({
                   className={`${input.textarea} overflow-hidden`}
                   value={inputValue}
                   placeholder="Describe your project goals, target users, key features and any specific requirements you already know..."
-                  onChange={(e) =>{
-                     onInputChange?.(e.target.value);
-                     const textarea = e.target;
-                      textarea.style.height = 'auto'; 
-                      textarea.style.height = `${textarea.scrollHeight}px`
-                    }}
-                    rows={1}
+                  onChange={(e) => {
+                    onInputChange?.(e.target.value)
+                    const textarea = e.target
+                    textarea.style.height = "auto"
+                    textarea.style.height = `${textarea.scrollHeight}px`
+                  }}
+                  rows={1}
                 />
               </>
             ) : null}
           </div>
-          
+
           <div className={input.actions}>
             <div className="flex gap-4 w-full">
-              <button 
-                className={input.generateButton} 
-                onClick={onGenerate} 
-                disabled={isLoading}
-              >
-                {isLoading ? 'Generating...' : `Generate ${isRequirementsView ? 'Requirements' : currentTab.includes('epics') ? 'Epics' : 'User Stories'}`}
+              <button className={input.generateButton} onClick={onGenerate} disabled={isLoading}>
+                {isLoading
+                  ? "Generating..."
+                  : `Generate ${isRequirementsView ? "Requirements" : currentTab.includes("epics") ? "Epics" : "User Stories"}`}
               </button>
-              <button className={input.clearButton} onClick={onClear} disabled={isLoading}
-              >Clear</button>
+              <button className={input.clearButton} onClick={onClear} disabled={isLoading}>
+                Clear
+              </button>
             </div>
           </div>
         </div>
@@ -169,17 +162,20 @@ const GeneratorView = <T,>({
           <div>
             <div className={gen.header}>
               <h2 className={gen.title}>
-                {isRequirementsView ? 'Generated Requirements' : 
-                 currentTab.includes('epics') ? 'Generated Epics' : 'Generated User Stories'}
+                {isRequirementsView
+                  ? "Generated Requirements"
+                  : currentTab.includes("epics")
+                    ? "Generated Epics"
+                    : "Generated User Stories"}
               </h2>
               <div className={gen.viewToggle}>
-                <button 
+                <button
                   className={!isEditMode ? gen.viewActive : gen.viewInactive}
                   onClick={() => !isEditMode || onToggleEdit()}
                 >
                   List View
                 </button>
-                <button 
+                <button
                   className={isEditMode ? gen.viewActive : gen.viewInactive}
                   onClick={() => isEditMode || onToggleEdit()}
                 >
@@ -209,20 +205,20 @@ const GeneratorView = <T,>({
                 items.map(renderItem)
               ) : (
                 <div className="text-center py-15 text-gray-500">
-                {isRequirementsView 
-                  ? "Enter your project description and click Generate to create requirements"
-                  : `No ${currentTab.includes('epics') ? 'epics' : 'user stories'} generated yet`}
+                  {isRequirementsView
+                    ? "Enter your project description and click Generate to create requirements"
+                    : `No ${currentTab.includes("epics") ? "epics" : "user stories"} generated yet`}
                 </div>
               )}
             </div>
           </div>
-              
+
           <div className="flex justify-center mt-1 mb-10 ">
             <button
               onClick={() => setShowAddModal(true)}
               className="text-m text-[#4A2B4A] underline hover:text-[#2d1a2d]"
             >
-              {!isEditMode ? '' : '+ Add manually'} 
+              {!isEditMode ? "" : "+ Add manually"}
             </button>
           </div>
 
@@ -234,7 +230,7 @@ const GeneratorView = <T,>({
           )}
 
           <div className={`${gen.actions} w-full grid grid-cols-3 gap-3`}>
-            <button 
+            <button
               className={`${gen.button} w-full flex justify-center items-center gap-2`}
               onClick={onSelectAll}
               disabled={!isItemSelectable || items.length === 0 || !!userFriendlyError}
@@ -243,7 +239,7 @@ const GeneratorView = <T,>({
               Select all
             </button>
 
-            <button 
+            <button
               className={`${gen.button} w-full flex justify-center items-center gap-2`}
               onClick={() => {
                 if (onSave) {
@@ -258,7 +254,7 @@ const GeneratorView = <T,>({
               Save
             </button>
 
-            <button 
+            <button
               className={`${gen.button} w-full flex justify-center items-center gap-2`}
               onClick={onGenerate}
               disabled={isLoading}
@@ -267,40 +263,34 @@ const GeneratorView = <T,>({
               Regenerate
             </button>
           </div>
-
         </div>
       </div>
-        <AddManualModal
+      <AddManualModal
         open={showAddModal}
         onClose={() => setShowAddModal(false)}
         onAdd={(item) => {
           if (isRequirementsView) {
-            setRequirements((prev: any) => [...prev, item as T]);
-          } else if (currentTab.includes('epics')) {
-            setEpics((prev: any) => [...prev, item as T]);
+            setRequirements((prev: any) => [...prev, item as T])
+          } else if (currentTab.includes("epics")) {
+            setEpics((prev: any) => [...prev, item as T])
           } else {
-            setUserStories((prev: any) => [...prev, item as T]);
-          };
-          setShowAddModal(false);
+            setUserStories((prev: any) => [...prev, item as T])
+          }
+          setShowAddModal(false)
         }}
         renderForm={(onSubmit, onCancel) => {
           const nextId = (() => {
-            if (isRequirementsView) return requirements.length + 1;
-            else if (currentTab.includes('epics')) return epics.length + 1;
-            else if (!currentTab.includes('epics')) return userStories.length + 1;
-            return 1;
-          })();
+            if (isRequirementsView) return requirements.length + 1
+            else if (currentTab.includes("epics")) return epics.length + 1
+            else if (!currentTab.includes("epics")) return userStories.length + 1
+            return 1
+          })()
 
           if (isRequirementsView) {
-            return (
-              <ManualRequirementForm
-                onSubmit={onSubmit}
-                onCancel={onCancel}
-              />
-            );
+            return <ManualRequirementForm onSubmit={onSubmit} onCancel={onCancel} />
           }
 
-          if (currentTab.includes('epics')) {
+          if (currentTab.includes("epics")) {
             return (
               <ManualEpicForm
                 onSubmit={onSubmit}
@@ -313,33 +303,29 @@ const GeneratorView = <T,>({
                   uuid: r.uuid,
                 }))}
               />
-            );
+            )
           }
 
-          if (!currentTab.includes('epics')) {
+          if (!currentTab.includes("epics")) {
             return (
               <ManualUserStoryForm
                 onSubmit={onSubmit}
                 onCancel={onCancel}
                 nextId={nextId}
-                availableEpics={epics.map(e => ({
+                availableEpics={epics.map((e) => ({
                   uuid: e.uuid,
                   idTitle: e.idTitle,
-                  title: e.title
+                  title: e.title,
                 }))}
               />
-            );
+            )
           }
 
-          return (
-            <div>No form available</div>
-          );        
+          return <div>No form available</div>
         }}
       />
-  
-
     </div>
-  );
-};
+  )
+}
 
-export default GeneratorView;
+export default GeneratorView
