@@ -7,7 +7,7 @@ import GeneratorView from '@/components/generatorview';
 import { epicInputStyles as input } from "./styles/epicinput.module";
 import { projectInputStyles as inputproject } from '../gen_requirements/styles/projectinput.module';
 import EpicCard from '../gen_epics/components/epiccard';
-import LoadingScreen from '@/components/loading';
+import LoadingScreen from '@/components/animations/loading';
 import Navbar from '@/components/NavBar';
 import { useGenerateUserStoriesLogic } from './hooks/useGenerateUserStoriesLogic';
 import { UserStory } from '@/types/userstory';
