@@ -1,22 +1,23 @@
-'use client';
+"use client"
 
-import { useState } from 'react';
-import { Book } from "lucide-react";
-import EpicUserStoryGroup from './components/epicwithuserstoriescard';
-import GeneratorView from '@/components/generatorview';
-import { epicInputStyles as input } from "./styles/epicinput.module";
-import { projectInputStyles as inputproject } from '../gen_requirements/styles/projectinput.module';
-import EpicCard from '../gen_epics/components/epiccard';
-import LoadingScreen from '@/components/loading';
-import Navbar from '@/components/NavBar';
-import { useGenerateUserStoriesLogic } from './hooks/useGenerateUserStoriesLogic';
-import { UserStory } from '@/types/userstory';
-import ConfirmDialog from '@/components/confimDialog';
+import { useState } from "react"
+import { Book } from "lucide-react"
+import EpicUserStoryGroup from "./components/epicwithuserstoriescard"
+import GeneratorView from "@/components/generatorview"
+import { projectInputStyles as inputproject } from "../gen_requirements/styles/projectinput.module"
+import EpicCard from "../gen_epics/components/epiccard"
+import LoadingScreen from "@/components/animations/loading"
+import Navbar from "@/components/NavBar"
+import { useGenerateUserStoriesLogic } from "./hooks/useGenerateUserStoriesLogic"
+import type { UserStory } from "@/types/userstory"
+import ConfirmDialog from "@/components/confimDialog"
+import { useRouter } from "next/navigation"
 
 export default function GenerateUserStoriesPage() {
-  const [showClearConfirm, setShowClearConfirm] = useState(false);
-  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
-  const [showImportConfirm, setShowImportConfirm] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false)
+  const [showImportConfirm, setShowImportConfirm] = useState(false)
+  const [showTaskGenConfirm, setShowTaskGenConfirm] = useState(false)
 
   const {
     epicDescription,
@@ -36,26 +37,25 @@ export default function GenerateUserStoriesPage() {
     groupedByEpic,
     allEpicOptions,
     error,
-    isLoading
-  } = useGenerateUserStoriesLogic();
-  
-  const unassignedTuple: [string, UserStory[]] | null = userStories.some(
-    us => us.assigned_epic === 'UNASSIGNED'
-  )
-    ? ['UNASSIGNED', userStories.filter(us => us.assigned_epic === 'UNASSIGNED')]
-    : null;
-  
+    isLoading,
+  } = useGenerateUserStoriesLogic()
+
+  const unassignedTuple: [string, UserStory[]] | null = userStories.some((us) => us.assigned_epic === "UNASSIGNED")
+    ? ["UNASSIGNED", userStories.filter((us) => us.assigned_epic === "UNASSIGNED")]
+    : null
+
   const allItems: [string, UserStory[]][] = [
     ...Object.entries(groupedByEpic),
-    ...(unassignedTuple ? [unassignedTuple] : [])
-  ];
+    ...(unassignedTuple ? [unassignedTuple] : []),
+  ]
+
+  const router = useRouter()
 
   return (
     <>
       <LoadingScreen isLoading={isLoading} generationType="userStories" />
-      
+
       <Navbar projectSelected={true} />
-      
 
       <GeneratorView
         inputTitle={
@@ -83,33 +83,31 @@ export default function GenerateUserStoriesPage() {
               key={epicId}
               id={epicId}
               uuid={epicId}
-              idTitle={epicId === 'UNASSIGNED' ? 'Unassigned' : epicId}    
+              idTitle={epicId === "UNASSIGNED" ? "Unassigned" : epicId}
               userStories={stories ?? []}
               editMode={editMode}
               onUpdate={handleUpdateStory}
               availableEpics={allEpicOptions}
               onDelete={handleDeleteStory}
             />
-            
           </>
         )}
-        
         renderLeftContent={() => (
           <div>
             <div className="flex items-baseline justify-between">
               <label className={inputproject.label}>Selected Epics</label>
-              <button 
-              className="text-[#4A2B4A] text-sm font-medium hover:underline"
-              onClick={() => setShowImportConfirm(true)}
+              <button
+                className="text-[#4A2B4A] text-sm font-medium hover:underline"
+                onClick={() => setShowImportConfirm(true)}
               >
-              Import from project's epics
-            </button>
+                Import from project's epics
+              </button>
             </div>
             <div className="space-y-3 max-h-[60vh] overflow-y-auto">
               {selectedEpics.map((epic) => (
                 <EpicCard
                   key={epic.uuid}
-                  isSelected = {selectedEpicIds.includes(epic.uuid)}
+                  isSelected={selectedEpicIds.includes(epic.uuid)}
                   {...epic}
                   editMode={false}
                   onUpdate={() => {}}
@@ -118,10 +116,11 @@ export default function GenerateUserStoriesPage() {
               ))}
             </div>
           </div>
-          
         )}
         onSelectAll={handleSelectAll}
         onSave={() => setShowSaveConfirm(true)}
+        onNext={() => setShowTaskGenConfirm(true)}
+        nextButtonText="Generate Tasks"
       />
 
       {showClearConfirm && (
@@ -131,10 +130,10 @@ export default function GenerateUserStoriesPage() {
           message={`Are you sure you want to clear the user stories and epics?\nThis will reset all your progress in this and previous sections.`}
           onCancel={() => setShowClearConfirm(false)}
           onConfirm={() => {
-            handleClear();
-            setShowClearConfirm(false);
+            handleClear()
+            setShowClearConfirm(false)
           }}
-      />
+        />
       )}
 
       {showSaveConfirm && (
@@ -144,12 +143,11 @@ export default function GenerateUserStoriesPage() {
           message={`The stories you didn't select will not be included.\nYou can still access them later as part of the archived project.`}
           onCancel={() => setShowSaveConfirm(false)}
           onConfirm={async () => {
-            await handleSave();
-            setShowSaveConfirm(false);
+            await handleSave()
+            setShowSaveConfirm(false)
           }}
         />
       )}
-
 
       {showImportConfirm && (
         <ConfirmDialog
@@ -158,12 +156,24 @@ export default function GenerateUserStoriesPage() {
           message={`Importing from the database will overwrite the current epics.\nAre you sure you want to continue?`}
           onCancel={() => setShowImportConfirm(false)}
           onConfirm={async () => {
-            await handleImportEpics();
-            setShowImportConfirm(false);
+            await handleImportEpics()
+            setShowImportConfirm(false)
           }}
         />
       )}
 
+      {showTaskGenConfirm && (
+        <ConfirmDialog
+          open={showTaskGenConfirm}
+          title="Generate Tasks"
+          message={`Are you sure you want to proceed to task generation?\nYou can still modify your user stories later.`}
+          onCancel={() => setShowTaskGenConfirm(false)}
+          onConfirm={() => {
+            router.push(`/gen_tasks?projectId=${localStorage.getItem("currentProjectId")}`)
+            setShowTaskGenConfirm(false)
+          }}
+        />
+      )}
     </>
-  );
+  )
 }

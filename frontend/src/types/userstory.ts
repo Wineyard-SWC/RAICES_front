@@ -7,7 +7,7 @@ export interface UserStory {
     description: string;
     priority: 'High' | 'Medium' | 'Low';
     points: number;
-    acceptance_criteria: string[];
+    acceptanceCriteria: string[];
     selected?: boolean
 };
 

@@ -4,6 +4,10 @@ import { TaskColumns } from "@/types/taskkanban"
 import Navbar from "@/components/NavBar"
 import DashboardStats from "./components/dashboardstats"
 import { TasksKanban } from "./components/taskskanban"
+import { AddTeamMemberCard } from "./components/SprintPlanning/addteammembercard"
+import { TeamMembersSection } from "./components/SprintPlanning/teammemberssection"
+import MetricCard from "./components/metriccard"
+import { CardStatsWidget } from "./components/cardstatswidget"
 
 export default function DashboardPage() {
   // Initial tasks data
@@ -44,10 +48,13 @@ export default function DashboardPage() {
       <Navbar projectSelected={true} />
       <main className="bg-[#f5f0f1] min-h-screen py-6">
         <div className="container mx-auto px-4">
+          {/* <TeamMembersSection></TeamMembersSection> */}
+          
           <DashboardStats/>
-
-          {/* Tasks Kanban */}
+          
+          
           <TasksKanban tasks={initialTasks} />
+         
         </div>
       </main>
     </>
