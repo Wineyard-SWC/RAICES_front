@@ -1,7 +1,7 @@
 'use client';
 
 
-import LoadingScreen from '@/components/loading';
+import LoadingScreen from '@/components/animations/loading';
 import { FileText } from "lucide-react";
 import Navbar from '@/components/NavBar';
 import RequirementCard from './components/requirementcard';

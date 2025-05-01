@@ -2,6 +2,14 @@
 
 import { useState, useEffect } from "react"
 import Navbar from "@/components/NavBar"
+
+import DashboardStats from "./components/dashboardstats"
+import { TasksKanban } from "./components/taskskanban"
+import { AddTeamMemberCard } from "./components/SprintPlanning/addteammembercard"
+import { TeamMembersSection } from "./components/SprintPlanning/teammemberssection"
+import MetricCard from "./components/metriccard"
+import { CardStatsWidget } from "./components/cardstatswidget"
+
 import SprintDetailsPage from "./components/sprintdetails/sprintdetails.view"
 import DashboardMainPage from "./components/dashboard/dashboard.view"
 import ProductBacklogPage from "./components/productbacklog/productbacklog.view"

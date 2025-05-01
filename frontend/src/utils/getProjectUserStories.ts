@@ -1,37 +1,16 @@
-import { UserStory } from "@/types/userstory";
-import { v4 as uuidv4 } from 'uuid';
+// utils/getProjectUserStories.ts
+import type { UserStory } from "@/types/userstory"
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || ""
 
-const apiURL = process.env.NEXT_PUBLIC_API_URL!;
-
-export async function getProjectUserStories(projectId: string): Promise<UserStory[]> {
-  const response = await fetch(apiURL + `/projects/${projectId}/userstories`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error("Error while obtaining the userstories of the project");
+export const getProjectUserStories = async (
+  projectId: string
+): Promise<UserStory[]> => {
+  const res = await fetch(`${API_BASE}/projects/${projectId}/userstories`)
+  if (!res.ok) {
+    // lee el body como texto para tener el mensaje de error
+    const text = await res.text()
+    throw new Error(text || "Failed to fetch user stories")
   }
-
-  const data = await response.json();
-
-  return data
-    .map((s: any) => ({
-      id: s.id,
-      uuid: s.uuid || uuidv4(),
-      idTitle: s.idTitle,
-      title: s.title,
-      description: s.description,
-      epicRef: s.epicRef,
-      priority: s.priority,
-      projectRef: s.projectRef,
-      acceptanceCriteria: s.acceptanceCriteria || [], 
-      comments: s.comments || [], 
-      lastUpdated: s.lastUpdated, 
-      points: s.points || 0, 
-      status: s.status, 
-    }))
-    .sort((a: any, b: any) => a.idTitle.localeCompare(b.idTitle));
+  return (await res.json()) as UserStory[]
 }
+
