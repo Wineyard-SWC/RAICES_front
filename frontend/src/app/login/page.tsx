@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Eye, EyeOff } from "lucide-react"
 import Image from "next/image"
 import { useAuth } from "@/hooks/useAuth"
+import parseFriendlyError from "@/utils/parseFriendlyLoginError"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -51,7 +52,7 @@ export default function LoginPage() {
 
           {error && (
             <div className="rounded-md bg-red-50 p-4 text-sm text-red-500">
-              {error}
+              {parseFriendlyError(error)}
             </div>
           )}
 

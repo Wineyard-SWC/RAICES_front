@@ -41,6 +41,7 @@ export const useRequirementEditLogic = (
     setDescription(requirement.description);
     setPriority(requirement.priority);
     setCategory(requirement.idTitle.includes('-NF-') ? 'No Funcional' : 'Funcional');
+    setErrors({});
   };
 
   const validateForm = () => {

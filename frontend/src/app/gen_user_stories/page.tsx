@@ -1,23 +1,24 @@
 "use client"
 
-import { useState } from "react"
-import { Book } from "lucide-react"
-import EpicUserStoryGroup from "./components/epicwithuserstoriescard"
-import GeneratorView from "@/components/generatorview"
-import { projectInputStyles as inputproject } from "../gen_requirements/styles/projectinput.module"
-import EpicCard from "../gen_epics/components/epiccard"
-import LoadingScreen from "@/components/animations/loading"
-import Navbar from "@/components/NavBar"
-import { useGenerateUserStoriesLogic } from "./hooks/useGenerateUserStoriesLogic"
-import type { UserStory } from "@/types/userstory"
-import ConfirmDialog from "@/components/confimDialog"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from 'react';
+import { Book } from "lucide-react";
+import EpicUserStoryGroup from './components/epicwithuserstoriescard';
+import GeneratorView from '@/components/generatorview';
+import { epicInputStyles as input } from "./styles/epicinput.module";
+import { projectInputStyles as inputproject } from '../gen_requirements/styles/projectinput.module';
+import EpicCard from '../gen_epics/components/epiccard';
+import LoadingScreen from '@/components/animations/loading';
+import Navbar from '@/components/NavBar';
+import { useGenerateUserStoriesLogic } from './hooks/useGenerateUserStoriesLogic';
+import { UserStory } from '@/types/userstory';
+import ConfirmDialog from '@/components/confimDialog';
+import { useRouter } from 'next/navigation';
 
 export default function GenerateUserStoriesPage() {
-  const [showClearConfirm, setShowClearConfirm] = useState(false)
-  const [showSaveConfirm, setShowSaveConfirm] = useState(false)
-  const [showImportConfirm, setShowImportConfirm] = useState(false)
-  const [showTaskGenConfirm, setShowTaskGenConfirm] = useState(false)
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+  const [showImportConfirm, setShowImportConfirm] = useState(false);
+  const [showGenerateConfirm, setShowGenerateConfirm] = useState(false);
 
   const {
     epicDescription,
@@ -51,6 +52,22 @@ export default function GenerateUserStoriesPage() {
 
   const router = useRouter()
 
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      router.push("/login");
+    } else {
+      setLoading(false);
+    }
+  }, [router]);
+
+  if (loading) {
+    return null; 
+  } 
+
   return (
     <>
       <LoadingScreen isLoading={isLoading} generationType="userStories" />
@@ -67,7 +84,9 @@ export default function GenerateUserStoriesPage() {
         inputLabel="Describe your epics"
         inputValue={epicDescription}
         onInputChange={setEpicDescription}
-        onGenerate={handleGenerate}
+        onGenerate={() => {
+          setShowGenerateConfirm(true)
+        }}
         onClear={() => {
           setShowClearConfirm(true)
         }}
@@ -162,15 +181,15 @@ export default function GenerateUserStoriesPage() {
         />
       )}
 
-      {showTaskGenConfirm && (
+      {showGenerateConfirm && (
         <ConfirmDialog
-          open={showTaskGenConfirm}
-          title="Generate Tasks"
-          message={`Are you sure you want to proceed to task generation?\nYou can still modify your user stories later.`}
-          onCancel={() => setShowTaskGenConfirm(false)}
-          onConfirm={() => {
-            router.push(`/gen_tasks?projectId=${localStorage.getItem("currentProjectId")}`)
-            setShowTaskGenConfirm(false)
+          open={showGenerateConfirm}
+          title="Generating User Stories"
+          message={`Generating user stories will overwrite the current selection and it will be lost if it is not saved.\nDo you want to continue?`}
+          onCancel={() => setShowGenerateConfirm(false)}
+          onConfirm={async () => {
+            await handleGenerate();
+            setShowGenerateConfirm(false);
           }}
         />
       )}

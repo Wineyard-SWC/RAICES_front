@@ -215,6 +215,7 @@ export const useEpicEditLogic = (
     );
     setNewRequirementUuids([]);
     setDeletedRequirementIds([]);
+    setErrors({});
   };
 
   return {

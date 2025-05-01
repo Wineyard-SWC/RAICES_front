@@ -1,7 +1,8 @@
 "use client"
-import { TaskColumns } from "@/types/taskkanban"
 
+import { useState, useEffect } from "react"
 import Navbar from "@/components/NavBar"
+
 import DashboardStats from "./components/dashboardstats"
 import { TasksKanban } from "./components/taskskanban"
 import { AddTeamMemberCard } from "./components/SprintPlanning/addteammembercard"
@@ -9,52 +10,80 @@ import { TeamMembersSection } from "./components/SprintPlanning/teammemberssecti
 import MetricCard from "./components/metriccard"
 import { CardStatsWidget } from "./components/cardstatswidget"
 
-export default function DashboardPage() {
-  // Initial tasks data
-  const initialTasks: TaskColumns = {
-    inProgress: [
-      {
-        id: "1",
-        title: "Implement user authentication",
-        description: "Add email/password and social login options.",
-        date: "2024-03-15",
-        comments: 3,
-        priority: "Low",
-      },
-      {
-        id: "2",
-        title: "Optimize database queries",
-        description: "Improve the efficiency of SQL queries to reduce load times.",
-        date: "2024-03-16",
-        comments: 2,
-        priority: "Medium",
-      },
-    ],
-    inReview: [
-      {
-        id: "3",
-        title: "Fix broken UI on mobile devices",
-        description: "Ensure full compatibility across different screen sizes like mobile screens",
-        date: "2024-03-17",
-        comments: 1,
-        priority: "High",
-      },
-    ],
-    completed: [],
-  }
+import SprintDetailsPage from "./components/sprintdetails/sprintdetails.view"
+import DashboardMainPage from "./components/dashboard/dashboard.view"
+import ProductBacklogPage from "./components/productbacklog/productbacklog.view"
+import CalendarPageView from "./components/sprintcalendar/sprintcalendar.view"
+import { useRouter } from "next/navigation"
 
+export default function DashboardPage() {
+  const [activeView, setActiveView] = useState<"dashboard" | "details" | "planning" | "calendar">("dashboard")
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
+
+  useEffect(() => {
+    const userId = localStorage.getItem("userId")
+    if (!userId) {
+      router.push("/login")
+    } else {
+      setLoading(false) 
+    }
+  }, [router])
+
+  useEffect(() => {
+    const storedProjectId = localStorage.getItem("currentProjectId");
+    if (storedProjectId) {
+      setProjectId(storedProjectId);
+    }
+  }, []);
+
+  if (loading) {
+    return null 
+  }
+  
   return (
     <>
       <Navbar projectSelected={true} />
-      <main className="bg-[#f5f0f1] min-h-screen py-6">
+      <main className="min-h-screen py-10 bg-[#EBE5EB]/30">
         <div className="container mx-auto px-4">
-          {/* <TeamMembersSection></TeamMembersSection> */}
+          {/*---------------------------------------DashboardView-----------------------------------------*/}
+          {activeView === "dashboard" && (
+            <DashboardMainPage 
+            onNavigateSprintDetails={() => setActiveView("details")}
+            onNavigateCalendar={() => setActiveView("calendar")} 
+            onNavigateProductBacklog={() => setActiveView("planning")}
+            />
+          )}
+          {/*---------------------------------------DashboardView-----------------------------------------*/}
+
+          {/*---------------------------------------SprintDetailsView-------------------------------------*/}
+          {activeView === "details" && (
+            <SprintDetailsPage onBack={() => setActiveView("dashboard")} />
+          )}
+          {/*---------------------------------------SprintDetailsView-------------------------------------*/}
           
-          <DashboardStats/>
+          {/*---------------------------------------SprintPlanningView-------------------------------------*/}
+        
+          {/*---------------------------------------SprintPlanningView-------------------------------------*/}
           
+          {/*---------------------------------------SprintCalendarView-------------------------------------*/}
           
-          <TasksKanban tasks={initialTasks} />
-         
+          {/*---------------------------------------SprintCalendarView-------------------------------------*/}
+          {activeView === "calendar" && (
+            <CalendarPageView onBack={() => setActiveView("dashboard")}/>
+          )}
+          {/*---------------------------------------ProductBacklogView-------------------------------------*/}
+          {/* Show ProductBacklogView when "backlog" is active */}
+          {activeView === "planning" && projectId && (
+            <ProductBacklogPage onBack={() => setActiveView("dashboard")} projectId={projectId} />
+          )}
+          {/*---------------------------------------ProductBacklogView-------------------------------------*/}
+          
+          {/*---------------------------------------DetailTaskAssignmentView-------------------------------*/}
+          
+          {/*---------------------------------------DetailTaskAssignmentView-------------------------------*/}
+          
         </div>
       </main>
     </>

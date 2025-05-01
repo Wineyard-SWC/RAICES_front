@@ -15,7 +15,7 @@ import handleDeleteRequirement from './utils/handleDeleteRequirement';
 import { useRequirementsLogic } from './hooks/useRequirementsLogic';
 import { useEpicContext } from '@/contexts/epiccontext';
 import ConfirmDialog from '@/components/confimDialog';
-
+import { useRouter } from 'next/navigation';
 
 export default function RequirementsPage() {
   const { projectDescription, setProjectDescription } = useProjectContext();
@@ -23,6 +23,7 @@ export default function RequirementsPage() {
   const { setEpics} = useEpicContext();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+  const [showGenerateConfirm, setShowGenerateConfirm] = useState(false);
 
 
 
@@ -38,6 +39,21 @@ export default function RequirementsPage() {
     handleClear
   } = useRequirementsLogic({ projectDescription, setProjectDescription });
 
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      router.push("/login");
+    } else {
+      setLoading(false);
+    }
+  }, [router]);
+
+  if (loading) {
+    return null; 
+  }
   
   return (
     <>
@@ -56,7 +72,9 @@ export default function RequirementsPage() {
         inputLabel="Project's Description"
         inputValue={projectDescription}
         onInputChange={setProjectDescription}
-        onGenerate={handleGenerate}
+        onGenerate={() => {
+          setShowGenerateConfirm(true)
+        }}
         onClear={() => {
           setShowClearConfirm(true)
         }}
@@ -90,7 +108,7 @@ export default function RequirementsPage() {
       <ConfirmDialog
         open={showClearConfirm}
         title="Clear Requirements Section"
-        message="Are you sure you want to clear the requirements and description?  This will reset all your progress in this section."
+        message={`Are you sure you want to clear the requirements and description?\nThis will reset all your progress in this section.`}
         onCancel={() => setShowClearConfirm(false)}
         onConfirm={() => {
           handleClear();
@@ -112,7 +130,18 @@ export default function RequirementsPage() {
         />
       )}
 
-
+      {showGenerateConfirm && (
+        <ConfirmDialog
+          open={showGenerateConfirm}
+          title="Generating Requirements"
+          message={`Generating requirements will overwrite the current selection and it will be lost if it is not saved.\nDo you want to continue?`}
+          onCancel={() => setShowGenerateConfirm(false)}
+          onConfirm={async () => {
+            await handleGenerate();
+            setShowGenerateConfirm(false);
+          }}
+        />
+      )}
     </>
 
 
