@@ -24,7 +24,7 @@ export default function BacklogCard({
   comments,
 }: BacklogCardProps) {
   return (
-    <div className="bg-white hover:bg-[#EBE5EB] transition-colors duration-300 ease-in-out  border border-black cursor-pointer' shadow-md rounded-lg p-4 mb-4">
+    <div className="bg-white hover:bg-[#EBE5EB] transition-colors duration-300 ease-in-out  border border-[#D3C7D3] cursor-pointer' shadow-md rounded-lg p-4 mb-4">
       <div className="flex justify-between items-center">
         <div className="flex gap-2">
         <span className={`flex justify-center items-center text-xs font-bold px-3 py-1 rounded ${type === "BUG" ? "bg-red-600 text-white" : "bg-[#4A2B4A] text-white"}`}>

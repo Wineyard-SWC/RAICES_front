@@ -1,8 +1,10 @@
-import { UserStory } from "@/types/userstory";
+import { UserStory, comments} from "@/types/userstory";
 
 const apiURL = process.env.NEXT_PUBLIC_API_URL!
+const Comments: comments[] = []
 
 export async function postUserStories(stories: Omit<UserStory, 'id' | 'selected'>[], projectId: string) {
+  
   const response = await fetch(apiURL+`/projects/${projectId}/userstories/batch`, {
     method: "POST",
     headers: {
@@ -19,7 +21,8 @@ export async function postUserStories(stories: Omit<UserStory, 'id' | 'selected'
         acceptanceCriteria: s.acceptance_criteria,
         epicRef: s.assigned_epic,
         projectRef: projectId,
-        comments: []
+        comments: s.comments || Comments,
+        status_khanban: 'Backlog'
       }))
     ),
   });

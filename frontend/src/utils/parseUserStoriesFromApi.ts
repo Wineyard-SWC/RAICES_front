@@ -13,7 +13,7 @@ export const parseUserStoriesFromAPI = (rawResponse: any): UserStory[] => {
   if (!rawResponse || !Array.isArray(rawResponse.content)) return [];
 
   return rawResponse.content.map((item: any, index: number): UserStory => ({
-    uuid: item.uuid ?? uuidv4(),
+    uuid: item.uuid || uuidv4(),
     id: item.id ?? `${index + 1}`,
     idTitle: item.idTitle ?? (item.id ? item.id : `US-${(index + 1).toString().padStart(3, '0')}`),
     title: item.title ?? '',
