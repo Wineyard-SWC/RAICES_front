@@ -206,7 +206,7 @@ export const TasksKanban = ({onNavigate, view }: TasksKanbanProps) => {
                       <div
                         ref={provided.innerRef}
                         {...provided.droppableProps}
-                        className="bg-gray-100 rounded-md p-4 min-w-[450px] max-w-[450px] flex-shrink-0"
+                        className="bg-gray-100 rounded-md p-4 min-w-[500px] max-w-[500px] flex-shrink-0"
                       >
                         <div className="flex items-center justify-between mb-3">
                           <h3 className="font-medium text-lg text-gray-700">{column.header}</h3>

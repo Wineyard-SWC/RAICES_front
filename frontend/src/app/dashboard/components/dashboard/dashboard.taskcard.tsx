@@ -29,7 +29,7 @@ export const TaskCard = ({ task, columnId, view, usertype, onDelete}: TaskCardPr
   return (
     <div className="hover:bg-[#EBE5EB] cursor-pointer bg-white rounded-md p-4 shadow-sm border border-[#D3C7D3] mb-3 relative">
       <div className="absolute right-2 top-2">
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setMenuOpen(true)}>
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setMenuOpen(!menuOpen)}>
           <MoreVertical className="h-4 w-4" />
         </Button>
         {menuOpen && view !== "dashboard" && (
@@ -37,8 +37,8 @@ export const TaskCard = ({ task, columnId, view, usertype, onDelete}: TaskCardPr
             <button
               className="flex items-center gap-2 w-full px-4 py-2 text-sm text-[#4A2B4A] hover:bg-gray-100"
               onClick={() => {
+                setShowModal(true)
                 setMenuOpen(false)
-                setTimeout(() => setShowModal(true), 0)
               }}
             >
               <Eye className="h-4 w-4" /> View Details
@@ -47,10 +47,8 @@ export const TaskCard = ({ task, columnId, view, usertype, onDelete}: TaskCardPr
               className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
               onClick={() => {
                 setMenuOpen(false)
-                setTimeout(() => {
-                  setItemToDelete({ id: task.id, columnId });
-                  setShowDeleteConfirm(true);
-                }, 0)
+                setItemToDelete({ id: task.id, columnId });
+                setShowDeleteConfirm(true);
               }}
             >
               <Trash className="h-4 w-4" /> Delete
@@ -61,12 +59,7 @@ export const TaskCard = ({ task, columnId, view, usertype, onDelete}: TaskCardPr
           <div className="absolute right-0 mt-2 w-36 bg-white border rounded-md shadow-lg z-20">
             <button
               className="flex items-center gap-2 w-full px-4 py-2 text-sm text-[#4A2B4A] hover:bg-gray-100"
-              onClick={
-                () => {
-                  setMenuOpen(false)
-                  setTimeout(() => setShowModal(true), 0)
-                }
-              }
+              onClick={() => setShowModal(true)}
             >
               <Eye className="h-4 w-4" /> View Details
             </button>
