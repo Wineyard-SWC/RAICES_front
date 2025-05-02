@@ -11,7 +11,7 @@ export const useUserStoryEditLogic = (
   const [title, setTitle] = useState(userStory.title);
   const [description, setDescription] = useState(userStory.description);
   const [priority, setPriority] = useState<UserStory['priority']>(userStory.priority);
-  const [acceptance_criteria, setAcceptanceCriteria] = useState(userStory.acceptance_criteria);
+  const [acceptance_criteria, setAcceptanceCriteria] = useState(userStory.acceptanceCriteria);
   const [assigned_epic, setEpicId] = useState(userStory.assigned_epic);
   const [hasChanges, setHasChanges] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -24,7 +24,7 @@ export const useUserStoryEditLogic = (
       original.title !== current.title ||
       original.description !== current.description ||
       original.priority !== current.priority ||
-      JSON.stringify(original.acceptance_criteria) !== JSON.stringify(current.acceptance_criteria) ||
+      JSON.stringify(original.acceptanceCriteria) !== JSON.stringify(current.acceptance_criteria) ||
       original.assigned_epic !== current.assigned_epic;
 
     setHasChanges(changed);
@@ -62,7 +62,7 @@ export const useUserStoryEditLogic = (
     setTitle(userStory.title);
     setDescription(userStory.description);
     setPriority(userStory.priority);
-    setAcceptanceCriteria(userStory.acceptance_criteria);
+    setAcceptanceCriteria(userStory.acceptanceCriteria);
     setErrors({})
   };
 
@@ -98,7 +98,7 @@ export const useUserStoryEditLogic = (
       title,
       description,
       priority,
-      acceptance_criteria: acceptance_criteria.filter(c => c.trim()),
+      acceptanceCriteria: acceptance_criteria.filter(c => c.trim()),
       assigned_epic,
     });
     onClose();

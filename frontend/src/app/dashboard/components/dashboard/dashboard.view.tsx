@@ -1,27 +1,20 @@
 import DashboardStats from "./dashboard.dashboardstats"
 import { TasksKanban } from "./dashboard.taskskanban"
-import { useProjectTasks } from "@/hooks/useProjectTasks"
-import { useProjectContext } from "@/contexts/projectcontext"
-import { TaskColumns } from "@/types/taskkanban"
+import { useBacklogContext } from "@/contexts/backlogcontext"
 
 type Props = {
-    onNavigateSprintDetails : () => void;
+    onNavigateSprintDetails: () => void;
     onNavigateCalendar?: () => void;
     onNavigateProductBacklog?: () => void;
-    tasks: TaskColumns;
-    refreshTasks: () => void;
-
 }
 
-const DashboardMainPage = ({ onNavigateSprintDetails,onNavigateProductBacklog,onNavigateCalendar,tasks, refreshTasks}: Props) => {
-   
+const DashboardMainPage = ({ onNavigateSprintDetails, onNavigateProductBacklog, onNavigateCalendar }: Props) => {
    return (
         <>
             {/* Dashboard Stats*/}
             <DashboardStats onViewSprintDetails={onNavigateSprintDetails} onViewCalendar={onNavigateCalendar}/>
             {/* Tasks Kanban */}
-            <TasksKanban tasks={tasks} onNavigate={onNavigateProductBacklog} refreshTasks={refreshTasks} view="dashboard"/>
-            
+            <TasksKanban view="dashboard" onNavigate={onNavigateProductBacklog}/>
         </>
     );
 }

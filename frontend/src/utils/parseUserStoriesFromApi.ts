@@ -20,7 +20,7 @@ export const parseUserStoriesFromAPI = (rawResponse: any): UserStory[] => {
     description: item.description ?? '',
     priority: normalizePriority(item.priority),
     points: item.points ?? 0,
-    acceptance_criteria: Array.isArray(item.acceptance_criteria) ? item.acceptance_criteria : [],
+    acceptanceCriteria: Array.isArray(item.acceptance_criteria) ? item.acceptance_criteria : [],
     assigned_epic: item.assigned_epic ?? 'EPIC-###',
   }));
 };
