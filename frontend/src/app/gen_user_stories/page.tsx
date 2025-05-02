@@ -1,4 +1,4 @@
-"use client"
+'use client';
 
 import { useState, useEffect } from 'react';
 import { Book } from "lucide-react";
@@ -38,19 +38,19 @@ export default function GenerateUserStoriesPage() {
     groupedByEpic,
     allEpicOptions,
     error,
-    isLoading,
-  } = useGenerateUserStoriesLogic()
-
-  const unassignedTuple: [string, UserStory[]] | null = userStories.some((us) => us.assigned_epic === "UNASSIGNED")
-    ? ["UNASSIGNED", userStories.filter((us) => us.assigned_epic === "UNASSIGNED")]
-    : null
-
+    isLoading
+  } = useGenerateUserStoriesLogic();
+  
+  const unassignedTuple: [string, UserStory[]] | null = userStories.some(
+    us => us.assigned_epic === 'UNASSIGNED'
+  )
+    ? ['UNASSIGNED', userStories.filter(us => us.assigned_epic === 'UNASSIGNED')]
+    : null;
+  
   const allItems: [string, UserStory[]][] = [
     ...Object.entries(groupedByEpic),
-    ...(unassignedTuple ? [unassignedTuple] : []),
-  ]
-
-  const router = useRouter()
+    ...(unassignedTuple ? [unassignedTuple] : [])
+  ];
 
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -71,8 +71,9 @@ export default function GenerateUserStoriesPage() {
   return (
     <>
       <LoadingScreen isLoading={isLoading} generationType="userStories" />
-
+      
       <Navbar projectSelected={true} />
+      
 
       <GeneratorView
         inputTitle={
@@ -97,36 +98,35 @@ export default function GenerateUserStoriesPage() {
         error={error}
         items={allItems}
         renderItem={([epicId, stories]) => (
-          <>
             <EpicUserStoryGroup
               key={epicId}
               id={epicId}
               uuid={epicId}
-              idTitle={epicId === "UNASSIGNED" ? "Unassigned" : epicId}
+              idTitle={epicId === 'UNASSIGNED' ? 'Unassigned' : epicId}    
               userStories={stories ?? []}
               editMode={editMode}
               onUpdate={handleUpdateStory}
               availableEpics={allEpicOptions}
               onDelete={handleDeleteStory}
             />
-          </>
         )}
+        
         renderLeftContent={() => (
           <div>
             <div className="flex items-baseline justify-between">
               <label className={inputproject.label}>Selected Epics</label>
-              <button
-                className="text-[#4A2B4A] text-sm font-medium hover:underline"
-                onClick={() => setShowImportConfirm(true)}
+              <button 
+              className="text-[#4A2B4A] text-sm font-medium hover:underline"
+              onClick={() => setShowImportConfirm(true)}
               >
-                Import from project's epics
-              </button>
+              Import from project's epics
+            </button>
             </div>
             <div className="space-y-3 max-h-[60vh] overflow-y-auto">
               {selectedEpics.map((epic) => (
                 <EpicCard
                   key={epic.uuid}
-                  isSelected={selectedEpicIds.includes(epic.uuid)}
+                  isSelected = {selectedEpicIds.includes(epic.uuid)}
                   {...epic}
                   editMode={false}
                   onUpdate={() => {}}
@@ -135,11 +135,10 @@ export default function GenerateUserStoriesPage() {
               ))}
             </div>
           </div>
+          
         )}
         onSelectAll={handleSelectAll}
         onSave={() => setShowSaveConfirm(true)}
-        onNext={() => setShowTaskGenConfirm(true)}
-        nextButtonText="Generate Tasks"
       />
 
       {showClearConfirm && (
@@ -149,10 +148,10 @@ export default function GenerateUserStoriesPage() {
           message={`Are you sure you want to clear the user stories and epics?\nThis will reset all your progress in this and previous sections.`}
           onCancel={() => setShowClearConfirm(false)}
           onConfirm={() => {
-            handleClear()
-            setShowClearConfirm(false)
+            handleClear();
+            setShowClearConfirm(false);
           }}
-        />
+      />
       )}
 
       {showSaveConfirm && (
@@ -162,11 +161,12 @@ export default function GenerateUserStoriesPage() {
           message={`The stories you didn't select will not be included.\nYou can still access them later as part of the archived project.`}
           onCancel={() => setShowSaveConfirm(false)}
           onConfirm={async () => {
-            await handleSave()
-            setShowSaveConfirm(false)
+            await handleSave();
+            setShowSaveConfirm(false);
           }}
         />
       )}
+
 
       {showImportConfirm && (
         <ConfirmDialog
@@ -175,8 +175,8 @@ export default function GenerateUserStoriesPage() {
           message={`Importing from the database will overwrite the current epics.\nAre you sure you want to continue?`}
           onCancel={() => setShowImportConfirm(false)}
           onConfirm={async () => {
-            await handleImportEpics()
-            setShowImportConfirm(false)
+            await handleImportEpics();
+            setShowImportConfirm(false);
           }}
         />
       )}
@@ -194,5 +194,5 @@ export default function GenerateUserStoriesPage() {
         />
       )}
     </>
-  )
+  );
 }

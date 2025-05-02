@@ -6,8 +6,8 @@ export interface SprintMember {
   name: string
   role: string
   avatar?: string
-  capacity: number // in hours
-  allocated: number // in hours
+  capacity: number
+  allocated: number
 }
 
 export interface SprintUserStory {

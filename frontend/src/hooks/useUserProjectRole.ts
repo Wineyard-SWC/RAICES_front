@@ -17,7 +17,6 @@ export const useUserProjectRole = (userId: string | null, projectId: string) => 
       setError(null)
 
       try {
-        // Nuevo endpoint: GET /project_users/relation?user_id=XXX&project_id=YYY
         const url = `${API_URL}/project_users/relation?user_id=${userId}&project_id=${projectId}`
         const response = await fetch(url)
 

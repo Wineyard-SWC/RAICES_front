@@ -12,6 +12,7 @@ import { SelectedUserStoriesProvider } from "@/contexts/selecteduserstories"
 import { LanguageProvider } from "@/contexts/languagecontext"
 import { TaskProvider } from "@/contexts/taskcontext"
 import { SprintProvider } from "@/contexts/sprintcontext"
+import { BacklogProvider } from "@/contexts/backlogcontext"
 
 interface ProvidersProps {
   children: ReactNode
@@ -31,8 +32,10 @@ export function AllProviders({ children }: { children: React.ReactNode }) {
                       <SelectedEpicProvider>
                         <SelectedUserStoriesProvider>
                           <LanguageProvider>
-                            {children}
-                            <div id="modal-root" />
+                            <BacklogProvider>
+                              {children}
+                              <div id="modal-root" />
+                            </BacklogProvider>
                           </LanguageProvider>
                         </SelectedUserStoriesProvider>
                       </SelectedEpicProvider>

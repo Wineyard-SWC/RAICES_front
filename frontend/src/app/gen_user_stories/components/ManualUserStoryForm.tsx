@@ -42,7 +42,7 @@ const ManualUserStoryForm = ({ onSubmit, onCancel, nextId, availableEpics }: Pro
       title,
       description,
       priority,
-      acceptance_criteria: criteria,
+      acceptanceCriteria: criteria,
       assigned_epic: epic,
       points: 0,
     });
