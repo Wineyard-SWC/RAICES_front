@@ -60,7 +60,7 @@ export default function GenerateTasksPage() {
   const [showAddTaskModal, setShowAddTaskModal] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
 
-  // Filter tasks
+  // Filtrar tareas
   const filteredTasks = generatedTasks.filter((task) => {
     const matchesSearch =
       !searchTerm ||
@@ -134,12 +134,40 @@ export default function GenerateTasksPage() {
             </div>
           </div>
 
-          {/* Main content */}
+          {/* Contenido principal */}
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Sidebar */}
+            {/* Sidebar de User Stories */}
             <div className="lg:col-span-1">
               <div className="bg-white rounded-xl shadow-sm p-4">
-                <h2 className="text-lg font-semibold text-[#4A2B4D] mb-4">User Stories</h2>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold text-[#4A2B4D]">User Stories</h2>
+                  <button
+                    onClick={() => {
+                      const allSelected = userStories.every(us =>
+                        selectedUserStories.includes(us.uuid)
+                      )
+                      if (allSelected) {
+                        // Deselecciona todas
+                        userStories.forEach(us => {
+                          if (selectedUserStories.includes(us.uuid)) {
+                            toggleSelectUserStory(us.uuid)
+                          }
+                        })
+                      } else {
+                        // Selecciona las que faltan
+                        userStories.forEach(us => {
+                          if (!selectedUserStories.includes(us.uuid)) {
+                            toggleSelectUserStory(us.uuid)
+                          }
+                        })
+                      }
+                    }}
+                    className="text-sm text-[#4A2B4D] hover:underline"
+                  >
+                    Select All
+                  </button>
+                </div>
+
                 {storiesError && <p className="text-red-600">{storiesError}</p>}
                 <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-2">
                   {userStories.map((us) => (
@@ -163,6 +191,7 @@ export default function GenerateTasksPage() {
                 </div>
               </div>
             </div>
+
 
             {/* Tasks area */}
             <div className="lg:col-span-3 bg-white rounded-xl shadow-sm p-4">
@@ -340,9 +369,10 @@ export default function GenerateTasksPage() {
         task={editingTask}
         open
         onClose={() => setEditingTask(null)}
-        onUpdate={(data) => {
-        handleUpdateTask(editingTask.id, data)
-        setEditingTask(null)
+        onUpdate={(taskId, updatedData) => {
+          // Aquí sí recibes BOTH el id y los datos actualizados
+          handleUpdateTask(taskId, updatedData)
+          setEditingTask(null)
         }}
         /*  👇  añade esto */
         userStories={userStories.map((us) => ({ id: us.uuid, title: us.title }))}
