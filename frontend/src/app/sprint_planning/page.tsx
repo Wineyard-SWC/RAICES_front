@@ -202,7 +202,7 @@ export default function SprintPlanningPage() {
   };
 
   /* ui */
-  if (loading) return <LoadingScreen isLoading generationType="sprint" />;
+  //if (loading) return <LoadingScreen isLoading generationType="sprint" />;
   if (error || !sprint) return (
     <>
       <Navbar projectSelected />

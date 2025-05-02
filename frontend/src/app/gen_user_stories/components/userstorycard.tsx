@@ -15,7 +15,7 @@ type Props = Pick<UserStory,
     | 'title'
     | 'description'
     | 'priority'
-    | 'acceptance_criteria'
+    | 'acceptanceCriteria'
     | 'assigned_epic'
     | 'points'
 > & {
@@ -35,7 +35,7 @@ const UserStoryCard = ({
     title,
     description,
     priority,
-    acceptance_criteria,
+    acceptanceCriteria,
     points,
     editMode,
     onUpdate,
@@ -89,7 +89,7 @@ const UserStoryCard = ({
           <div>
             <p className={styles.acceptanceTitle}>Acceptance Criteria:</p>
             <ul className="space-y-1 mt-1">
-              {acceptance_criteria?.map((criterion, index) => (
+              {acceptanceCriteria?.map((criterion, index) => (
                 <li key={index} className={styles.acceptanceItem}>
                   <CheckCircle size={14} className={styles.icon} />
                   <span>{criterion}</span>
@@ -108,7 +108,7 @@ const UserStoryCard = ({
           title,
           description,
           priority,
-          acceptance_criteria,
+          acceptanceCriteria,
           assigned_epic,
           points
         }}

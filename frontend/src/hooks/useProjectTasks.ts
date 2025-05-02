@@ -21,9 +21,10 @@ export const useProjectTasks = (projectId: string | null) => {
 
     setLoading(true);
     try {
+      
       const response = await fetch(API_URL + `/projects/${projectId}/tasks/khanban`);
       const rawTasks: Task[] = await response.json();
-      
+      console.log("rawtasks",rawTasks)
       const grouped: TaskColumns = {
         backlog: [],
         todo: [],

@@ -95,7 +95,7 @@ export const useGenerateUserStoriesLogic = () => {
         description: s.description,
         priority: s.priority,
         points: s.points,
-        acceptance_criteria: s.acceptance_criteria,
+        acceptanceCriteria: s.acceptanceCriteria,
         assigned_epic: s.assigned_epic
       }));
       await postUserStories(cleaned, selectedProject!);

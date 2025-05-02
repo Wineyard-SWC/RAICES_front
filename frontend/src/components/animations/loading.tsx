@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 interface LoadingScreenProps {
   isLoading: boolean;
-  generationType: "requirements" | "epics" | "userStories";
+  generationType: "requirements" | "epics" | "userStories" | "sprint" | "tasks";
 }
 
 const loadingMessagesMap = {
@@ -30,6 +30,8 @@ const loadingMessagesMap = {
         "Creating acceptance criteria",
         "Organizing results",
       ],
+      tasks:[],
+      sprint:[]
   };
 
 const LoadingScreen: React.FC<LoadingScreenProps> = ({ isLoading, generationType }) => {
