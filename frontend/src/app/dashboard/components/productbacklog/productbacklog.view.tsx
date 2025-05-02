@@ -26,6 +26,41 @@ const ProductBacklogPage: React.FC<ProductBacklogViewProps> = ({onBack}) => {
     item.description.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+
+  const [startDate, setStartDate] = useState<Date | null>(null)
+  const [endDate, setEndDate] = useState<Date | null>(null)
+  const [teamSize, setTeamSize] = useState<number>(0)
+  
+  useEffect(() => {
+    const teamMembersRaw = localStorage.getItem("sprint_team_members")
+    const teamMembers = teamMembersRaw ? JSON.parse(teamMembersRaw) : []
+  
+    const startDateStr = localStorage.getItem("sprint_start_date")
+    const durationDays = parseInt(localStorage.getItem("sprint_duration_days") || "0")
+  
+    if (startDateStr) {
+        const start = new Date(startDateStr)
+        const end = new Date(start)
+        end.setDate(start.getDate() + durationDays)
+  
+        setStartDate(start)
+        setEndDate(end)
+    }
+  
+      setTeamSize(teamMembers.length)
+    }, [])
+  
+  const formatDate = (date: Date | null) =>
+    date?.toLocaleDateString("en-US", {
+      weekday: "short",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    }) || "N/A"
+
+  const Taskdata = localStorage.getItem("taskStadistics")
+  const completiotioninfo = JSON.parse(Taskdata!)
+
   return (
     <main className="min-h-screen">
       <div className="px-25 max-w-full">
@@ -70,25 +105,25 @@ const ProductBacklogPage: React.FC<ProductBacklogViewProps> = ({onBack}) => {
         {isAdmin ? (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <MetricCard
-              icon={<Calendar className="text-[#4A2B4A]" />}
-              title="Start Date"
-              mainValue="Apr 1, 2025"
+            icon={<Calendar className="text-[#4A2B4A]" />}
+            title="Start Date"
+            mainValue={formatDate(startDate)}
             />
             <MetricCard
-              icon={<Clock className="text-[#4A2B4A]" />}
-              title="End Date"
-              mainValue="Apr 15, 2025"
+            icon={<Clock className="text-[#4A2B4A]" />}
+            title="End Date"
+            mainValue={formatDate(endDate)}
             />
             <MetricCard
-              icon={<BarChart2 className="text-[#4A2B4A]" />}
-              title="Sprint Progress"
-              mainValue="72%"
-              progress={72}
+            icon={<BarChart2 className="text-[#4A2B4A]" />}
+            title="Sprint Progress"
+            mainValue={`${completiotioninfo?.completionPercentage || 0}%`}
+            progress={completiotioninfo?.completionPercentage || 0}
             />
             <MetricCard
-              icon={<User className="text-[#4A2B4A]" />}
-              title="Team Size"
-              mainValue="6 Members"
+            icon={<User className="text-[#4A2B4A]" />}
+            title="Team Size"
+            mainValue={`${teamSize} Members`}
             />
           </div>
           ):(<p></p>

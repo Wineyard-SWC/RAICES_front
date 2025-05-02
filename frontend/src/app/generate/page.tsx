@@ -1,6 +1,6 @@
 "use client"
 
-import { FileText, Layers, Book } from "lucide-react"
+import { FileText, Layers, Book, ClipboardList  } from "lucide-react"
 import Navbar from "@/components/NavBar"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
@@ -53,7 +53,7 @@ export default function GeneratePage() {
           <h2 className="text-2xl font-bold text-[#1e1e1e]">Generation Options</h2>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div className="grid grid-cols-2 gap-6 md:grid-cols-3">
           <GenerationCard
             title="Requirements"
             subtitle="Generate project requirements based on your project goals"
@@ -76,6 +76,14 @@ export default function GeneratePage() {
             description="Convert your epics into user stories with acceptance criteria that your development team can implement."
             icon={<Book className="h-6 w-6 text-[#4A2B4D]" />}
             href="/gen_user_stories"
+          />
+
+          <GenerationCard
+            title="Tasks"
+            subtitle="Create actionable development tasks"
+            description="Transform your user stories into clear and assignable tasks that can be tracked during sprints."
+            icon={<ClipboardList  className="h-6 w-6 text-[#4A2B4D]" />}
+            href="/gen_tasks"
           />
 
         </div>

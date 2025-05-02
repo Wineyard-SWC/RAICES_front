@@ -3,8 +3,8 @@ import {styles} from "../../styles/calendarstyles"
 import { Dispatch, SetStateAction } from "react"
 
 interface Props {
-    viewMode: "week" | "month"
-    setViewMode: Dispatch<SetStateAction<"week" | "month">>
+    viewMode: "week" | "task"
+    setViewMode: Dispatch<SetStateAction<"week" | "task">>
     day: string;
 }
 
@@ -15,9 +15,9 @@ const CalendarControls = ({ viewMode, setViewMode, day }: Props) => (
         <button
           key={mode}
           className={viewMode === mode ? styles.calendarButtonActive : styles.calendarButtonInactive}
-          onClick={() => setViewMode(mode as "week" | "month")}
+          onClick={() => setViewMode(mode as "week" | "task")}
         >
-          {mode === "week" ? "Week View" : "Team View"}
+          {mode === "week" ? "Week View" : "Task View"}
         </button>
       ))}
       <p className="px-3 py-1 rounded text-m ">{day}</p>

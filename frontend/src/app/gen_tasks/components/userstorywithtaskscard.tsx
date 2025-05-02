@@ -64,9 +64,9 @@ const UserStoryWithTasksCard: React.FC<UserStoryWithTasksCardProps> = ({
                 key={task.id}
                 task={task}
                 editMode={editMode}
-                onUpdate={onUpdate}
-                onDelete={onDelete}
-                onEdit={onEdit}
+                onUpdate={() => {onUpdate}}
+                onDelete={() => {onDelete}}
+                onEdit={() => {onEdit}}
               />
             ))
           ) : (
