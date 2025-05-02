@@ -22,7 +22,9 @@ export async function postUserStories(stories: Omit<UserStory, 'id' | 'selected'
         epicRef: s.assigned_epic,
         projectRef: projectId,
         comments: s.comments || Comments,
-        status_khanban: s.status_khanban || 'Backlog'
+        status_khanban: s.status_khanban || 'Backlog',
+        total_tasks: s.total_tasks || 0,
+        task_completed: s.task_completed || 0
       }))
     ),
   });
