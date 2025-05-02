@@ -193,7 +193,6 @@ export default function CalendarPageView({defaultViewMode = "week", onBack}: Cal
         {/* Conditionally render team view or calendar grid based on showTeamView state */}
         {showTeamView ? (
           <TeamTasksView 
-            developers={developerData} 
             onTaskMenuClick={handleTaskMenuClick} 
           />
         ) : (

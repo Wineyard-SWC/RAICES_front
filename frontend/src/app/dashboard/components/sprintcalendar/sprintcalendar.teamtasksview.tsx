@@ -1,22 +1,8 @@
 "use client";
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { MoreVertical, Calendar, MessageSquare } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-
-// Define the task interface
-interface Task {
-  id: string;
-  title: string;
-  description: string;
-  dateRange: {
-    start: string;
-    end: string;
-  };
-  status: string;
-  type: string;
-  points: number;
-  comments?: number;
-}
+import { Task } from "@/types/task";
 
 // Define developer interface
 interface Developer {
@@ -29,39 +15,47 @@ interface Developer {
 }
 
 interface TeamTasksViewProps {
-  developers: Developer[];
   onTaskMenuClick?: (taskId: string) => void;
+  projectId?: string;
 }
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 // Individual Task Card component matching your TaskCard format
 const TaskCard: React.FC<Task & { onMenuClick?: (taskId: string) => void }> = ({
   id,
   title,
   description,
-  dateRange,
-  status,
-  type,
-  points,
-  comments = 1,
+  status_khanban,
+  priority,
+  story_points,
+  comments = [],
+  created_at,
+  updated_at,
   onMenuClick
 }) => {
-  // Type color mapping
+  // Type color mapping based on priority
   const typeColors = {
-    'BUG': 'bg-red-100 text-red-800',
-    'STORY': 'bg-purple-100 text-purple-800',
-    'TASK': 'bg-green-100 text-green-800',
+    'High': 'bg-red-100 text-red-800',
+    'Medium': 'bg-purple-100 text-purple-800',
+    'Low': 'bg-green-100 text-green-800',
   };
   
   // Status color mapping
   const statusColors = {
-    'To do': 'bg-blue-100 text-blue-800',
+    'To Do': 'bg-blue-100 text-blue-800',
     'In Progress': 'bg-yellow-100 text-yellow-800',
     'Done': 'bg-green-100 text-green-800',
-    'Review': 'bg-orange-100 text-orange-800',
+    'In Review': 'bg-orange-100 text-orange-800',
+    'Backlog': 'bg-gray-100 text-gray-800',
   };
   
-  const typeColor = typeColors[type as keyof typeof typeColors] || 'bg-gray-100 text-gray-800';
-  const statusColor = statusColors[status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800';
+  const typeColor = typeColors[priority as keyof typeof typeColors] || 'bg-gray-100 text-gray-800';
+  const statusColor = statusColors[status_khanban as keyof typeof statusColors] || 'bg-gray-100 text-gray-800';
+  
+  // Format date for display
+  const createdDate = new Date(created_at);
+  const updatedDate = new Date(updated_at);
   
   return (
     <div className="hover:bg-[#EBE5EB] cursor-pointer bg-white rounded-md p-4 shadow-sm border border-[#D3C7D3] mb-3 relative">
@@ -82,27 +76,27 @@ const TaskCard: React.FC<Task & { onMenuClick?: (taskId: string) => void }> = ({
       <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
         <div className="flex items-center">
           <Calendar className="h-4 w-4 mr-1" />
-          <span>Mar {dateRange.start} - Mar {dateRange.end}</span>
+          <span>Created: {createdDate.toLocaleDateString()}</span>
         </div>
         
         <div className="flex items-center gap-2">
-          {comments > 0 && (
+          {comments.length > 0 && (
             <div className="flex items-center">
               <MessageSquare className="h-4 w-4 mr-1" />
-              <span>{comments}</span>
+              <span>{comments.length}</span>
             </div>
           )}
           
           <span className={`px-2 py-1 rounded-full text-xs ${typeColor}`}>
-            {type}
+            {priority}
           </span>
           
           <span className={`px-2 py-1 rounded-full text-xs ${statusColor}`}>
-            {status}
+            {status_khanban}
           </span>
           
           <span className="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800">
-            {points} pts
+            {story_points} pts
           </span>
         </div>
       </div>
@@ -171,9 +165,79 @@ const DeveloperSection: React.FC<{ developer: Developer, onTaskMenuClick?: (task
 
 // Main team tasks view component
 export default function TeamTasksView({ 
-  developers,
-  onTaskMenuClick
+  onTaskMenuClick,
+  projectId
 }: TeamTasksViewProps) {
+  const [developers, setDevelopers] = useState<Developer[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchTasks = async () => {
+      setLoading(true);
+      try {
+        // Get project ID from localStorage if not provided as prop
+        const currentProjectId = projectId || localStorage.getItem("currentProjectId");
+        
+        if (!currentProjectId) {
+          console.error("No project ID available");
+          return;
+        }
+
+        const response = await fetch(`${API_URL}/projects/${currentProjectId}/tasks`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch tasks");
+        }
+        
+        const tasks: Task[] = await response.json();
+        
+        // Group tasks by assignee
+        const tasksByAssignee: Record<string, Task[]> = {};
+        
+        tasks.forEach(task => {
+          if (!task.assignee) return;
+          
+          if (!tasksByAssignee[task.assignee]) {
+            tasksByAssignee[task.assignee] = [];
+          }
+          
+          tasksByAssignee[task.assignee].push(task);
+        });
+        
+        // Create developer objects
+        const developersData: Developer[] = Object.entries(tasksByAssignee).map(([name, tasks]) => {
+          // Calculate hours based on story points (assuming 1 point = 2 hours)
+          const totalPoints = tasks.reduce((sum, task) => sum + task.story_points, 0);
+          const hoursAllocated = totalPoints * 2;
+          
+          return {
+            id: name,
+            name: name,
+            role: "Team Member", // Default role
+            hoursAllocated: hoursAllocated,
+            hoursTotal: 40, // Default work week
+            tasks: tasks
+          };
+        });
+        
+        setDevelopers(developersData);
+      } catch (error) {
+        console.error("Error fetching tasks:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTasks();
+  }, [projectId]);
+
+  if (loading) {
+    return <div className="p-4 text-center">Loading team tasks...</div>;
+  }
+
+  if (developers.length === 0) {
+    return <div className="p-4 text-center">No tasks assigned to team members</div>;
+  }
+
   return (
     <div className="space-y-4 mt-4">
       {developers.map(developer => (
