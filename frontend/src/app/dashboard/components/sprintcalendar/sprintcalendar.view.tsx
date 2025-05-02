@@ -150,7 +150,7 @@ export default function CalendarPageView({defaultViewMode = "week", onBack}: Cal
         {/* Cards inside */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <SprintProgressCard />
-          <BurndownChartCard actualPercentage={actualPercentage} idealPercentage={idealPercentage} burndownData={burndownData} />
+          <BurndownChartCard />
           <TaskStatusCard />
           <TeamWorkloadCard />
         </div>
@@ -180,7 +180,7 @@ export default function CalendarPageView({defaultViewMode = "week", onBack}: Cal
               className="pl-8 pr-4 py-1 border border-[#D3C7D3] rounded text-m w-40 md:w-64"
               placeholder="Search tasks..."
             />
-            <select className="ml-2 px-3 py-1 rounded text-m border border-[#D3C7D3]">
+            <select aria-label="Status" className="ml-2 px-3 py-1 rounded text-m border border-[#D3C7D3]">
               <option>All Status</option>
               <option>To do</option>
               <option>In Progress</option>

@@ -31,7 +31,7 @@ export interface BasicTask {
   date: string
   comments: Comment[]
   priority: "High" | "Medium" | "Low"
-  status: KanbanStatus
+  status_khanban: KanbanStatus
   assignee?: string
 }
 
@@ -61,7 +61,7 @@ export type TaskFormData = {
   user_story_id: string
   assignee: string
   sprint_id?: string
-  status: KanbanStatus
+  status_khanban: KanbanStatus
   priority: "High" | "Medium" | "Low"
   story_points: number
   deadline?: string
