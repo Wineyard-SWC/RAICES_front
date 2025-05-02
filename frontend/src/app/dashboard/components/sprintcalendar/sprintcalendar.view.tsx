@@ -150,7 +150,7 @@ export default function CalendarPageView({defaultViewMode = "week", onBack}: Cal
         {/* Cards inside */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <SprintProgressCard />
-          <BurndownChartCard actualPercentage={actualPercentage} idealPercentage={idealPercentage} burndownData={burndownData} />
+          <BurndownChartCard/>
           <TaskStatusCard />
           <TeamWorkloadCard />
         </div>
