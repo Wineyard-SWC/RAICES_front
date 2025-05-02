@@ -88,21 +88,11 @@ const SprintDetailsPage = ({ onBack }: Props) => {
             />
         </div>
 
-        <div className="bg-white border border-[#D3C7D3] shadow-md rounded-xl px-4 py-4">
+        <div className="bg-white border border-[#D3C7D3] shadow-md  rounded-xl px-4 py-4">
             {/* Chart Section */}
             <SprintChartsSection />
             
-            {/* Task List */}
-            <div className="space-y-4 mt-10">
-                <div className="flex justify-end items-center gap-3">
-                    <button className="bg-[#4A2B4A] text-white font-medium px-4 py-2 rounded-lg hover:bg-[#3a2248] transition">
-                    Sprint Planning
-                    </button>
-                    <button className="bg-[#4A2B4A] text-white font-medium px-4 py-2 rounded-lg hover:bg-[#3a2248] transition">
-                    See all sprints
-                    </button>
-                </div>
-            </div>
+          
         </div>
     </div>
   )

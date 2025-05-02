@@ -53,7 +53,7 @@ const SprintChartsSection = () => {
   }, [burndownData])
 
   return (
-    <div className="flex gap-4 mt-10">
+    <div className="flex gap-4 mt-2 mb-2">
       <div className="w-1/2">
         {loading ? (
           <div className="text-center text-sm text-gray-500">Loading burndown chart...</div>

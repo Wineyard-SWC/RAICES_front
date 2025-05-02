@@ -8,6 +8,24 @@ import { Button } from "@/components/ui/button"
 import { useBacklogContext } from "@/contexts/backlogcontext";
 import ConfirmDialog from "@/components/confimDialog";
 
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  picture?: string;
+}
+
+interface UserWorkload {
+  id: string;
+  name: string;
+  progress: number;
+  tasks: string;
+  completedTasks: number;
+  totalTasks: number;
+}
+
+
 interface BacklogCardProps {
   id:string;
   type: string;
@@ -20,6 +38,8 @@ interface BacklogCardProps {
   progress: number;
   comments: comments[];
 }
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL
 
 export default function BacklogCard({
   id,
@@ -41,6 +61,9 @@ export default function BacklogCard({
     open: boolean;
     action: "accept" | "reject" | null;
   }>({ open: false, action: null });
+  const [users, setUsers] = useState<UserWorkload[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [userMap, setUserMap] = useState<Record<string, User>>({});
 
   const priorityColors = {
     low: "bg-green-100 text-green-800",
@@ -62,6 +85,58 @@ export default function BacklogCard({
     setConfirmState({ open: false, action: null });
   };
 
+  const fetchUserData = async (userId: string): Promise<User | null> => {
+    // Check if we already have this user in our map
+    if (userMap[userId]) {
+      return userMap[userId];
+    }
+
+    // Check if we have the user in localStorage
+    const cachedUsers = localStorage.getItem('cached_users');
+    const cachedUserMap: Record<string, User> = cachedUsers ? JSON.parse(cachedUsers) : {};
+    
+    if (cachedUserMap[userId]) {
+      // Update our in-memory map
+      setUserMap(prev => ({ ...prev, [userId]: cachedUserMap[userId] }));
+      return cachedUserMap[userId];
+    }
+
+    // If not in cache, fetch from API
+    try {
+      const response = await fetch(`${API_URL}/users/${userId}`);
+      if (!response.ok) {
+        throw new Error('User not found');
+      }
+      const userData = await response.json();
+      
+      // Update our cache
+      cachedUserMap[userId] = userData;
+      localStorage.setItem('cached_users', JSON.stringify(cachedUserMap));
+      
+      // Update our in-memory map
+      setUserMap(prev => ({ ...prev, [userId]: userData }));
+      
+      return userData;
+    } catch (error) {
+      console.error(`Error fetching user ${userId}:`, error);
+      return null;
+    }
+  };
+
+  const [authorName, setAuthorName] = useState(author);
+  const [reviewerName, setReviewerName] = useState(reviewer);
+
+  useEffect(() => {
+    const fetchNames = async () => {
+      const authorUser = await fetchUserData(author);
+      if (authorUser?.name) setAuthorName(authorUser.name);
+  
+      const reviewerUser = await fetchUserData(reviewer);
+      if (reviewerUser?.name) setReviewerName(reviewerUser.name);
+    };
+  
+    fetchNames();
+  }, [author, reviewer]);
   return (
     <div className="relative  bg-white hover:bg-[#EBE5EB] transition-colors duration-300 ease-in-out  border border-[#D3C7D3] cursor-pointer' shadow-md rounded-lg p-4 mb-4">
       <div className="absolute right-2 top-2">
@@ -103,10 +178,10 @@ export default function BacklogCard({
         <div className="flex justify-between items-center">
           <div className="flex gap-4">
             <div className="text-m text-black">
-              <strong>Author:</strong> {author}
+              <strong>Author:</strong> {authorName}
             </div>
             <div className="text-m text-black">
-              <strong>Reviewer:</strong> {reviewer}
+              <strong>Reviewer:</strong> {reviewerName}
             </div>
           </div>
           <div className="text-m text-black">{comments.length} Comments</div>
