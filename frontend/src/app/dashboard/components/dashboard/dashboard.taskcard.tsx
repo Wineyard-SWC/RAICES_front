@@ -29,7 +29,7 @@ export const TaskCard = ({ task, columnId, view, usertype, onDelete}: TaskCardPr
   return (
     <div className="hover:bg-[#EBE5EB] cursor-pointer bg-white rounded-md p-4 shadow-sm border border-[#D3C7D3] mb-3 relative">
       <div className="absolute right-2 top-2">
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setMenuOpen(!menuOpen)}>
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setMenuOpen(true)}>
           <MoreVertical className="h-4 w-4" />
         </Button>
         {menuOpen && view !== "dashboard" && (
@@ -37,8 +37,8 @@ export const TaskCard = ({ task, columnId, view, usertype, onDelete}: TaskCardPr
             <button
               className="flex items-center gap-2 w-full px-4 py-2 text-sm text-[#4A2B4A] hover:bg-gray-100"
               onClick={() => {
-                setShowModal(true)
                 setMenuOpen(false)
+                setTimeout(() => setShowModal(true), 0)
               }}
             >
               <Eye className="h-4 w-4" /> View Details
@@ -47,8 +47,10 @@ export const TaskCard = ({ task, columnId, view, usertype, onDelete}: TaskCardPr
               className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
               onClick={() => {
                 setMenuOpen(false)
-                setItemToDelete({ id: task.id, columnId });
-                setShowDeleteConfirm(true);
+                setTimeout(() => {
+                  setItemToDelete({ id: task.id, columnId });
+                  setShowDeleteConfirm(true);
+                }, 0)
               }}
             >
               <Trash className="h-4 w-4" /> Delete
@@ -59,29 +61,37 @@ export const TaskCard = ({ task, columnId, view, usertype, onDelete}: TaskCardPr
           <div className="absolute right-0 mt-2 w-36 bg-white border rounded-md shadow-lg z-20">
             <button
               className="flex items-center gap-2 w-full px-4 py-2 text-sm text-[#4A2B4A] hover:bg-gray-100"
-              onClick={() => setShowModal(true)}
+              onClick={
+                () => {
+                  setMenuOpen(false)
+                  setTimeout(() => setShowModal(true), 0)
+                }
+              }
             >
               <Eye className="h-4 w-4" /> View Details
             </button>
-          </div>
+          </div>  
         )}
       </div>
 
       <h3 className="font-medium text-gray-900 pr-6">{task.title}</h3>
 
-      <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
-        {"date" in task && (
-          <span>{task.date}</span>
-        )}
+      <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
+        <div className="flex-1">
+          {"date" in task && (
+            <span>{task.date}</span>
+          )}
+        </div>
+        
         <div className="flex items-center gap-2">
-          {Array.isArray(task.comments) && task.comments.length >= 0 && (
+          {Array.isArray(task.comments) && (
             <div className="flex items-center">
               <MessageSquare className="h-4 w-4 mr-1" />
               <span>{task.comments.length}</span>
             </div>
           )}
           <span 
-            className={` px-2 py-1 flex justify-between items-center rounded-full text-xs ${priorityColors[task.priority]}`}>
+            className={`px-2 py-1 rounded-full text-xs ${priorityColors[task.priority]}`}>
             {task.priority}
           </span>
         </div>

@@ -135,6 +135,7 @@ export const useGenerateTasksLogic = () => {
     setError(null);
 
     try {
+      console.log(generatedTasks);
       // 1️⃣  Guarda SOLO las tareas (aún sin sprint)
       await postTasks(projectId, generatedTasks);
 

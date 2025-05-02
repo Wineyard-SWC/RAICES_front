@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import Navbar              from "@/components/NavBar";
-import LoadingScreen       from "@/components/animations/loading";
+
 import SprintConfiguration from "./components/SprintConfiguration";
 import TeamMembersSection  from "./components/TeamMembersSection";
 import ProductBacklog      from "./components/ProductBacklog";
@@ -16,6 +16,8 @@ import { buildSprintPayload } from "@/utils/buildSprintPayload";
 import { getProjectUserStories } from "@/utils/getProjectUserStories";
 import { getProjectTasks       } from "@/utils/getProjectTasks";
 import { Task } from "@/types/task";
+
+import DefaultLoading from "@/components/animations/DefaultLoading";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
@@ -202,7 +204,7 @@ export default function SprintPlanningPage() {
   };
 
   /* ui */
-  //if (loading) return <LoadingScreen isLoading generationType="sprint" />;
+  if (loading) return <DefaultLoading text="sprint" />
   if (error || !sprint) return (
     <>
       <Navbar projectSelected />

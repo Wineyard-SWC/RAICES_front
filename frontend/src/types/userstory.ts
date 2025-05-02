@@ -20,6 +20,8 @@ export interface UserStory {
     comments?: comments[];
     status_khanban?: 'Backlog'|'In Progress'|'In Review'|'To Do'|'Done'
     assignee?:string;
+    total_tasks?:number;
+    task_completed?:number;
 };
 
 

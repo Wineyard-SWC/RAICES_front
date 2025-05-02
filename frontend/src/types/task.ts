@@ -1,21 +1,46 @@
-import { comments } from "./userstory"
+// types/task.ts
 
+// ——————————————
+// Comentarios en las tareas
+// ——————————————
+export interface Comment {
+  id: string
+  user_id: string
+  user_name: string
+  text: string
+  timestamp: string
+}
+
+// ——————————————
+// Estados del Kanban
+// ——————————————
+export type KanbanStatus =
+  | "Backlog"
+  | "To Do"
+  | "In Progress"
+  | "In Review"
+  | "Done"
+
+// ——————————————
+// Tarea básica (lo que ve el kanban)
+// ——————————————
 export interface BasicTask {
   id: string
   title: string
   description: string
   date: string
-  comments: comments[];
-  priority: 'High' | 'Medium' | 'Low'
-  status_khanban: 'Backlog' | 'In Progress' | 'In Review' | 'To Do' | 'Done'
-  assignee?: string;
+  comments: Comment[]
+  priority: "High" | "Medium" | "Low"
+  status: KanbanStatus
+  assignee?: string
 }
 
-
+// ——————————————
+// Tarea extendida (con relación a user story, sprint, historia)
+// ——————————————
 export interface Task extends BasicTask {
   user_story_id: string
   user_story_title?: string
-  assignee: string
   assignee_id?: string
   sprint_id?: string
   sprint_name?: string
@@ -26,6 +51,19 @@ export interface Task extends BasicTask {
   selected?: boolean
 }
 
-export type TaskFormData = Omit<Task, "id" | "created_at" | "updated_at" | "comments"> & {
+// ——————————————
+// Datos para enviar/editar una tarea
+// ——————————————
+export type TaskFormData = {
   id?: string
+  title: string
+  description: string
+  user_story_id: string
+  assignee: string
+  sprint_id?: string
+  status: KanbanStatus
+  priority: "High" | "Medium" | "Low"
+  story_points: number
+  deadline?: string
+  comments: Comment[]
 }

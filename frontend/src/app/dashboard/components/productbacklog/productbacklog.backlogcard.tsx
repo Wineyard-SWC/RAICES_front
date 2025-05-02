@@ -37,7 +37,11 @@ export default function BacklogCard({
   const [comments, setComments] = useState(initialComments)
 
 
-  
+  const priorityColors = {
+    low: "bg-green-100 text-green-800",
+    medium: "bg-yellow-100 text-yellow-800",
+    high: "bg-red-100 text-red-800",
+  };
 
   return (
     <div className="relative  bg-white hover:bg-[#EBE5EB] transition-colors duration-300 ease-in-out  border border-[#D3C7D3] cursor-pointer' shadow-md rounded-lg p-4 mb-4">
@@ -65,8 +69,10 @@ export default function BacklogCard({
         <span className={`flex justify-center items-center text-xs font-bold px-3 py-1 rounded ${type === "BUG" ? "bg-red-600 text-white" : type === "TASK" ? "bg-[#0029f9] text-white": "bg-[#4A2B4A] text-white"}`}>
           {type}
         </span>
-        <span className={`flex justify-center items-center text-xs font-bold px-3 py-1 rounded ${priority === "high" ? "bg-red-600 text-white" : "bg-green-600 text-white"}`}>
-          {priority}
+        <span
+            className={`flex justify-center items-center text-xs font-bold px-3 py-1 rounded ${priorityColors[priority as keyof typeof priorityColors]}`}
+          >
+            {priority}
         </span>
         </div>
         

@@ -33,7 +33,9 @@ export async function getProjectUserStories(projectId: string): Promise<UserStor
       lastUpdated: s.lastUpdated, 
       points: s.points || 0, 
       status: s.status, 
-      status_khanban: s.status_khaban || 'Backlog'
+      status_khanban: s.status_khaban || 'Backlog',
+      total_tasks: s.total_tasks || 0,
+      task_completed: s.task_completed || 0
     }))
     .sort((a: any, b: any) => a.idTitle.localeCompare(b.idTitle));
 }
