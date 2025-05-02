@@ -2,6 +2,8 @@ import { useEffect, useState } from "react"
 import { BurndownChart } from "@/components/burndownchart"
 import { VelocityTrendChart } from "@/components/velocitytrend"
 import { useParams } from "next/navigation"
+import { useSprintDataContext } from "@/contexts/sprintdatacontext"
+
 
 interface BurndownDataPoint {
   day: string
@@ -16,71 +18,55 @@ interface VelocityPoint {
 }
 
 const SprintChartsSection = () => {
-  const [burndownData, setBurndownData] = useState<BurndownDataPoint[]>([])
+  const [chartData, setChartData] = useState<BurndownDataPoint[]>([])
   const [loading, setLoading] = useState(true)
-  const projectId = typeof window !== "undefined" ? localStorage.getItem("currentProjectId") : null
+  const { burndownData, velocityData } = useSprintDataContext()
 
   useEffect(() => {
-    const fetchBurndownData = async () => {
-      try {
-        const response = await fetch(`http://127.0.0.1:8000/api/burndown?projectId=${projectId}`)
-        const data = await response.json()
+    if (!burndownData) return
 
-        const { duration_days } = data
-        let { total_story_points } = data
-
-        const totalDays = duration_days + 1
-        const idealDropPerDay = total_story_points / duration_days
-
-        const generatedData: BurndownDataPoint[] = []
-
-        for (let day = 0; day < totalDays; day++) {
-          const ideal = total_story_points - idealDropPerDay * day
-          generatedData.push({
-            day: `Day ${day}`,
-            Ideal: parseFloat(ideal.toFixed(2)),
-            Remaining: total_story_points, // Simulación inicial
-          })
-        }
-
-        setBurndownData(generatedData)
-      } catch (error) {
-        console.error("Error al cargar burndown data:", error)
-      } finally {
-        setLoading(false)
+    try {
+      const { duration_days, total_story_points } = burndownData
+      
+      const totalDays = duration_days + 1
+      const idealDropPerDay = total_story_points / duration_days
+      
+      const generatedData: BurndownDataPoint[] = []
+      
+      for (let day = 0; day < totalDays; day++) {
+        const ideal = total_story_points - idealDropPerDay * day
+        generatedData.push({
+          day: `Day ${day}`,
+          Ideal: parseFloat(ideal.toFixed(2)),
+          Remaining: total_story_points, // This would be replaced with actual data
+        })
       }
+      
+      setChartData(generatedData)
+    } catch (error) {
+      console.error("Error processing burndown data:", error)
+    } finally {
+      setLoading(false)
     }
-
-    fetchBurndownData()
-  }, [])
-
-  const [velocityData, setVelocityData] = useState<VelocityPoint[]>([])
-
-  useEffect(() => {
-    const fetchVelocityTrend = async () => {
-      try {
-        const res = await fetch(`http://localhost:8000/api/velocitytrend?projectId=${projectId}`)
-        const data = await res.json()
-        setVelocityData(data)
-      } catch (err) {
-        console.error("Error fetching velocity trend:", err)
-      }
-    }
-
-    fetchVelocityTrend()
-  }, [])
+  }, [burndownData])
 
   return (
     <div className="flex gap-4 mt-10">
       <div className="w-1/2">
         {loading ? (
           <div className="text-center text-sm text-gray-500">Cargando burndown chart...</div>
+        ) : chartData.length > 0 ? (
+          <BurndownChart data={chartData} />
         ) : (
-          <BurndownChart data={burndownData} />
+          <div className="text-center text-sm text-gray-500">No hay datos disponibles</div>
         )}
       </div>
       <div className="w-1/2">
-      <VelocityTrendChart data={velocityData} />
+        {velocityData.length > 0 ? (
+          <VelocityTrendChart data={velocityData} />
+        ) : (
+          <div className="text-center text-sm text-gray-500">No hay datos de velocidad disponibles</div>
+        )}
       </div>
     </div>
   )
