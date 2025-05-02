@@ -29,6 +29,8 @@ const apiURL = process.env.NEXT_PUBLIC_API_URL!
 
 
 const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
+  
+
   // State for burndown chart
   const [burndownChartData, setBurndownChartData] = useState<BurndownDataPoint[]>([])
   const [actualPercentage, setActualPercentage] = useState(0)
@@ -148,6 +150,8 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
       completionPercentage
     }
   }, [tasks])
+  
+  localStorage.setItem("taskStadistics", JSON.stringify(taskStats))
 
   // Function to fetch or calculate sprint dates
   const calculateSprintDates = () => {

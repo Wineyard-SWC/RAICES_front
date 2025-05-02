@@ -5,6 +5,7 @@ import { createContext, useContext, useEffect, useState } from "react"
 interface BurndownData {
   duration_days: number
   total_story_points: number
+  remaining_story_points: number
 }
 
 interface TeamMember {
@@ -68,10 +69,10 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
     try {
       const response = await fetch(`${apiURL}/api/burndown?projectId=${project_id}`)
       const data = await response.json()
+      
+      const { duration_days, total_story_points, remaining_story_points, team_members, start_date, name} = data
 
-      const { duration_days, total_story_points, team_members } = data
-
-      const burndown: BurndownData = { duration_days, total_story_points }
+      const burndown: BurndownData = { duration_days, total_story_points, remaining_story_points }
 
       setBurndownData(burndown)
       setTeamMembers(team_members || [])
@@ -81,6 +82,8 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
       localStorage.setItem("sprint_team_members", JSON.stringify(team_members || []))
       localStorage.setItem("sprint_duration_days", String(duration_days))
       localStorage.setItem("sprint_total_story_points", String(total_story_points))
+      localStorage.setItem("sprint_start_date", String(start_date))
+      localStorage.setItem("sprint_name", String(name))
     } catch (error) {
       console.error("Error fetching burndown data:", error)
     }

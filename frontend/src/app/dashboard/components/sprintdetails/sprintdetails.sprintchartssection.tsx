@@ -22,6 +22,8 @@ const SprintChartsSection = () => {
   const [loading, setLoading] = useState(true)
   const { burndownData, velocityData } = useSprintDataContext()
 
+  
+
   useEffect(() => {
     if (!burndownData) return
 
@@ -38,7 +40,7 @@ const SprintChartsSection = () => {
         generatedData.push({
           day: `Day ${day}`,
           Ideal: parseFloat(ideal.toFixed(2)),
-          Remaining: total_story_points, // This would be replaced with actual data
+          Remaining: total_story_points, 
         })
       }
       
@@ -54,18 +56,18 @@ const SprintChartsSection = () => {
     <div className="flex gap-4 mt-10">
       <div className="w-1/2">
         {loading ? (
-          <div className="text-center text-sm text-gray-500">Cargando burndown chart...</div>
+          <div className="text-center text-sm text-gray-500">Loading burndown chart...</div>
         ) : chartData.length > 0 ? (
-          <BurndownChart data={chartData} />
+          <BurndownChart data={chartData} height={350}/>
         ) : (
-          <div className="text-center text-sm text-gray-500">No hay datos disponibles</div>
+          <div className="text-center text-sm text-gray-500">No data available</div>
         )}
       </div>
       <div className="w-1/2">
         {velocityData.length > 0 ? (
-          <VelocityTrendChart data={velocityData} />
+          <VelocityTrendChart data={velocityData} height={350} />
         ) : (
-          <div className="text-center text-sm text-gray-500">No hay datos de velocidad disponibles</div>
+          <div className="text-center text-sm text-gray-500">No data available</div>
         )}
       </div>
     </div>
