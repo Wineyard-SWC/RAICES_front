@@ -63,25 +63,28 @@ export const TaskCard = ({ task, columnId, view, usertype, onDelete}: TaskCardPr
             >
               <Eye className="h-4 w-4" /> View Details
             </button>
-          </div>
+          </div>  
         )}
       </div>
 
       <h3 className="font-medium text-gray-900 pr-6">{task.title}</h3>
 
-      <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
-        {"date" in task && (
-          <span>{task.date}</span>
-        )}
+      <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
+        <div className="flex-1">
+          {"date" in task && (
+            <span>{task.date}</span>
+          )}
+        </div>
+        
         <div className="flex items-center gap-2">
-          {Array.isArray(task.comments) && task.comments.length >= 0 && (
+          {Array.isArray(task.comments) && (
             <div className="flex items-center">
               <MessageSquare className="h-4 w-4 mr-1" />
               <span>{task.comments.length}</span>
             </div>
           )}
           <span 
-            className={` px-2 py-1 flex justify-between items-center rounded-full text-xs ${priorityColors[task.priority]}`}>
+            className={`px-2 py-1 rounded-full text-xs ${priorityColors[task.priority]}`}>
             {task.priority}
           </span>
         </div>
