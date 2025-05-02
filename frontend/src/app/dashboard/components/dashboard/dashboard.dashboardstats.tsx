@@ -64,7 +64,7 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
       for (let day = 0; day < totalDays; day++) {
         const ideal = total_story_points - idealDropPerDay * day
         generatedData.push({
-          day: `Day ${day}`,
+          day: Day ${day},
           Ideal: parseFloat(ideal.toFixed(2)),
           Remaining: total_story_points, 
         })
@@ -199,7 +199,7 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
         icon={<Calendar className={s.icon} />}
         footer={
           <Button variant="default" 
-          className={`${s.button} mt-4`}
+          className={${s.button} mt-4}
           onClick={onViewCalendar}
           >
             View Calendar
@@ -231,19 +231,19 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
         footer={
           <Button
             variant="default"
-            className={`${s.button} mt-auto`}
+            className={${s.button} mt-auto}
             onClick={onViewSprintDetails}
           >
             View Sprint Details
           </Button>
         }
       >
-        <div className={`${s.progressCard} flex flex-col space-y-4`}>
+        <div className={${s.progressCard} flex flex-col space-y-4}>
           <div className="mb-4">
             <div className={s.sprintLabel}>Sprint Velocity</div>
             <Progress 
               value={sprintVelocity > 0 ? Math.min(sprintVelocity, 100) : 0} 
-              className={`${s.progressBar} mt-2 mb-2`} 
+              className={${s.progressBar} mt-2 mb-2} 
               indicatorClassName={s.progressBarIndicator} 
             />
             <div className={s.sprintStats}>
@@ -259,7 +259,7 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
             <div className="mt-2">
               <Progress 
                 value={taskStats.completionPercentage} 
-                className={`${s.progressBar} mt-2 mb-2`} 
+                className={${s.progressBar} mt-2 mb-2} 
                 indicatorClassName={s.progressBarIndicator} 
               />
             </div>
@@ -325,7 +325,7 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
           </div>
         </div>
         
-        <div className={`${s.progressCard} flex flex-col space-y-4`}>
+        <div className={${s.progressCard} flex flex-col space-y-4}>
           <div className={s.taskGrid}>
             <div className={s.statCard}>
               <div className={s.statValue}>{taskStats.completedTasks}</div>

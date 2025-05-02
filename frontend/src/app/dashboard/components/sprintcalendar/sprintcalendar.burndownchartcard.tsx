@@ -30,7 +30,7 @@ const BurndownChartCard = () => {
     for (let day = 0; day < totalDays; day++) {
       const ideal = total_story_points - idealDropPerDay * day
       generatedData.push({
-        day: `Day ${day}`,
+        day: Day ${day},
         Ideal: parseFloat(ideal.toFixed(2)),
         Remaining: total_story_points, // This would be replaced with actual remaining points
       })
