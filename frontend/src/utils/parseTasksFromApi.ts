@@ -22,7 +22,7 @@ export const parseTasksFromApi = (raw: string): Task[] => {
     title: t.title,
     description: t.description,
     user_story_id: t.user_story_id,
-    status: "To Do",
+    status_khanban: "To Do",
     priority: t.priority,
     story_points: t.story_points,
     assignee: "",

@@ -1,28 +1,31 @@
 import { useEffect, useState } from "react";
-import { getProjectUserStories } from "@/utils/getProjectUserStories";
-import { UserStory } from "@/types/userstory";
 import BacklogCard from "./productbacklog.backlogcard";
 import MetricCard from "../sprintdetails/sprintdetails.metriccard";
 import { Calendar, Clock, BarChart2, User } from "lucide-react";
 import { TasksKanban } from "../dashboard/dashboard.taskskanban";
-import { TaskColumns } from "@/types/taskkanban";
-import { ArrowLeft } from "lucide-react";
+import { TaskColumns, TaskOrStory } from "@/types/taskkanban";
+import { Input } from "@/components/ui/input"
+import { Search } from "lucide-react"
+  import { useBacklogContext } from "@/contexts/backlogcontext";
 
 interface ProductBacklogViewProps {
   onBack: () => void;
-  stories: UserStory[];
-  tasks: TaskColumns;
-  refreshTasks: () => void;
-  onDeleteStory: (id: string) => void;
 }
 
-const ProductBacklogPage: React.FC<ProductBacklogViewProps> = ({tasks, stories, onBack, refreshTasks, onDeleteStory }) => {
-  const [backlogItems, setBacklogItems] = useState<UserStory[]>(stories);
-  const [BacklogactiveView, setBacklogActiveView] = useState<"backlog" | "kanban">("kanban");
-  const isAdmin = true; 
-  const [currentPage, setCurrentPage] = useState(0);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
+const ProductBacklogPage: React.FC<ProductBacklogViewProps> = ({onBack}) => {
+  const { tasks, searchTerm, setSearchTerm, deleteStory } = useBacklogContext()
+  const [BacklogactiveView, setBacklogActiveView] = useState<"backlog" | "kanban">("kanban")
+  const [currentPage, setCurrentPage] = useState(0)
+  const [itemsPerPage, setItemsPerPage] = useState(5)
+  const isAdmin = true
   
+  // Filtrar elementos en revisión
+  const reviewItems = tasks?.inreview ?? []
+  const filteredItems = reviewItems.filter(item =>
+    item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.description.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
   return (
     <main className="min-h-screen">
       <div className="px-25 max-w-full">
@@ -93,15 +96,19 @@ const ProductBacklogPage: React.FC<ProductBacklogViewProps> = ({tasks, stories, 
         
 
         {/* Search Bar */}
-        <div>
-          <div className="mt-8 mb-8 w-full h-10 rounded-lg bg-gray-100 border border-gray-300 flex items-center justify-center text-gray-500 text-sm">
-            SearchBar Placeholder
-          </div>
+        <div className="relative w-full h-10 mb-4 mt-4">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-lg text-gray-400" />
+          <Input
+            placeholder={BacklogactiveView === "kanban" ? "Search sprint elements..." : "Search sprint under review elements..."}
+            className="pl-8 h-9 bg-white"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
 
         {/* Conditional Rendering for Views */}
         {BacklogactiveView === "kanban" ? (
-          <TasksKanban tasks={tasks} view={"backlogs"} refreshTasks={refreshTasks} />
+          <TasksKanban view="backlog" />
     ) : (
       // Backlog View Rendering
       <div className="mt-6">
@@ -132,24 +139,25 @@ const ProductBacklogPage: React.FC<ProductBacklogViewProps> = ({tasks, stories, 
 
           {/* Lista de Backlog Items */}
           <div className="mt-4">
-            {backlogItems.length === 0 ? (
-              <p className="text-black">No user stories found for this project.</p>
+            {reviewItems.length === 0 ? (
+              <p className="text-black">No elements under review found for this project.</p>
               ) : (
                 <>
-                  {backlogItems
+                  {filteredItems
                     .slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage)
                     .map((item) => (
                       <BacklogCard
                         key={item.id}
-                        type="STORY"
+                        id={item.id}
+                        type={item.title.includes("US") ? "STORY" : "TASK"}
                         priority={item.priority.toLowerCase()}
                         status="In Review"
                         title={item.title}
                         description={item.description}
-                        author="Unknown"
-                        reviewer="Unknown"
-                        progress={10}
-                        comments={0}
+                        author={item.assignee ?? ""}
+                        reviewer={item.assignee ?? "Not Assigned"}
+                        progress={100}
+                        comments={item.comments ?? []}
                       />
                     ))}
 
@@ -164,16 +172,16 @@ const ProductBacklogPage: React.FC<ProductBacklogViewProps> = ({tasks, stories, 
                     </button>
 
                     <span className="text-m text-black">
-                      Page {currentPage + 1} of {Math.ceil(backlogItems.length / itemsPerPage)}
+                    Page {currentPage + 1} of {Math.ceil(filteredItems.length / itemsPerPage)}
                     </span>
 
                     <button
                       onClick={() =>
                         setCurrentPage((prev) =>
-                          (prev + 1) * itemsPerPage < backlogItems.length ? prev + 1 : prev
+                          (prev + 1) * itemsPerPage < filteredItems.length ? prev + 1 : prev
                         )
                       }
-                      disabled={(currentPage + 1) * itemsPerPage >= backlogItems.length}
+                      disabled={(currentPage + 1) * itemsPerPage >= filteredItems.length}
                       className="px-4 py-2 text-m rounded bg-[#4A2B4A] text-white disabled:bg-gray-300"
                     >
                       Next
@@ -182,7 +190,6 @@ const ProductBacklogPage: React.FC<ProductBacklogViewProps> = ({tasks, stories, 
                 </>
               )}
             </div>
-
           </div>
         </div>
         )}

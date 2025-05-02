@@ -8,6 +8,7 @@ export interface BasicTask {
   comments: comments[];
   priority: 'High' | 'Medium' | 'Low'
   status_khanban: 'Backlog' | 'In Progress' | 'In Review' | 'To Do' | 'Done'
+  assignee?: string;
 }
 
 

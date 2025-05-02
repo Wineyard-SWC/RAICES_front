@@ -19,6 +19,7 @@ export interface UserStory {
     selected?: boolean
     comments?: comments[];
     status_khanban?: 'Backlog'|'In Progress'|'In Review'|'To Do'|'Done'
+    assignee?:string;
 };
 
 
