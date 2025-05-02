@@ -26,10 +26,11 @@ const todayString = today.toLocaleDateString('en-US', {
 
 const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
   const [burndownData, setBurndownData] = useState<BurndownDataPoint[]>([])
+  const projectId = typeof window !== "undefined" ? localStorage.getItem("currentProjectId") : null
 
   useEffect(() => {
     const fetchBurndownData = async () => {
-      const response = await fetch("http://localhost:8000/api/burndown")
+      const response = await fetch(`http://127.0.0.1:8000/api/burndown?projectId=${projectId}`)
       const data = await response.json()
   
       const { duration_days } = data
@@ -92,9 +93,9 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
                 <span>Ideal: {idealPercentage}%</span>
                 </div>
     
-                <div className={s.progressLabel}>My workload</div>
+                {/* <div className={s.progressLabel}>My workload</div>
                 <Progress value={60} className={s.progressBar} indicatorClassName={s.progressBarIndicator} />
-                <div className="text-right text-sm">24h / 40h</div>
+                <div className="text-right text-sm">24h / 40h</div> */}
               </div>
             </div>
           </ProgressCard>

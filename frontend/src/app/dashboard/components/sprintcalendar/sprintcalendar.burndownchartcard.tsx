@@ -14,10 +14,11 @@ const BurndownChartCard = () => {
   const [burndownData, setBurndownData] = useState<BurndownDataPoint[]>([])
   const [actualPercentage, setActualPercentage] = useState(0)
   const [idealPercentage, setIdealPercentage] = useState(0)
+  const projectId = typeof window !== "undefined" ? localStorage.getItem("currentProjectId") : null
 
   useEffect(() => {
     const fetchBurndownData = async () => {
-      const response = await fetch("http://localhost:8000/api/burndown")
+      const response = await fetch(`http://127.0.0.1:8000/api/burndown?projectId=${projectId}`)
       const data = await response.json()
 
       const { duration_days } = data
@@ -33,7 +34,7 @@ const BurndownChartCard = () => {
         generatedData.push({
           day: `Day ${day}`,
           Ideal: parseFloat(ideal.toFixed(2)),
-          Remaining: total_story_points, // puedes cambiar esto si más adelante se calcula dinámicamente
+          Remaining: total_story_points,
         })
       }
 
@@ -44,6 +45,8 @@ const BurndownChartCard = () => {
 
       const actual = Math.round(((initialHeight - lastData.Remaining) / initialHeight) * 100)
       const ideal = Math.round(((initialHeight - lastData.Ideal) / initialHeight) * 100)
+
+      
 
       setActualPercentage(actual)
       setIdealPercentage(ideal)
@@ -60,6 +63,10 @@ const BurndownChartCard = () => {
       <div className="space-y-4">
         <div>
           <BurndownChart data={burndownData} height={120} simple />
+        </div>
+        <div className={s.progressText}>
+        <span>Actual: {actualPercentage}%</span>
+        <span>Ideal: {idealPercentage}%</span>
         </div>
       </div>
     </ProgressCard>

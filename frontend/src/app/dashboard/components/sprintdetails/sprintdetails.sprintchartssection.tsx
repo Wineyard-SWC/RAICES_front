@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { BurndownChart } from "@/components/burndownchart"
 import { VelocityTrendChart } from "@/components/velocitytrend"
+import { useParams } from "next/navigation"
 
 interface BurndownDataPoint {
   day: string
@@ -17,11 +18,12 @@ interface VelocityPoint {
 const SprintChartsSection = () => {
   const [burndownData, setBurndownData] = useState<BurndownDataPoint[]>([])
   const [loading, setLoading] = useState(true)
+  const projectId = typeof window !== "undefined" ? localStorage.getItem("currentProjectId") : null
 
   useEffect(() => {
     const fetchBurndownData = async () => {
       try {
-        const response = await fetch("http://localhost:8000/api/burndown")
+        const response = await fetch(`http://127.0.0.1:8000/api/burndown?projectId=${projectId}`)
         const data = await response.json()
 
         const { duration_days } = data
@@ -57,7 +59,7 @@ const SprintChartsSection = () => {
   useEffect(() => {
     const fetchVelocityTrend = async () => {
       try {
-        const res = await fetch("http://localhost:8000/api/velocitytrend")
+        const res = await fetch(`http://localhost:8000/api/velocitytrend?projectId=${projectId}`)
         const data = await res.json()
         setVelocityData(data)
       } catch (err) {
@@ -78,9 +80,7 @@ const SprintChartsSection = () => {
         )}
       </div>
       <div className="w-1/2">
-      {velocityData.length > 0 && (
-        <VelocityTrendChart data={velocityData} height={300} />
-      )}
+      <VelocityTrendChart data={velocityData} />
       </div>
     </div>
   )
