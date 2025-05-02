@@ -260,6 +260,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
           >
             <div className="h-8 w-8 rounded-full bg-[#ebe5eb] overflow-hidden">
               <img
+                src="https://cdn-icons-png.flaticon.com/512/921/921071.png"
                 alt="User avatar"
                 className="h-full w-full object-cover"
               />

@@ -1,9 +1,9 @@
 import {styles} from "../../styles/calendarstyles"
 import { Activity } from "lucide-react"
 import { ProgressCard } from "../dashboard/dashboard.progresscard"
-import { Progress } from "@/components/progress"
 import { useEffect, useState } from "react"
 import { Task } from "@/types/task"
+import { PieChart, Pie, Cell, ResponsiveContainer, Label } from "recharts"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
@@ -62,23 +62,52 @@ const SprintProgressCard = ({ projectId }: SprintProgressCardProps) => {
     ? Math.round((completedTasks / totalTasks) * 100) 
     : 0
 
+  // Data for the gauge chart
+  const gaugeData = [
+    { name: 'Completed', value: completionPercentage },
+    { name: 'Remaining', value: 100 - completionPercentage }
+  ]
+
+  // Colors for the gauge chart
+  const COLORS = ['#4a2b4a', '#e5e7eb']
+
   return (
     <ProgressCard
       title="Sprint Progress"
       icon={<Activity className={styles.icon} />}
     >
       <div className="space-y-4">
-        {/* Progress bar */}
-        <div className="space-y-2">
-          <Progress
-            value={completionPercentage}
-            className={styles.progressBar}
-            indicatorClassName={styles.progressBarIndicator}
-          />
-          <div className={styles.progressText}>
-            <span>{completionPercentage}% completed</span>
-            <span>{completedTasks} of {totalTasks} tasks</span>
-          </div>
+        {/* Gauge Chart */}
+        <div className="w-full h-52">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={gaugeData}
+                cx="50%"
+                cy="50%"
+                startAngle={180}
+                endAngle={0}
+                innerRadius="65%"
+                outerRadius="95%"
+                paddingAngle={0}
+                dataKey="value"
+              >
+                {gaugeData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+                <Label
+                  value={`${completionPercentage}%`}
+                  position="center"
+                  fill="#888888"
+                  style={{ fontSize: '28px', fontWeight: 'bold' }}
+                />
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        <div className={styles.progressText}>
+          <span>{completionPercentage}% completed</span>
+          <span>{completedTasks} of {totalTasks} tasks</span>
         </div>
       </div>
     </ProgressCard>
