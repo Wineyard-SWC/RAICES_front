@@ -1,200 +1,216 @@
-import { ProgressCard } from "./dashboard.progresscard"
-import { Calendar, Clock, BarChart2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/progress"
-import { dashboardStatsStyles as s } from "../../styles/dashboardstyles"
-import { BurndownChart } from "@/components/burndownchart"
-import { useEffect, useState, useMemo } from "react"
-import { useSprintDataContext } from "@/contexts/sprintdatacontext"
-import { useBacklogContext } from "@/contexts/backlogcontext"
+import { ProgressCard } from "./dashboard.progresscard";
+import { Calendar, Clock, BarChart2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/progress";
+import { dashboardStatsStyles as s } from "../../styles/dashboardstyles";
+import { BurndownChart } from "@/components/burndownchart";
+import { useEffect, useState, useMemo } from "react";
+import { useSprintDataContext } from "@/contexts/sprintdatacontext";
+import { useBacklogContext } from "@/contexts/backlogcontext";
 
 type Props = {
   onViewSprintDetails: () => void;
   onViewCalendar?: () => void;
-}
+};
 
 interface BurndownDataPoint {
-  day: string
-  Remaining: number
-  Ideal: number
+  day: string;
+  Remaining: number;
+  Ideal: number;
 }
 
-const today = new Date()
+const today = new Date();
 const todayString = today.toLocaleDateString('en-US', {
-    weekday: 'long',  
-    month: 'long',    
-    day: 'numeric',   
-})
-const apiURL = process.env.NEXT_PUBLIC_API_URL!
+  weekday: 'long',
+  month: 'long',
+  day: 'numeric',
+});
 
+const apiURL = process.env.NEXT_PUBLIC_API_URL!;
 
-const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
+const DashboardStats = ({ onViewSprintDetails, onViewCalendar }: Props) => {
   // State for burndown chart
-  const [burndownChartData, setBurndownChartData] = useState<BurndownDataPoint[]>([])
-  const [actualPercentage, setActualPercentage] = useState(0)
-  const [idealPercentage, setIdealPercentage] = useState(0)
-  const projectId = typeof window !== "undefined" ? localStorage.getItem("currentProjectId") : null
-  
+  const [burndownChartData, setBurndownChartData] = useState<BurndownDataPoint[]>([]);
+  const [actualPercentage, setActualPercentage] = useState(0);
+  const [idealPercentage, setIdealPercentage] = useState(0);
+
+  // Get the active projectId from localStorage and make it reactive
+  const [projectId, setProjectId] = useState<string | null>(
+    typeof window !== "undefined" ? localStorage.getItem("currentProjectId") : null
+  );
+
+  // Update projectId state when localStorage changes (e.g., project selection)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setProjectId(localStorage.getItem("currentProjectId"));
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
+
   // State for sprint progress
-  const [sprintVelocity, setSprintVelocity] = useState(0)
-  const [taskCompletion, setTaskCompletion] = useState(0)
-  const [daysLeft, setDaysLeft] = useState(0)
+  const [sprintVelocity, setSprintVelocity] = useState(0);
+  const [taskCompletion, setTaskCompletion] = useState(0);
+  const [daysLeft, setDaysLeft] = useState(0);
 
   // Use the sprint data context to get the data
-  const { 
-    burndownData, 
-    teamMembers, 
+  const {
+    burndownData,
     velocityData,
-    refreshBurndownData, 
-    refreshVelocityData 
-  } = useSprintDataContext()
-  
+    refreshBurndownData,
+    refreshVelocityData,
+  } = useSprintDataContext();
+
   // Use the backlog context to get task data
-  const { tasks, refreshAll: refreshTasks } = useBacklogContext()
+  const { tasks, refreshAll: refreshTasks } = useBacklogContext();
 
   // Process burndown data for chart
   useEffect(() => {
-    if (!burndownData) return
-  
-    try {
-      const { duration_days, total_story_points, remaining_story_points } = burndownData
-      const totalDays = duration_days + 1
-      const idealDropPerDay = total_story_points / duration_days
-      const actualDropPerDay = (total_story_points - remaining_story_points) / duration_days
-    
-      const generatedData: BurndownDataPoint[] = []
-      for (let day = 0; day < totalDays; day++) {
-        const ideal = total_story_points - idealDropPerDay * day
-        const remaining = total_story_points - actualDropPerDay * day
-    
-        generatedData.push({
-          day: `Day ${day}`,
-          Ideal: parseFloat(ideal.toFixed(2)),
-          Remaining: parseFloat(remaining.toFixed(2)),
-        })
+    const fetchBurndownData = async () => {
+      if (!projectId) {
+        setBurndownChartData([]);
+        setActualPercentage(0);
+        setIdealPercentage(0);
+        return;
       }
-    
-      setBurndownChartData(generatedData)
-      
-      // Calculate percentages
-      const initial = total_story_points
-      if (generatedData.length > 0) {
-        const last = generatedData[generatedData.length - 1]
-        setActualPercentage(Math.round(((initial - last.Remaining) / initial) * 100))
-        setIdealPercentage(Math.round(((initial - last.Ideal) / initial) * 100))
-      }
+      try {
+        const response = await fetch(`${apiURL}/api/burndown?projectId=${projectId}`);
+        if (!response.ok) {
+          console.error(`Failed to fetch burndown data for project ID: ${projectId}`);
+          setBurndownChartData([]);
+          setActualPercentage(0);
+          setIdealPercentage(0);
+          return;
+        }
+        const data = await response.json();
+        const { duration_days, total_story_points, remaining_story_points } = data;
 
-      // Calculate days left
-      const sprintStartDate = localStorage.getItem("sprint_start_date")
-      if (sprintStartDate) {
-        const startDate = new Date(sprintStartDate)
-        const currentDate = new Date()
-        const endDate = new Date(startDate)
-        
-        // Add duration_days to startDate to get endDate
-        endDate.setDate(startDate.getDate() + duration_days)
-        
-        // Calculate days remaining
-        const msPerDay = 1000 * 60 * 60 * 24
-        const daysRemaining = Math.max(0, Math.ceil((endDate.getTime() - currentDate.getTime()) / msPerDay))
-        
-        setDaysLeft(daysRemaining)
-      } else {
-        // Fallback if no start date is found
-        setDaysLeft(duration_days)
+        const totalDays = duration_days + 1;
+        const idealDropPerDay = total_story_points / duration_days;
+        const actualDropPerDay =
+          (total_story_points - remaining_story_points) / duration_days;
+
+        const generatedData: BurndownDataPoint[] = [];
+        for (let day = 0; day < totalDays; day++) {
+          const ideal = total_story_points - idealDropPerDay * day;
+          const remaining = total_story_points - actualDropPerDay * day;
+
+          generatedData.push({
+            day: `Day ${day}`,
+            Ideal: parseFloat(ideal.toFixed(2)),
+            Remaining: parseFloat(remaining.toFixed(2)),
+          });
+        }
+
+        setBurndownChartData(generatedData);
+
+        // Calculate percentages
+        const initial = total_story_points;
+        if (generatedData.length > 0) {
+          const last = generatedData[generatedData.length - 1];
+          setActualPercentage(Math.round(((initial - last.Remaining) / initial) * 100));
+          setIdealPercentage(Math.round(((initial - last.Ideal) / initial) * 100));
+        } else {
+          setActualPercentage(0);
+          setIdealPercentage(0);
+        }
+
+        // Calculate days left (moved here to be within the project-specific fetch)
+        const sprintStartDate = localStorage.getItem("sprint_start_date");
+        if (sprintStartDate && duration_days !== undefined) {
+          const startDate = new Date(sprintStartDate);
+          const currentDate = new Date();
+          const endDate = new Date(startDate);
+          endDate.setDate(startDate.getDate() + duration_days);
+          const msPerDay = 1000 * 60 * 60 * 24;
+          const daysRemaining = Math.max(
+            0,
+            Math.ceil((endDate.getTime() - currentDate.getTime()) / msPerDay)
+          );
+          setDaysLeft(daysRemaining);
+        } else if (duration_days !== undefined) {
+          setDaysLeft(duration_days);
+        } else {
+          setDaysLeft(0); // Default if no start date or duration
+        }
+      } catch (error) {
+        console.error("Error fetching burndown data:", error);
+        setBurndownChartData([]);
+        setActualPercentage(0);
+        setIdealPercentage(0);
       }
-    } catch (error) {
-      console.error("Error processing burndown data:", error)
-    }
-  }, [burndownData])
+    };
+
+    fetchBurndownData();
+  }, [projectId, burndownData?.duration_days]); // Re-run when projectId or duration changes
 
   // Process velocity data
   useEffect(() => {
-    if (!velocityData || velocityData.length === 0) return
-
+    if (!velocityData || velocityData.length === 0) {
+      setSprintVelocity(0);
+      setTaskCompletion(0);
+      return;
+    }
     try {
       // Calculate average velocity from last 3 sprints
-      const recentVelocity = velocityData.slice(-3)
-      const avgVelocity = recentVelocity.reduce((sum, sprint) => sum + sprint.Actual, 0) / recentVelocity.length
-      setSprintVelocity(Math.round(avgVelocity))
-      
+      const recentVelocity = velocityData.slice(-3);
+      const avgVelocity =
+        recentVelocity.reduce((sum, sprint) => sum + sprint.Actual, 0) / recentVelocity.length;
+      setSprintVelocity(Math.round(avgVelocity) || 0);
+
       // Get task completion from localStorage or calculate from recent sprint
-      const storedCompletion = parseInt(localStorage.getItem("sprint_task_completion") || "0")
+      const storedCompletion = parseInt(localStorage.getItem("sprint_task_completion") || "0");
       if (storedCompletion) {
-        setTaskCompletion(storedCompletion)
+        setTaskCompletion(storedCompletion);
       } else if (velocityData.length > 0) {
-        const latestSprint = velocityData[velocityData.length - 1]
-        const completion = latestSprint.Actual / latestSprint.Planned * 100
-        setTaskCompletion(Math.round(completion))
+        const latestSprint = velocityData[velocityData.length - 1];
+        const completion = (latestSprint.Actual / latestSprint.Planned) * 100;
+        setTaskCompletion(Math.round(completion) || 0);
       }
     } catch (error) {
-      console.error("Error processing velocity data:", error)
+      console.error("Error processing velocity data:", error);
+      setSprintVelocity(0);
+      setTaskCompletion(0);
     }
-  }, [velocityData])
+  }, [velocityData]);
 
   // Calculate task statistics from the TaskColumns
   const taskStats = useMemo(() => {
-    if (!tasks) return { completedTasks: 0, inProgressTasks: 0, totalTasks: 0, completionPercentage: 0 }
-    
+    if (!tasks)
+      return { completedTasks: 0, inProgressTasks: 0, totalTasks: 0, completionPercentage: 0 };
     // Count tasks in each column
-    const done = tasks.done?.length || 0
-    const inProgress = tasks.inprogress?.length || 0
-    const review = tasks.inreview?.length || 0
-    const todo = tasks.todo?.length || 0
-    
-    const totalTasks = done + inProgress + review + todo
-    const completionPercentage = totalTasks > 0 ? Math.round((done / totalTasks) * 100) : 0
-    
+    const done = tasks.done?.length || 0;
+    const inProgress = tasks.inprogress?.length || 0;
+    const review = tasks.inreview?.length || 0;
+    const todo = tasks.todo?.length || 0;
+
+    const totalTasks = done + inProgress + review + todo;
+    const completionPercentage = totalTasks > 0 ? Math.round((done / totalTasks) * 100) : 0;
+
     return {
       completedTasks: done,
-      inProgressTasks: inProgress, // Counting both in progress and review as active tasks
+      inProgressTasks: inProgress + review, // Counting both in progress and review as active tasks
       totalTasks,
-      completionPercentage
-    }
-  }, [tasks])
-
-  // Function to fetch or calculate sprint dates
-  const calculateSprintDates = () => {
-    // Try to get dates from context first
-    if (burndownData?.duration_days) {
-      const sprintStartDate = localStorage.getItem("sprint_start_date")
-      
-      if (sprintStartDate) {
-        const startDate = new Date(sprintStartDate)
-        const currentDate = new Date()
-        const endDate = new Date(startDate)
-        
-        // Add duration_days to startDate to get endDate
-        endDate.setDate(startDate.getDate() + burndownData.duration_days)
-        
-        // Calculate days remaining
-        const msPerDay = 1000 * 60 * 60 * 24
-        const daysRemaining = Math.max(0, Math.ceil((endDate.getTime() - currentDate.getTime()) / msPerDay))
-        
-        setDaysLeft(daysRemaining)
-      }
-    }
-  }
-  
-  // Call this function initially and whenever burndownData changes
-  useEffect(() => {
-    calculateSprintDates()
-  }, [burndownData])
+      completionPercentage,
+    };
+  }, [tasks]);
 
   // Refresh data when component mounts
   useEffect(() => {
     const loadData = async () => {
       try {
-        await refreshBurndownData()
-        await refreshVelocityData()
-        await refreshTasks()
+        await refreshBurndownData();
+        await refreshVelocityData();
+        await refreshTasks();
       } catch (error) {
-        console.error("Error refreshing data:", error)
+        console.error("Error refreshing data:", error);
       }
-    }
-    
-    loadData()
-  }, [])
+    };
+    loadData();
+  }, [refreshBurndownData, refreshVelocityData, refreshTasks]);
 
   return (
     <div className={s.container}>
@@ -202,10 +218,7 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
         title="Calendar & Burndown"
         icon={<Calendar className={s.icon} />}
         footer={
-          <Button variant="default" 
-          className={`${s.button} mt-4`}
-          onClick={onViewCalendar}
-          >
+          <Button variant="default" className={`${s.button} mt-4`} onClick={onViewCalendar}>
             View Calendar
           </Button>
         }
@@ -214,12 +227,10 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
           <div className="text-center mb-2">
             <h3 className="text-gray-700">{todayString}</h3>
           </div>
-          
           <div>
             <h4 className="font-medium mb-2">Burndown Chart</h4>
             <BurndownChart data={burndownChartData} height={120} simple />
           </div>
-
           <div className="space-y-2">
             <div className={s.progressText}>
               <span>Actual: {actualPercentage}%</span>
@@ -245,10 +256,10 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
         <div className={`${s.progressCard} flex flex-col space-y-4`}>
           <div className="mb-4">
             <div className={s.sprintLabel}>Sprint Velocity</div>
-            <Progress 
-              value={sprintVelocity > 0 ? Math.min(sprintVelocity, 100) : 0} 
-              className={`${s.progressBar} mt-2 mb-2`} 
-              indicatorClassName={s.progressBarIndicator} 
+            <Progress
+              value={sprintVelocity > 0 ? Math.min(sprintVelocity, 100) : 0}
+              className={`${s.progressBar} mt-2 mb-2`}
+              indicatorClassName={s.progressBarIndicator}
             />
             <div className={s.sprintStats}>
               <span>{sprintVelocity > 0 ? sprintVelocity : 0} SP/Sprint</span>
@@ -261,23 +272,22 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
               <div className={s.sprintStats}>{taskStats.completionPercentage}%</div>
             </div>
             <div className="mt-2">
-              <Progress 
-                value={taskStats.completionPercentage} 
-                className={`${s.progressBar} mt-2 mb-2`} 
-                indicatorClassName={s.progressBarIndicator} 
+              <Progress
+                value={taskStats.completionPercentage}
+                className={`${s.progressBar} mt-2 mb-2`}
+                indicatorClassName={s.progressBarIndicator}
               />
             </div>
           </div>
 
           <div className="mb-4">
             <div className="grid grid-cols-2 gap-4">
-            
               <div className={s.statCard}>
                 <Clock className={s.statIcon} />
                 <div className={s.statValue}>{daysLeft}</div>
                 <div className={s.statLabel}>Days Left</div>
               </div>
-  
+
               <div className={s.statCard}>
                 <BarChart2 className={s.statIcon} />
                 <div className={s.statValue}>{taskStats.completionPercentage}%</div>
@@ -328,14 +338,14 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
             <div className={s.emojiBadge}>😄</div>
           </div>
         </div>
-        
+
         <div className={`${s.progressCard} flex flex-col space-y-4`}>
           <div className={s.taskGrid}>
             <div className={s.statCard}>
               <div className={s.statValue}>{taskStats.completedTasks}</div>
               <div className={s.statLabel}>Completed Tasks</div>
             </div>
-  
+
             <div className={s.statCard}>
               <div className={s.statValue}>{taskStats.inProgressTasks}</div>
               <div className={s.statLabel}>In Progress</div>
@@ -345,6 +355,6 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
       </ProgressCard>
     </div>
   );
-}
+};
 
 export default DashboardStats;
