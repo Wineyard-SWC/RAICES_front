@@ -5,6 +5,7 @@ import { createContext, useContext, useEffect, useState } from "react"
 interface BurndownData {
   duration_days: number
   total_story_points: number
+  remaining_story_points: number
 }
 
 interface TeamMember {
@@ -69,9 +70,9 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
       const response = await fetch(`${apiURL}/api/burndown?projectId=${project_id}`)
       const data = await response.json()
 
-      const { duration_days, total_story_points, team_members } = data
+      const { duration_days, total_story_points, remaining_story_points, team_members } = data
 
-      const burndown: BurndownData = { duration_days, total_story_points }
+      const burndown: BurndownData = { duration_days, total_story_points, remaining_story_points }
 
       setBurndownData(burndown)
       setTeamMembers(team_members || [])
