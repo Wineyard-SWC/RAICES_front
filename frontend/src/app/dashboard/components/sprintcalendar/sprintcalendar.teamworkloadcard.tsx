@@ -2,24 +2,111 @@ import { Users } from "lucide-react"
 import { ProgressCard } from "../dashboard/dashboard.progresscard"
 import { Progress } from "@/components/progress"
 import {styles} from "../../styles/calendarstyles"
+import { useEffect, useState } from "react"
+import { Task } from "@/types/task"
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL
 
 interface UserWorkload {
   name: string
   progress: number 
   tasks: string
+  completedTasks: number
+  totalTasks: number
 }
 
-const users: UserWorkload[] = [
-  { name: "Emma Smith", progress: 75, tasks: "3/4 Tasks" },
-  { name: "Mike Johnson", progress: 83, tasks: "5/6 Tasks" },
-]
+interface TeamWorkloadCardProps {
+  projectId?: string
+}
 
+const TeamWorkloadCard = ({ projectId }: TeamWorkloadCardProps) => {
+  const [users, setUsers] = useState<UserWorkload[]>([])
+  const [loading, setLoading] = useState(false)
 
-const TeamWorkloadCard = () => {
+  useEffect(() => {
+    const fetchTasks = async () => {
+      setLoading(true)
+      try {
+        // Get project ID from localStorage if not provided as prop
+        const currentProjectId = projectId || localStorage.getItem("currentProjectId")
+        
+        if (!currentProjectId) {
+          console.error("No project ID available")
+          return
+        }
+
+        const response = await fetch(`${API_URL}/projects/${currentProjectId}/tasks`)
+        if (!response.ok) {
+          throw new Error("Failed to fetch tasks")
+        }
+        
+        const tasks: Task[] = await response.json()
+        
+        // Group tasks by assignee
+        const tasksByAssignee: Record<string, Task[]> = {}
+        
+        tasks.forEach(task => {
+          if (!task.assignee) return
+          
+          if (!tasksByAssignee[task.assignee]) {
+            tasksByAssignee[task.assignee] = []
+          }
+          
+          tasksByAssignee[task.assignee].push(task)
+        })
+        
+        // Create user workload objects
+        const workloadData: UserWorkload[] = Object.entries(tasksByAssignee).map(([name, tasks]) => {
+          const completedTasks = tasks.filter(task => task.status_khanban === 'Done').length
+          const totalTasks = tasks.length
+          const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+          
+          return {
+            name,
+            progress,
+            tasks: `${completedTasks}/${totalTasks} Tasks`,
+            completedTasks,
+            totalTasks
+          }
+        })
+        
+        setUsers(workloadData)
+      } catch (error) {
+        console.error("Error fetching tasks:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchTasks()
+  }, [projectId])
+
+  if (loading) {
+    return (
+      <ProgressCard
+        title="Team Workload"
+        icon={<Users className={styles.icon} />}
+      >
+        <div className="p-4 text-center text-gray-500">Loading team workload...</div>
+      </ProgressCard>
+    )
+  }
+
+  if (users.length === 0) {
+    return (
+      <ProgressCard
+        title="Team Workload"
+        icon={<Users className={styles.icon} />}
+      >
+        <div className="p-4 text-center text-gray-500">No team members with assigned tasks</div>
+      </ProgressCard>
+    )
+  }
+
   return (
     <ProgressCard
       title="Team Workload"
-      icon={<Users className={styles.icon} />} // Icono de "equipo"
+      icon={<Users className={styles.icon} />}
     >
       <div className="space-y-4">
         {users.map((user, idx) => (
@@ -36,7 +123,7 @@ const TeamWorkloadCard = () => {
               <span className="text-sm text-gray-600">{user.tasks}</span>
             </div>
 
-            {/* Barra de progreso */}
+            {/* Progress bar */}
             <Progress
               value={user.progress}
               className={styles.progressBar}

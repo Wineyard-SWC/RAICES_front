@@ -7,10 +7,11 @@ import { Search, ArrowLeft, Users, ListFilter, X, AlertCircle } from "lucide-rea
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Navbar from "@/components/NavBar"
-import LoadingScreen from "@/components/animations/loading"
+
 import { useSprintContext } from "@/contexts/sprintcontext"
 import type { Task } from "@/types/task"
 import { Progress } from "@/components/progress"
+import DefaultLoading from "@/components/animations/DefaultLoading"
 
 export default function TaskAssignmentPage() {
   const router = useRouter()
@@ -31,7 +32,7 @@ export default function TaskAssignmentPage() {
   const [taskToAssign, setTaskToAssign] = useState<Task | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
 
-  if (!sprint) return <LoadingScreen isLoading generationType="tasks" />
+  if (!sprint) return <DefaultLoading text="tasks and members" />
 
   // Calculate total story points in the sprint for workload distribution
   const totalSprintPoints = tasks.reduce((sum, task) => sum + (task.story_points || 0), 0)

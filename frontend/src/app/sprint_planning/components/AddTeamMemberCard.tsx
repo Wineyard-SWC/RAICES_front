@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
 import { Plus } from "lucide-react";
-import LoadingScreen from "@/components/animations/loading";
 import { Button } from "@/components/ui/button";
 import type { SprintMember } from "@/types/sprint";
+import DefaultLoading from "@/components/animations/DefaultLoading";
 
 interface ProjectUser {
   id: string;
@@ -91,7 +91,7 @@ export default function AddTeamMemberCard({ projectId, already, onAdd }: Props) 
             </DialogTitle>
 
             {loading ? (
-              <LoadingScreen isLoading generationType="team" />
+              <DefaultLoading text="Members" />
             ) : error ? (
               <p className="text-red-600">{error}</p>
             ) : (

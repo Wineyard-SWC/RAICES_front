@@ -8,23 +8,32 @@ import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
 import { TaskCard } from "./dashboard.taskcard"
 import { TaskColumns } from "@/types/taskkanban"
+import { updateTaskStatus } from "@/utils/updatestatuskhanban"
+import { useBacklogContext } from "@/contexts/backlogcontext"
 
 interface TasksKanbanProps {
-  tasks: TaskColumns
   onNavigate?: () => void;
   view?: string;
-  refreshTasks?: () => void;
 }
+const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
 
-export const TasksKanban = ({ tasks, onNavigate, view, refreshTasks }: TasksKanbanProps) => {
+export const TasksKanban = ({onNavigate, view }: TasksKanbanProps) => {
+  const { 
+    tasks, 
+    updateTaskStatus, 
+    deleteTask, 
+    searchTerm,
+    setSearchTerm 
+  } = useBacklogContext()
+
   const [taskState, setTaskState] = useState<TaskColumns>({
-    backlog: tasks.backlog || [],
-    todo: tasks.todo || [],
-    inprogress: tasks.inprogress || [],
-    inreview: tasks.inreview || [],
-    done: tasks.done || [],
-  });
+    backlog: [],
+    todo: [],
+    inprogress: [],
+    inreview: [],
+    done: [],
+  })
 
   useEffect(() => {
     setTaskState({
@@ -33,8 +42,16 @@ export const TasksKanban = ({ tasks, onNavigate, view, refreshTasks }: TasksKanb
       inprogress: tasks.inprogress || [],
       inreview: tasks.inreview || [],
       done: tasks.done || [],
-    });
-  }, [tasks]);
+    })
+  }, [tasks])
+
+  const statusDisplayMap: Record<keyof typeof taskState, string> = {
+    backlog: "Backlog",
+    todo: "To Do",
+    inprogress: "In Progress",
+    inreview: "In Review",
+    done: "Done",
+  }
 
   const onDragEnd = (result: any) => {
     const { source, destination } = result
@@ -43,14 +60,14 @@ export const TasksKanban = ({ tasks, onNavigate, view, refreshTasks }: TasksKanb
       return
     }
 
+    const sourceCol = source.droppableId as keyof typeof taskState
+    const destCol = destination.droppableId as keyof typeof taskState
+
     setTaskState((prev) => {
       const newState = { ...prev }
-      const sourceCol = source.droppableId as keyof typeof newState
-      const destCol = destination.droppableId as keyof typeof newState
-
       const sourceTasks = [...newState[sourceCol]]
       const [movedTask] = sourceTasks.splice(source.index, 1)
-
+  
       if (sourceCol === destCol) {
         sourceTasks.splice(destination.index, 0, movedTask)
         newState[sourceCol] = sourceTasks
@@ -59,18 +76,18 @@ export const TasksKanban = ({ tasks, onNavigate, view, refreshTasks }: TasksKanb
         destTasks.splice(destination.index, 0, movedTask)
         newState[sourceCol] = sourceTasks
         newState[destCol] = destTasks
+        
+        movedTask.status_khanban = statusDisplayMap[destCol] as 'Backlog' | 'In Progress' | 'In Review' | 'To Do' | 'Done'
+        
+        updateTaskStatus(movedTask.id, statusDisplayMap[destCol])
       }
-
+  
       return newState
     })
   }
 
-  const handleDelete = (taskId: string, columnId: string) => {
-    setTaskState((prev) => {
-      const newState = { ...prev }
-      newState[columnId as keyof typeof newState] = newState[columnId as keyof typeof newState].filter(task => task.id !== taskId);
-      return newState
-    });
+  const handleDelete = async (taskId: string) => {
+    await deleteTask(taskId)
   }
 
   const columnStyles = {
@@ -101,6 +118,7 @@ export const TasksKanban = ({ tasks, onNavigate, view, refreshTasks }: TasksKanb
     },
   }
 
+
   return (
     <Card 
     className="border border-[#D3C7D3] shadow-sm ">
@@ -114,7 +132,12 @@ export const TasksKanban = ({ tasks, onNavigate, view, refreshTasks }: TasksKanb
           {view === "dashboard" ? (
             <div className="relative w-64">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-lg text-gray-400" />
-              <Input placeholder="Search tasks..." className="pl-8 h-9 bg-white" /> 
+              <Input
+                placeholder="Search sprint tasks..."
+                className="pl-8 h-9 bg-white"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div> 
           ):('')}
           {view === "dashboard" ? (
@@ -150,7 +173,12 @@ export const TasksKanban = ({ tasks, onNavigate, view, refreshTasks }: TasksKanb
                           </div>
 
                           <div className="h-full overflow-y-auto max-h-[500px] pr-1">
-                            {taskState[columnId as keyof typeof taskState].map((task, index) => (
+                            {taskState[columnId as keyof typeof taskState]
+                              .filter(task => 
+                                  task.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                  task.description.toLowerCase().includes(searchTerm.toLowerCase())
+                              )
+                              .map((task, index) => (
                               <Draggable key={task.id} draggableId={task.id} index={index}>
                                 {(provided) => (
                                   <div
@@ -178,7 +206,7 @@ export const TasksKanban = ({ tasks, onNavigate, view, refreshTasks }: TasksKanb
                       <div
                         ref={provided.innerRef}
                         {...provided.droppableProps}
-                        className="bg-gray-100 rounded-md p-4 min-w-[500px] max-w-[500px] flex-shrink-0"
+                        className="bg-gray-100 rounded-md p-4 min-w-[450px] max-w-[450px] flex-shrink-0"
                       >
                         <div className="flex items-center justify-between mb-3">
                           <h3 className="font-medium text-lg text-gray-700">{column.header}</h3>
@@ -188,11 +216,16 @@ export const TasksKanban = ({ tasks, onNavigate, view, refreshTasks }: TasksKanb
                         </div>
 
                         <div className="h-full overflow-y-auto max-h-[500px] pr-1">
-                          {taskState[columnId as keyof typeof taskState].map((task, index) => (
+                          {taskState[columnId as keyof typeof taskState]
+                            .filter(task => 
+                              task.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                              task.description.toLowerCase().includes(searchTerm.toLowerCase())
+                            )
+                            .map((task, index) => (
                             <Draggable key={task.id} draggableId={task.id} index={index}>
                               {(provided) => (
                                 <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
-                                  <TaskCard task={task} columnId={columnId} onDelete={() => handleDelete(task.id, columnId)} />
+                                    <TaskCard task={task} columnId={columnId} onDelete={() => handleDelete(task.id)} />
                                 </div>
                               )}
                             </Draggable>

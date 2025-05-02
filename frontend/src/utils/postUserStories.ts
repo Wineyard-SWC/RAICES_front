@@ -18,11 +18,13 @@ export async function postUserStories(stories: Omit<UserStory, 'id' | 'selected'
         description: s.description,
         priority: s.priority,
         points: s.points,
-        acceptanceCriteria: s.acceptance_criteria,
+        acceptanceCriteria: s.acceptanceCriteria,
         epicRef: s.assigned_epic,
         projectRef: projectId,
         comments: s.comments || Comments,
-        status_khanban: 'Backlog'
+        status_khanban: s.status_khanban || 'Backlog',
+        total_tasks: s.total_tasks || 0,
+        task_completed: s.task_completed || 0
       }))
     ),
   });

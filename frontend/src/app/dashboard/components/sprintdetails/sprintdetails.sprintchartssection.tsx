@@ -47,7 +47,7 @@ const SprintChartsSection = () => {
 
         setBurndownData(generatedData)
       } catch (error) {
-        console.error("Error al cargar burndown data:", error)
+        console.error("Error loading burndown data:", error)
       } finally {
         setLoading(false)
       }
@@ -65,7 +65,7 @@ const SprintChartsSection = () => {
         const data = await res.json()
         setVelocityData(data)
       } catch (err) {
-        console.error("Error fetching velocity trend:", err)
+        console.error("Error loading velocity trend:", err)
       }
     }
 
@@ -76,7 +76,7 @@ const SprintChartsSection = () => {
     <div className="flex gap-4 mt-10">
       <div className="w-1/2">
         {loading ? (
-          <div className="text-center text-sm text-gray-500">Cargando burndown chart...</div>
+          <div className="text-center text-sm text-gray-500">Loading burndown chart...</div>
         ) : (
           <BurndownChart data={burndownData} />
         )}

@@ -12,15 +12,23 @@ export const getProjectTasks = async (projectId: string): Promise<Task[]> => {
 // 2) Batch‐upsert (reemplaza tu postTasks original)
 export const postTasks = async (
   projectId: string,
-  tasks: TaskFormData[]
+  tasks: Task[]
 ): Promise<Task[]> => {
-  console.log("-----------------");
-  console.log(tasks);
-  const res = await fetch(apiURL + `/projects/${projectId}/tasks/batch`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(tasks),
-  })
+  // 1️⃣ Mapea cada Task para renombrar `status` → `status_khanban`
+  const payload = tasks.map(({ status, ...rest }) => ({
+    ...rest,
+    status_khanban: status,
+  }))
+
+  // 2️⃣ Llama al endpoint con el payload corregido
+  const res = await fetch(
+    `${apiURL}/projects/${projectId}/tasks/batch`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }
+  )
   if (!res.ok) {
     console.error(await res.text())
     throw new Error("Failed to save tasks batch")
