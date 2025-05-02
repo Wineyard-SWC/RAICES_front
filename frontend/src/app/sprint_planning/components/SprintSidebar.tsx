@@ -35,8 +35,12 @@ export default function SprintSidebar({
   )
 
   /* capacidad fija de ejemplo (cámbiala si tu backend la envía) */
-  const maxPoints         = 32
-  const pointsPercentage  = Math.min(100, Math.round((totalPoints / maxPoints) * 100))
+  const maxPoints = sprint.max_points ?? 0
+  const pointsPercentage = maxPoints > 0 ? Math.round((totalPoints / maxPoints) * 100) : 0
+// display cap at 100%, extra if over
+  const displayPercentage = Math.min(pointsPercentage, 100)
+  const overPercentage = pointsPercentage > 100 ? pointsPercentage - 100 : 0
+
   const storyCount        = selectedStories.length
   const bugCount          = 0 // pondrías tu lógica real aquí
 
@@ -78,10 +82,6 @@ export default function SprintSidebar({
                   ).toLocaleDateString()}`}
                 />
                 <Detail label="Team Size"    value={`${sprint.team_members.length} members`} />
-                <Detail
-                  label="Team Capacity"
-                  value={`${sprint.team_members.reduce((s, m) => s + m.capacity, 0)} h`}
-                />
               </div>
             </section>
 
@@ -110,11 +110,11 @@ export default function SprintSidebar({
               <div className="mb-1 flex justify-between">
                 <span className="text-sm text-gray-500">Sprint Points</span>
                 <span className="text-sm font-medium">
-                  {totalPoints}/{maxPoints} ({pointsPercentage}%)
+                {totalPoints}/{maxPoints} - {displayPercentage}%{overPercentage > 0 ? ` (+ ${overPercentage}%)` : ""}
                 </span>
               </div>
               <Progress
-                value={pointsPercentage}
+                value={displayPercentage}
                 className="h-2 bg-gray-200"
                 indicatorClassName="bg-[#4a2b4a]"
               />

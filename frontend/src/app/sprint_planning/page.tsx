@@ -166,43 +166,78 @@ export default function SprintPlanningPage() {
   }, [projectId, sprint]);
 
   /* ------------ save sprint ------------- */
+  // SprintPlanningPage.tsx → handleSaveSprint
   const handleSaveSprint = async () => {
     if (!sprint) return;
+  
     const payload = buildSprintPayload({
       ...sprint,
-      user_stories: sprint.user_stories.map(us=>({
-        ...us,
-        tasks: tasks.filter(t=>t.user_story_id===us.id),
-      })),
+      user_stories: sprint.user_stories
+        .filter((us) => us.selected)
+        .map((us) => ({
+          ...us,
+          tasks: tasks.filter((t) => t.user_story_id === us.id),
+        })),
     });
-
-    console.log(payload);
+  
     setLoading(true);
+  
     try {
-      const res = await fetch(
-        sprintId
-          ? `${API_URL}/projects/${projectId}/sprints/${sprintId}`
-          : `${API_URL}/projects/${projectId}/sprints`,
-        {
-          method: sprintId ? "PUT" : "POST",
-          headers:{ "Content-Type":"application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+      // 1) Construye la URL correctamente
+      const url = sprintId
+        ? `${API_URL}/projects/${projectId}/sprints/${sprintId}`
+        : `${API_URL}/projects/${projectId}/sprints`;
+  
+      const res = await fetch(url, {
+        method: sprintId ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+  
+      console.log("this is payload", payload);
+      console.log("res", res);
+  
       if (!res.ok) throw new Error("Save failed");
       const saved: Sprint = await res.json();
       setSprint(saved);
-
-      if (!sprintId) {
-        router.replace(`/sprint_planning?projectId=${projectId}&sprintId=${saved.id}`);
-      }
-
+  
+      // 2) Prepara tareas para batch‐upsert
+      // Ojo: aquí también debes incluir `status_khanban`
+      const tasksToUpsert = tasks
+        .filter((t) => t.sprint_id === saved.id)
+        .map((t) => ({
+          id: t.id,
+          title: t.title,
+          description: t.description,
+          user_story_id: t.user_story_id,
+          assignee: t.assignee,
+          sprint_id: t.sprint_id,
+          status_khanban: t.status,   // ← necesario para que Pydantic lo reciba
+          priority: t.priority,
+          story_points: t.story_points,
+          deadline: t.deadline,
+          comments: t.comments,
+        }));
+  
+      const taskRes = await fetch(
+        `${API_URL}/projects/${projectId}/tasks/batch`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(tasksToUpsert),
+        }
+      );
+      if (!taskRes.ok) throw new Error("Tasks batch failed");
+  
+      // 3) Finalmente navega con backticks
       router.push(`/dashboard?projectId=${projectId}`);
-
-    } catch (e:any) { setError(e.message); }
-    finally       { setLoading(false); }
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
   };
-
+  
   /* ui */
   if (loading) return <DefaultLoading text="sprint" />
   if (error || !sprint) return (
@@ -217,10 +252,10 @@ export default function SprintPlanningPage() {
   return (
     <div className="min-h-screen bg-[#ebe5eb]/30">
       <Navbar projectSelected />
-      <div className="flex">
+      <div className="flex gap-4">
         <main className="flex-1 container mx-auto px-4 py-8">
-          <h1 className="text-4xl font-bold">Sprint Planning</h1>
-          <p className="text-[#694969] mb-6">
+        <h1 className="text-4xl font-bold">Sprint Planning</h1>
+        <p className="text-[#694969] mt-2 mb-6">
             Plan for <strong>{sprint.name}</strong>
           </p>
 
@@ -252,17 +287,17 @@ export default function SprintPlanningPage() {
             }}
           />
 
-          
-          <ProductBacklog
-            userStories={sprint.user_stories}
-            onToggleUserStory={id =>
-              setSprint({
-                ...sprint,
-                user_stories: sprint.user_stories.map(us =>
-                  us.id===id ? { ...us, selected:!us.selected } : us),
-              })}
-          />
-
+          <div className="mt-6">
+            <ProductBacklog
+              userStories={sprint.user_stories}
+              onToggleUserStory={id =>
+                setSprint({
+                  ...sprint,
+                  user_stories: sprint.user_stories.map(us =>
+                    us.id===id ? { ...us, selected:!us.selected } : us),
+                })}
+            />
+          </div>
         </main>
 
         <SprintSidebar

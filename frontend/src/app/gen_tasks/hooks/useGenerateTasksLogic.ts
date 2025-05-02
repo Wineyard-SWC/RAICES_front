@@ -135,11 +135,44 @@ export const useGenerateTasksLogic = () => {
     setError(null);
 
     try {
-      console.log(generatedTasks);
-      // 1️⃣  Guarda SOLO las tareas (aún sin sprint)
+      // 1️⃣ Guarda SOLO las tareas (aún sin sprint)
       await postTasks(projectId, generatedTasks);
 
-      // 2️⃣  Navega a Sprint Planning; allí se creará el sprint
+      // 2️⃣ Ahora calculamos los totales por historia
+      //    - total_tasks = número de tasks asociadas
+      //    - points      = suma de story_points de esas tasks
+      const updatedStories = userStories.map(us => {
+        const tasksOfStory = generatedTasks.filter(t => t.user_story_id === us.uuid);
+        const totalTasks = tasksOfStory.length;
+        const sumPoints  = tasksOfStory.reduce((sum, t) => sum + (t.story_points || 0), 0);
+        return {
+          // campos mínimos que el endpoint espera:
+          uuid: us.uuid,                   // id interno
+          idTitle: us.idTitle,             // p.e. "US-123"
+          title: us.title,
+          description: us.description,
+          acceptanceCriteria: us.acceptanceCriteria,
+          priority: us.priority,
+          comments: us.comments || [],
+          status_khanban: us.status_khanban || "Backlog",
+          projectRef: projectId,
+          points: sumPoints,
+          total_tasks: totalTasks,
+          task_completed: 0,               // o si llevas cuenta, el filtrado de completadas
+        };
+      });
++
+      // 3️⃣ Envío batch para actualizar las historias
+      await fetch(
+        `${API_URL}/projects/${projectId}/userstories/batch`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updatedStories),
+        }
+      );
+
+      // 4️⃣ Navega a Sprint Planning; allí se creará el sprint
       router.push(`/sprint_planning?projectId=${projectId}`);
     } catch (e: any) {
       console.error(e);
@@ -148,7 +181,6 @@ export const useGenerateTasksLogic = () => {
       setIsLoading(false);
     }
   };
-
 
   const handleUpdateTask = (id: string, data: Partial<Task>) =>
     setGeneratedTasks((prev) =>

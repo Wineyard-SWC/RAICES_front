@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import type { Sprint } from "@/types/sprint"
 
 interface SprintConfigurationProps {
-  sprint: Sprint
+  sprint: Sprint & { max_points?: number }
   onUpdate: (data: Partial<Sprint>) => void
 }
 
@@ -17,42 +17,45 @@ export default function SprintConfiguration({ sprint, onUpdate }: SprintConfigur
   const [duration, setDuration] = useState(sprint.duration_weeks.toString())
   const [startDate, setStartDate] = useState(new Date(sprint.start_date).toISOString().split("T")[0])
   const [endDate, setEndDate] = useState(new Date(sprint.end_date).toISOString().split("T")[0])
+  const [capacity, setCapacity] = useState((sprint.max_points ?? 0).toString())
 
   const handleSubmit = () => {
     onUpdate({
       name,
-      duration_weeks: Number.parseInt(duration) || 2,
+      duration_weeks: parseInt(duration) || 2,
       start_date: new Date(startDate).toISOString(),
       end_date: new Date(endDate).toISOString(),
+      max_points: parseInt(capacity) || 0,
     })
   }
 
   const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newStartDate = e.target.value
-    setStartDate(newStartDate)
+    const newStart = e.target.value
+    setStartDate(newStart)
 
-    // Automatically update end date based on duration
-    const start = new Date(newStartDate)
-    const durationWeeks = Number.parseInt(duration) || 2
-    const end = new Date(start)
-    end.setDate(start.getDate() + durationWeeks * 7)
+    const weeks = parseInt(duration) || 2
+    const end = new Date(newStart)
+    end.setDate(end.getDate() + weeks * 7)
     setEndDate(end.toISOString().split("T")[0])
 
     handleSubmit()
   }
 
   const handleDurationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newDuration = e.target.value
-    setDuration(newDuration)
+    const weeks = e.target.value
+    setDuration(weeks)
 
-    // Update end date based on new duration
     const start = new Date(startDate)
-    const durationWeeks = Number.parseInt(newDuration) || 2
     const end = new Date(start)
-    end.setDate(start.getDate() + durationWeeks * 7)
+    end.setDate(start.getDate() + (parseInt(weeks) || 2) * 7)
     setEndDate(end.toISOString().split("T")[0])
 
     handleSubmit()
+  }
+
+  const handleCapacityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCapacity(e.target.value)
+    onUpdate({ max_points: parseInt(e.target.value) || 0 })
   }
 
   return (
@@ -96,6 +99,16 @@ export default function SprintConfiguration({ sprint, onUpdate }: SprintConfigur
             />
             <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
           </div>
+        </div>
+        <div>
+          <label className="mb-1 block text-sm text-[#525252]">Team Capacity (Story Points)</label>
+          <Input
+            type="number"
+            min="0"
+            value={capacity}
+            onChange={handleCapacityChange}
+            className="w-full"
+          />
         </div>
       </div>
     </div>

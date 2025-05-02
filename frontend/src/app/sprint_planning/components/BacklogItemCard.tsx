@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { Plus } from "lucide-react"
+import { Plus, Minus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { UserStory } from "@/types/userstory"
 import type { Task } from "@/types/task"
@@ -74,9 +74,6 @@ export default function BacklogItemCard({
         <div className="flex items-center gap-2">
           {getTypeBadge()}
           {getPriorityBadge()}
-          <span className="text-xs text-gray-500">
-            {item.uuid?.substring(0, 8) ?? "-"}
-          </span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -91,7 +88,12 @@ export default function BacklogItemCard({
             } px-2 text-xs`}
             onClick={onAdd}
           >
-            <Plus className="h-3 w-3" /> {isSelected ? "Remove" : "Add"}
+            {isSelected ? (
+              <Minus className="h-3 w-3" />
+            ) : (
+              <Plus className="h-3 w-3" />
+            )}
+            {isSelected ? " Remove" : " Add"}
           </Button>
         </div>
       </div>
