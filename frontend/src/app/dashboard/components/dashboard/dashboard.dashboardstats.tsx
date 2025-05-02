@@ -4,25 +4,18 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/progress"
 import { dashboardStatsStyles as s } from "../../styles/dashboardstyles"
 import { BurndownChart } from "@/components/burndownchart"
+import { useEffect, useState } from "react"
 
 type Props = {
   onViewSprintDetails: () => void;
   onViewCalendar?: () => void;
 }
 
-const burndownData = [
-  { day: "Day 0", Remaining: 100, Ideal: 100 },
-  { day: "Day 1", Remaining: 95, Ideal: 90 },
-  { day: "Day 2", Remaining: 90,  Ideal: 80 },
-  { day: "Day 3", Remaining: 82,  Ideal: 70 },
-  { day: "Day 4", Remaining: 76,  Ideal: 60 },
-  { day: "Day 5", Remaining: 65,  Ideal: 50 },
-  { day: "Day 6", Remaining: 58,  Ideal: 40 },
-  { day: "Day 7", Remaining: 45,  Ideal: 30 },
-  { day: "Day 8", Remaining: 35,  Ideal: 20 },
-  { day: "Day 9", Remaining: 24,  Ideal: 10 },
-  { day: "Day 10", Remaining: 15, Ideal: 0  },
-]
+interface BurndownDataPoint {
+  day: string
+  Remaining: number
+  Ideal: number
+}
 
 const today = new Date()
 const todayString = today.toLocaleDateString('en-US', {
@@ -32,11 +25,43 @@ const todayString = today.toLocaleDateString('en-US', {
 })
 
 const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
-  const initialHeight = burndownData[0].Remaining;
-  const lastData = burndownData[burndownData.length - 1];
+  const [burndownData, setBurndownData] = useState<BurndownDataPoint[]>([])
 
-  const actualPercentage = Math.round(((initialHeight - lastData.Remaining) / initialHeight) * 100);
-  const idealPercentage = Math.round(((initialHeight - lastData.Ideal) / initialHeight) * 100);
+  useEffect(() => {
+    const fetchBurndownData = async () => {
+      const response = await fetch("http://localhost:8000/api/burndown")
+      const data = await response.json()
+  
+      const { duration_days } = data
+      let { total_story_points } = data
+  
+      const totalDays = duration_days + 1
+      const idealDropPerDay = total_story_points / duration_days
+  
+      const generatedData: BurndownDataPoint[] = []
+  
+      for (let day = 0; day < totalDays; day++) {
+        const ideal = total_story_points - idealDropPerDay * day
+        generatedData.push({
+          day: `Day ${day}`,
+          Ideal: parseFloat(ideal.toFixed(2)),
+          Remaining: total_story_points,
+        })
+      }
+  
+      setBurndownData(generatedData)
+    }
+  
+    fetchBurndownData()
+  }, [])
+  
+
+  const initialHeight = burndownData[0]?.Remaining ?? 100
+  const lastData = burndownData[burndownData.length - 1] ?? { Remaining: 100, Ideal: 100 }
+
+  const actualPercentage = Math.round(((initialHeight - lastData.Remaining) / initialHeight) * 100)
+  const idealPercentage = Math.round(((initialHeight - lastData.Ideal) / initialHeight) * 100)
+
     return (
         <div className={s.container}>
           <ProgressCard
