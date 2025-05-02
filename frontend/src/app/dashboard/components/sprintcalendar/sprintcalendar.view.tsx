@@ -149,7 +149,7 @@ export default function CalendarPageView({defaultViewMode = "week", onBack}: Cal
         </div>
         {/* Cards inside */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <SprintProgressCard completedTasks={10} totalTasks={20}/>
+          <SprintProgressCard />
           <BurndownChartCard actualPercentage={actualPercentage} idealPercentage={idealPercentage} burndownData={burndownData} />
           <TaskStatusCard />
           <TeamWorkloadCard />
@@ -170,7 +170,7 @@ export default function CalendarPageView({defaultViewMode = "week", onBack}: Cal
               className={showTeamView ? "px-3 py-1 rounded border border-[#4a2b4a] text-m bg-[#4A2B4D] text-white" : "px-3 py-1 rounded border border-[#4a2b4a] text-m bg-[#f5f0f1] text-[#4A2B4D]"}
               onClick={() => setShowTeamView(true)}
             >
-              Team View
+              Task View
             </button>
           </div>
           
