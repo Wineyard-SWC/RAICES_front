@@ -10,9 +10,9 @@ import { Search } from "lucide-react"
 const today = new Date()
 
 // Helper function to get the date for n days ago
-const getDaysAgo = (daysAgo: number) => {
-  const date = new Date(today)
-  date.setDate(today.getDate() - daysAgo)
+const getDaysAgo = (daysAgo: number, referenceDate: Date = today) => {
+  const date = new Date(referenceDate)
+  date.setDate(referenceDate.getDate() - daysAgo)
   return date
 }
 
@@ -24,18 +24,23 @@ const formatDate = (date: Date) => {
 }
 
 // Get the dates for our 5-day view (4 previous days + today)
-const getDates = () => {
+const getDates = (weekOffset: number = 0) => {
+  // Calculate the reference date based on week offset
+  const referenceDate = new Date(today)
+  referenceDate.setDate(today.getDate() + (weekOffset * 7))
+  
   return [
-    formatDate(getDaysAgo(4)), // 4 days ago
-    formatDate(getDaysAgo(3)), // 3 days ago
-    formatDate(getDaysAgo(2)), // 2 days ago
-    formatDate(getDaysAgo(1)), // yesterday
-    formatDate(today),         // today
+    formatDate(getDaysAgo(4, referenceDate)), // 4 days ago from reference
+    formatDate(getDaysAgo(3, referenceDate)), // 3 days ago from reference
+    formatDate(getDaysAgo(2, referenceDate)), // 2 days ago from reference
+    formatDate(getDaysAgo(1, referenceDate)), // yesterday from reference
+    formatDate(referenceDate),               // reference date (today + weekOffset)
   ]
 }
 
 interface CalendarGridProps {
   projectId?: string
+  weekOffset?: number
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
@@ -47,10 +52,10 @@ const calculateDailyCapacity = (teamSize = 3) => {
 }
 
 // Helper function to distribute tasks based on completion date or move to today
-const distributeTasksByCompletionDate = (tasks: Task[]) => {
+const distributeTasksByCompletionDate = (tasks: Task[], weekOffset: number = 0) => {
   if (!tasks || tasks.length === 0) return { 0: [], 1: [], 2: [], 3: [], 4: [] };
   
-  const dates = getDates();
+  const dates = getDates(weekOffset);
   const distribution: {[key: number]: Task[]} = {0: [], 1: [], 2: [], 3: [], 4: []};
   
   // Get midnight timestamps for each day for comparison
@@ -96,12 +101,12 @@ const distributeTasksByCompletionDate = (tasks: Task[]) => {
   return distribution;
 };
 
-const CalendarGrid = ({ projectId }: CalendarGridProps) => {
+const CalendarGrid = ({ projectId, weekOffset = 0 }: CalendarGridProps) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [taskDistribution, setTaskDistribution] = useState<{[key: number]: Task[]}>({0: [], 1: [], 2: [], 3: [], 4: []});
   const [capacityUsage, setCapacityUsage] = useState<number[]>([0, 0, 0, 0, 0]);
-  const [dates, setDates] = useState(getDates());
+  const [dates, setDates] = useState(getDates(weekOffset));
   const [showOnlyMyTasks, setShowOnlyMyTasks] = useState(true);
   const { userId } = useUser();
   const [searchTerm, setSearchTerm] = useState("");
@@ -119,6 +124,11 @@ const CalendarGrid = ({ projectId }: CalendarGridProps) => {
       return matchesSearch && matchesStatus;
     });
   };
+
+  useEffect(() => {
+    // Update dates when weekOffset changes
+    setDates(getDates(weekOffset));
+  }, [weekOffset]);
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -141,7 +151,7 @@ const CalendarGrid = ({ projectId }: CalendarGridProps) => {
         const allTasks: Task[] = await response.json();
         
         // Update dates every time we fetch tasks to ensure they're current
-        const currentDates = getDates();
+        const currentDates = getDates(weekOffset);
         setDates(currentDates);
         
         // Filter tasks based on the showOnlyMyTasks state and userId
@@ -152,14 +162,12 @@ const CalendarGrid = ({ projectId }: CalendarGridProps) => {
         setTasks(filteredTasks);
         
         // Distribute tasks by completion date
-        const distributed = distributeTasksByCompletionDate(filteredTasks);
+        const distributed = distributeTasksByCompletionDate(filteredTasks, weekOffset);
         setTaskDistribution(distributed);
         
         // Calculate capacity usage for each day
         const dailyCapacity = calculateDailyCapacity();
-        const usage = Object.keys(distributed).map(day => {
-          const dayIndex = parseInt(day);
-          const dayTasks = distributed[dayIndex];
+        const usage = Object.values(distributed).map(dayTasks => {
           const totalPoints = dayTasks.reduce((sum, task) => sum + (task.story_points || 0), 0);
           return Math.min(Math.round((totalPoints / dailyCapacity) * 100), 100);
         });
@@ -195,22 +203,20 @@ const CalendarGrid = ({ projectId }: CalendarGridProps) => {
   // Effect to update task distribution when search term or status filter changes
   useEffect(() => {
     if (tasks.length > 0) {
-      const filteredTasks = filterTasks(tasks);
-      const distributed = distributeTasksByCompletionDate(filteredTasks);
-      setTaskDistribution(distributed);
+      const filtered = filterTasks(tasks);
+      const distribution = distributeTasksByCompletionDate(filtered, weekOffset);
+      setTaskDistribution(distribution);
       
-      // Recalculate capacity usage
+      // Calculate capacity usage for each day
       const dailyCapacity = calculateDailyCapacity();
-      const usage = Object.keys(distributed).map(day => {
-        const dayIndex = parseInt(day);
-        const dayTasks = distributed[dayIndex];
+      const usage = Object.values(distribution).map(dayTasks => {
         const totalPoints = dayTasks.reduce((sum, task) => sum + (task.story_points || 0), 0);
         return Math.min(Math.round((totalPoints / dailyCapacity) * 100), 100);
       });
       
       setCapacityUsage(usage);
     }
-  }, [searchTerm, statusFilter, tasks]);
+  }, [tasks, dates, searchTerm, statusFilter]);
 
   // Get status color for task card border
   const getStatusColor = (status: string) => {
@@ -297,16 +303,16 @@ const CalendarGrid = ({ projectId }: CalendarGridProps) => {
       </div>
       <div className="grid grid-cols-5 gap-2 mb-2">
         {dates.map((date, idx) => {
-          const isToday = idx === 4;
+          const isCurrentDay = idx === 4 && weekOffset === 0;
           return (
             <div 
               key={idx} 
-              className={`${styles.calendarDayHeader} ${isToday ? 'bg-purple-50 border border-purple-200' : ''}`}
+              className={`${styles.calendarDayHeader} ${isCurrentDay ? 'bg-purple-50 border border-purple-200' : ''}`}
             >
               <div className="flex justify-between items-center">
-                <span className={isToday ? 'font-bold' : ''}>
+                <span className={isCurrentDay ? 'font-bold' : ''}>
                   {date.dayName} {date.dayNumber}
-                  {isToday && <span className="ml-1 text-purple-700">(Today)</span>}
+                  {isCurrentDay && <span className="ml-1 text-purple-700">(Today)</span>}
                 </span>
                 <span className="text-xs font-medium">
                   {capacityUsage[idx]}% capacity
@@ -316,7 +322,7 @@ const CalendarGrid = ({ projectId }: CalendarGridProps) => {
               <div className="w-full h-1 bg-gray-200 rounded-full mt-1">
                 <div 
                   className={`h-1 rounded-full ${
-                    isToday ? (
+                    isCurrentDay ? (
                       capacityUsage[idx] > 90 ? 'bg-red-500' : 
                       capacityUsage[idx] > 75 ? 'bg-yellow-500' : 'bg-green-500'
                     ) : 'bg-gray-400' // Past days always use gray
@@ -330,12 +336,12 @@ const CalendarGrid = ({ projectId }: CalendarGridProps) => {
       </div>
       <div className="grid grid-cols-5 gap-2 h-96">
         {[...Array(5)].map((_, dayIndex) => {
-          const isToday = dayIndex === 4;
+          const isCurrentDay = dayIndex === 4 && weekOffset === 0;
           return (
             <div 
               key={dayIndex} 
               className={`shadow-sm border rounded-lg p-2 h-full overflow-y-auto ${
-                isToday ? 'border-purple-300 bg-purple-50' : 'border-[#D3C7D3]'
+                isCurrentDay ? 'border-purple-300 bg-purple-50' : 'border-[#D3C7D3]'
               }`}
             >
               {taskDistribution[dayIndex]?.map((task) => (
@@ -350,12 +356,12 @@ const CalendarGrid = ({ projectId }: CalendarGridProps) => {
                   assignee={task.assignee}
                 />
               ))}
-              {isToday && taskDistribution[dayIndex].length === 0 && (
+              {isCurrentDay && taskDistribution[dayIndex].length === 0 && (
                 <div className="text-center p-4 text-gray-500 italic">
                   No active tasks for today
                 </div>
               )}
-              {!isToday && taskDistribution[dayIndex].length === 0 && (
+              {!isCurrentDay && taskDistribution[dayIndex].length === 0 && (
                 <div className="text-center p-4 text-gray-500 italic">
                   No tasks completed on this day
                 </div>

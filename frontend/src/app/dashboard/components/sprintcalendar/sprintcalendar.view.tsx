@@ -96,16 +96,25 @@ const burndownData = [
 ];
 
 const today = new Date()
-const todayString = today.toLocaleDateString('en-US', {
-  weekday: 'long',
-  month: 'long',
-  day: 'numeric',
-});
+const formatDateString = (date: Date) => {
+  return date.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  });
+};
 
 export default function CalendarPageView({defaultViewMode = "week", onBack}: CalendarPageProps) {
   const [viewMode, setViewMode] = useState<"week" | "month">(defaultViewMode);
   // Add a new state to track whether team view or calendar grid should be shown
   const [showTeamView, setShowTeamView] = useState<boolean>(false);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [sprintNumber, setSprintNumber] = useState<number>(0);
+  // Add state to track the current week offset (0 = current week)
+  const [weekOffset, setWeekOffset] = useState<number>(0);
+  // State for the current displayed date
+  const [currentDisplayDate, setCurrentDisplayDate] = useState<Date>(today);
   
   const initialHeight = burndownData[0].Remaining;
   const lastData = burndownData[burndownData.length - 1];
@@ -116,12 +125,66 @@ export default function CalendarPageView({defaultViewMode = "week", onBack}: Cal
     if (!localStorage.getItem("currentProjectId")) {
       localStorage.setItem("currentProjectId", "calendar-view-project")
     }
+    
+    // Load sprint dates and number from localStorage
+    const startDateStr = localStorage.getItem("sprint_start_date");
+    const durationDays = parseInt(localStorage.getItem("sprint_duration_days") || "0");
+    const sprintNum = parseInt(localStorage.getItem("sprint_number") || "1");
+    
+    if (startDateStr) {
+      const start = new Date(startDateStr);
+      const end = new Date(start);
+      end.setDate(start.getDate() + durationDays);
+      
+      setStartDate(start);
+      setEndDate(end);
+      setSprintNumber(sprintNum);
+    }
   }, []);
+  
+  useEffect(() => {
+    // Update the current display date whenever weekOffset changes
+    const newDate = new Date(today);
+    newDate.setDate(today.getDate() + (weekOffset * 7));
+    setCurrentDisplayDate(newDate);
+  }, [weekOffset]);
+  
+  // Format date for display
+  const formatDate = (date: Date | null) =>
+    date?.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric"
+    }) || "N/A";
+  
+  // Generate sprint title with dates
+  const getSprintTitle = () => {
+    if (startDate && endDate) {
+      return `Sprint ${sprintNumber} (${formatDate(startDate)} - ${formatDate(endDate)})`;
+    }
+    return `Sprint ${sprintNumber}`;
+  };
 
   // Handler for task menu clicks
   const handleTaskMenuClick = (taskId: string) => {
     console.log(`Task menu clicked: ${taskId}`);
     // Add your task menu handling logic here
+  };
+  
+  // Handler for previous week button
+  const handlePreviousWeek = () => {
+    setWeekOffset(prevOffset => prevOffset - 1);
+  };
+  
+  // Handler for next week button
+  const handleNextWeek = () => {
+    setWeekOffset(prevOffset => prevOffset + 1);
+  };
+  
+  // Handler for returning to current week
+  const handleCurrentWeek = () => {
+    setWeekOffset(0);
+    setCurrentDisplayDate(today);
   };
   
   return (
@@ -140,17 +203,31 @@ export default function CalendarPageView({defaultViewMode = "week", onBack}: Cal
       {/* Sprint Overview Card */}
       <div className="bg-white p-6 rounded-xl shadow-md mb-8">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">Sprint 12 (March 3 - March 14, 2025)</h2>
+          <h2 className="text-2xl font-bold">{getSprintTitle()}</h2>
           <div className="flex gap-2">
-            <button className="px-2 py-1 border border-[#D3C7D3] rounded-md text-m">&lt;</button>
-            <button className="px-2 py-1 border border-[#D3C7D3] rounded-md text-m font-semibold">{todayString}</button>
-            <button className="px-2 py-1 border border-[#D3C7D3] rounded-md text-m">&gt;</button>
+            <button 
+              onClick={handlePreviousWeek}
+              className="px-2 py-1 border border-[#D3C7D3] rounded-md text-m hover:bg-[#f5f0f1]"
+            >
+              &lt;
+            </button>
+            <button 
+              onClick={handleCurrentWeek}
+              className="px-2 py-1 border border-[#D3C7D3] rounded-md text-m font-semibold"
+            >
+              {formatDateString(currentDisplayDate)}
+            </button>
+            <button 
+              onClick={handleNextWeek}
+              className="px-2 py-1 border border-[#D3C7D3] rounded-md text-m hover:bg-[#f5f0f1]"
+            >
+              &gt;
+            </button>
           </div>
         </div>
         {/* Cards inside */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <SprintProgressCard />
-
           <BurndownChartCard/>
           <TaskStatusCard />
           <TeamWorkloadCard />
@@ -175,7 +252,7 @@ export default function CalendarPageView({defaultViewMode = "week", onBack}: Cal
             </button>
           </div>
           
-          <div className="flex items-center">
+          {/* <div className="flex items-center">
             <input
               type="text"
               className="pl-8 pr-4 py-1 border border-[#D3C7D3] rounded text-m w-40 md:w-64"
@@ -188,7 +265,7 @@ export default function CalendarPageView({defaultViewMode = "week", onBack}: Cal
               <option>Review</option>
               <option>Done</option>
             </select>
-          </div>
+          </div> */}
         </div>
         
         {/* Conditionally render team view or calendar grid based on showTeamView state */}
@@ -197,7 +274,7 @@ export default function CalendarPageView({defaultViewMode = "week", onBack}: Cal
             onTaskMenuClick={handleTaskMenuClick} 
           />
         ) : (
-          <CalendarGrid />
+          <CalendarGrid weekOffset={weekOffset} />
         )}
       </div>
     </div>
