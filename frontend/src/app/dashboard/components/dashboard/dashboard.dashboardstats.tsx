@@ -26,10 +26,11 @@ const todayString = today.toLocaleDateString('en-US', {
 
 const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
   const [burndownData, setBurndownData] = useState<BurndownDataPoint[]>([])
+  const projectId = typeof window !== "undefined" ? localStorage.getItem("currentProjectId") : null
 
   useEffect(() => {
     const fetchBurndownData = async () => {
-      const response = await fetch("http://localhost:8000/api/burndown")
+      const response = await fetch(`http://127.0.0.1:8000/api/burndown?projectId=${projectId}`)
       const data = await response.json()
   
       const { duration_days } = data
