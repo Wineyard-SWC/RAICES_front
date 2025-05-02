@@ -20,13 +20,13 @@ export default function TeamMemberCard({
   isEditable = true,
   ownerId,
 }: Props) {
-  const locked  = member.fixed || member.id === ownerId;
-  const cap     = member.capacity ?? 0;
-  const used    = member.allocated ?? 0;
+  const locked = member.fixed || member.id === ownerId;
+  const cap = member.capacity ?? 0;
+  const used = member.allocated ?? 0;
   const percent = cap ? Math.min(100, Math.round((used / cap) * 100)) : 0;
 
   return (
-    <div className="relative rounded border border-gray-200 p-3">
+    <div className="relative rounded border border-gray-200 bg-white p-3 mb-6">
       {isEditable && !locked && (
         <button
           onClick={() => onRemove(member.id)}

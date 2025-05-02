@@ -22,9 +22,6 @@ export default function TaskAssignmentPage() {
 
   const safeSprintId = sprintId?.startsWith("temp-") ? "" : sprintId;
 
-  // Sprint context
-  const { sprint, tasks, setTasks } = useSprintContext()
-
   // UI state
   const [taskFilter, setTaskFilter] = useState<"all" | "unassigned" | "assigned">("all")
   const [selectedMember, setSelectedMember] = useState<string | null>(null)
@@ -32,51 +29,51 @@ export default function TaskAssignmentPage() {
   const [taskToAssign, setTaskToAssign] = useState<Task | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
 
+  // Sprint context
+  const { sprint, tasks, setTasks } = useSprintContext()
   if (!sprint) return <DefaultLoading text="tasks and members" />
 
-  // Calculate total story points in the sprint for workload distribution
-  const totalSprintPoints = tasks.reduce((sum, task) => sum + (task.story_points || 0), 0)
-  
-  const isUnassigned = (id?: string | null) => !id || id === "0";
+  // 1) Extraer sólo las tareas de las historias seleccionadas
+  const sprintTasks = tasks.filter(t =>
+    sprint.user_stories.some(us => us.selected && us.id === t.user_story_id)
+  )
 
-  const filteredTasks = tasks.filter(task => {
-    /* 1. estado asignación ------------------------------------------ */
-    if (taskFilter === "assigned"   && isUnassigned(task.assignee_id)) return false;
-    if (taskFilter === "unassigned" && !isUnassigned(task.assignee_id)) return false;
-        
-    /* 2. miembro (solo cuando se muestran *solo* asignadas) ---------- */
+  // 2) Calcular puntos totales basados en sprintTasks
+  const totalSprintPoints = sprintTasks.reduce((sum, t) => sum + (t.story_points || 0), 0)
+
+  // 3) Filtrar por estado, asignación y búsqueda
+  const filteredTasks = sprintTasks.filter((task) => {
+    // filtro unassigned
+    if (taskFilter === "unassigned" && task.assignee_id) return false
+    // filtro assigned
+    if (taskFilter === "assigned" && !task.assignee_id) return false
+    // si assigned y hay miembro seleccionado
     if (taskFilter === "assigned" && selectedMember) {
-      if (task.assignee_id !== selectedMember) return false;
+      if (task.assignee_id !== selectedMember) return false
     }
-  
-    /* 3. búsqueda ---------------------------------------------------- */
+    // búsqueda libre
     if (searchTerm) {
-      const q = searchTerm.toLowerCase();
-      if (
-        !task.title.toLowerCase().includes(q) &&
-        !task.description.toLowerCase().includes(q)
-      ) return false;
+      const q = searchTerm.toLowerCase()
+      const inTitle = task.title.toLowerCase().includes(q)
+      const inDesc = task.description.toLowerCase().includes(q)
+      if (!inTitle && !inDesc) return false
     }
-    return true;
-  });
-  
-  // Calculate assignment progress
-  const totalTasks = tasks.length
-  const assignedTasksCount = tasks.filter((t) => t.assignee_id).length
+    return true
+  })
+
+  // 4) Cálculo de progreso y totales sobre sprintTasks
+  const totalTasks = sprintTasks.length
+  const assignedTasksCount = sprintTasks.filter(t => t.assignee_id).length
   const assignmentProgress = totalTasks > 0 ? Math.round((assignedTasksCount / totalTasks) * 100) : 0
 
-  // Calculate workload for each team member
-  const teamWorkload = sprint.team_members.map((member) => {
-    // Get tasks assigned to this member
-    const memberTasks = tasks.filter((t) => t.assignee_id === member.id)
+  // 5) Cargar capacidad de cada miembro según sprintTasks
+  const teamWorkload = sprint.team_members.map(member => {
+    const memberTasks = sprintTasks.filter(t => t.assignee_id === member.id)
+    const assignedPoints = memberTasks.reduce((sum, t) => sum + (t.story_points || 0), 0)
+    const workloadPercentage = totalSprintPoints > 0
+      ? Math.round((assignedPoints / totalSprintPoints) * 100)
+      : 0
 
-    // Calculate points assigned to this member
-    const assignedPoints = memberTasks.reduce((sum, task) => sum + (task.story_points || 0), 0)
-
-    // Calculate workload percentage (based on total sprint points)
-    const workloadPercentage = totalSprintPoints > 0 ? Math.round((assignedPoints / totalSprintPoints) * 100) : 0
-
-    // Determine workload status
     let statusColor = "bg-[#4a2b4a]"
     let statusBg = "bg-[#f5f0f1]"
     let statusText = "text-gray-700"
@@ -105,34 +102,45 @@ export default function TaskAssignmentPage() {
     }
   })
 
-  // Assign a task to a team member
+  // Asignar tarea a miembro
   const assignTask = (taskId: string, memberId: string) => {
-    setTasks(tasks.map((t) => (t.id === taskId ? { ...t, assignee_id: memberId, sprint_id: sprint?.id } : t)))
+    console.log(tasks);
+    setTasks(tasks.map(t =>
+      t.id === taskId
+        ? { ...t, assignee: memberId, assignee_id: memberId, sprint_id: sprint.id }
+        : t
+    ))
+
+    console.log(memberId)
     setAssignModalOpen(false)
     setTaskToAssign(null)
   }
 
-  // Open the assignment modal
+  // Abrir modal de asignación
   const openAssignModal = (task: Task) => {
-    if (selectedMember && taskFilter === "unassigned") {
-      assignTask(task.id, selectedMember);   // one-click assign
-    } else {
-      setTaskToAssign(task);
-      setAssignModalOpen(true);
+    if (selectedMember && !task.assignee_id) {
+      assignTask(task.id, selectedMember)
+      return
     }
-    };
+    setTaskToAssign(task)
+    setAssignModalOpen(true)
+  }
 
-  // Remove assignment from a task
+  // Remover asignación
   const removeAssignment = (taskId: string) => {
-    setTasks(tasks.map((t) => (t.id === taskId ? { ...t, assignee_id: undefined } : t)))
+    setTasks(tasks.map(t =>
+      t.id === taskId ? { ...t, assignee_id: undefined, assignee: undefined } : t
+    ))
   }
 
-  // Save assignments and return to sprint planning
-  const saveAssignments = async () => {
-    // In a real app, you'd save the assignments to your backend
-    // For now, we'll just navigate back
-    router.push(`/sprint_planning?projectId=${projectId}${safeSprintId ? `&sprintId=${safeSprintId}` : ""}`)
+  // Guardar y volver a planificación
+  const saveAssignments = () => {
+    console.log("🔍 Tareas antes de volver a planning:", tasks)
+    router.push(
+      `/sprint_planning?projectId=${projectId}${safeSprintId ? `&sprintId=${safeSprintId}` : ``}`
+    )
   }
+
 
   return (
     <div className="min-h-screen bg-[#ebe5eb]/30">
