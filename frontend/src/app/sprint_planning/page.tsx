@@ -200,6 +200,13 @@ export default function SprintPlanningPage() {
       if (!res.ok) throw new Error("Save failed");
       const saved: Sprint = await res.json();
       setSprint(saved);
+
+      // re-asigna en cada task el nuevo ID
+      setTasks(tasks.map(t =>
+        t.sprint_id === sprint.id      // sprint.id era el temp-...
+          ? { ...t, sprint_id: saved.id }
+          : t
+      ))
   
       // 2) Prepara tareas para batch‐upsert
       // Ojo: aquí también debes incluir `status_khanban`
@@ -212,7 +219,7 @@ export default function SprintPlanningPage() {
           user_story_id: t.user_story_id,
           assignee: t.assignee,
           sprint_id: t.sprint_id,
-          status_khanban: t.status,   // ← necesario para que Pydantic lo reciba
+          status_khanban: t.status_khanban,   // ← necesario para que Pydantic lo reciba
           priority: t.priority,
           story_points: t.story_points,
           deadline: t.deadline,
