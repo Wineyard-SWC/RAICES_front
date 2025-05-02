@@ -80,9 +80,7 @@ const SprintChartsSection = () => {
         )}
       </div>
       <div className="w-1/2">
-      {velocityData.length > 0 && (
-        <VelocityTrendChart data={velocityData} height={300} />
-      )}
+      <VelocityTrendChart data={velocityData} />
       </div>
     </div>
   )

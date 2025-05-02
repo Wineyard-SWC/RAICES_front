@@ -46,6 +46,8 @@ const BurndownChartCard = () => {
       const actual = Math.round(((initialHeight - lastData.Remaining) / initialHeight) * 100)
       const ideal = Math.round(((initialHeight - lastData.Ideal) / initialHeight) * 100)
 
+      
+
       setActualPercentage(actual)
       setIdealPercentage(ideal)
     }
@@ -61,6 +63,10 @@ const BurndownChartCard = () => {
       <div className="space-y-4">
         <div>
           <BurndownChart data={burndownData} height={120} simple />
+        </div>
+        <div className={s.progressText}>
+        <span>Actual: {actualPercentage}%</span>
+        <span>Ideal: {idealPercentage}%</span>
         </div>
       </div>
     </ProgressCard>

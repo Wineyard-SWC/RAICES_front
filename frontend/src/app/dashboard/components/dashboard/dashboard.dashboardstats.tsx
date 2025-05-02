@@ -93,9 +93,9 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
                 <span>Ideal: {idealPercentage}%</span>
                 </div>
     
-                <div className={s.progressLabel}>My workload</div>
+                {/* <div className={s.progressLabel}>My workload</div>
                 <Progress value={60} className={s.progressBar} indicatorClassName={s.progressBarIndicator} />
-                <div className="text-right text-sm">24h / 40h</div>
+                <div className="text-right text-sm">24h / 40h</div> */}
               </div>
             </div>
           </ProgressCard>
