@@ -222,6 +222,16 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
                         >
                           Generate User Stories
                         </button>
+                        <button
+                          onClick={() => {
+                            setGenerateOpen(false)
+                            router.push(`/gen_tasks?projectId=${localStorage.getItem("currentProjectId")}`)
+                          }}
+                          className="block w-full text-left px-4 py-2 text-sm text-[#4a2b4a] hover:bg-[#ebe5eb]"
+                          disabled={!projectSelected}
+                        >
+                          Generate Tasks
+                        </button>
                       </div>
                     </div>
                   )}
