@@ -1,7 +1,7 @@
 // types/task.ts
 
 // ——————————————
-// Comentarios en las tareas
+// Comentarios de cada tarea
 // ——————————————
 export interface Comment {
   id: string
@@ -12,7 +12,7 @@ export interface Comment {
 }
 
 // ——————————————
-// Estados del Kanban
+// Estados válidos en el Kanban
 // ——————————————
 export type KanbanStatus =
   | "Backlog"
@@ -22,7 +22,7 @@ export type KanbanStatus =
   | "Done"
 
 // ——————————————
-// Tarea básica (lo que ve el kanban)
+// Tarea básica para el tablero Kanban
 // ——————————————
 export interface BasicTask {
   id: string
@@ -36,7 +36,7 @@ export interface BasicTask {
 }
 
 // ——————————————
-// Tarea extendida (con relación a user story, sprint, historia)
+// Tarea “completa”, ligada a historia y sprint
 // ——————————————
 export interface Task extends BasicTask {
   user_story_id: string
@@ -52,7 +52,7 @@ export interface Task extends BasicTask {
 }
 
 // ——————————————
-// Datos para enviar/editar una tarea
+// Forma de los datos al crear o editar
 // ——————————————
 export type TaskFormData = {
   id?: string
@@ -67,3 +67,4 @@ export type TaskFormData = {
   deadline?: string
   comments: Comment[]
 }
+

@@ -7,79 +7,134 @@ import { Task } from "@/types/task"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
+// Interface for user data
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  picture?: string;
+}
+
 interface UserWorkload {
-  name: string
-  progress: number 
-  tasks: string
-  completedTasks: number
-  totalTasks: number
+  id: string;
+  name: string;
+  progress: number;
+  tasks: string;
+  completedTasks: number;
+  totalTasks: number;
 }
 
 interface TeamWorkloadCardProps {
-  projectId?: string
+  projectId?: string;
 }
 
 const TeamWorkloadCard = ({ projectId }: TeamWorkloadCardProps) => {
-  const [users, setUsers] = useState<UserWorkload[]>([])
-  const [loading, setLoading] = useState(false)
+  const [users, setUsers] = useState<UserWorkload[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [userMap, setUserMap] = useState<Record<string, User>>({});
+
+  // Function to get user data from API or cache
+  const fetchUserData = async (userId: string): Promise<User | null> => {
+    // Check if we already have this user in our map
+    if (userMap[userId]) {
+      return userMap[userId];
+    }
+
+    // Check if we have the user in localStorage
+    const cachedUsers = localStorage.getItem('cached_users');
+    const cachedUserMap: Record<string, User> = cachedUsers ? JSON.parse(cachedUsers) : {};
+    
+    if (cachedUserMap[userId]) {
+      // Update our in-memory map
+      setUserMap(prev => ({ ...prev, [userId]: cachedUserMap[userId] }));
+      return cachedUserMap[userId];
+    }
+
+    // If not in cache, fetch from API
+    try {
+      const response = await fetch(`${API_URL}/users/${userId}`);
+      if (!response.ok) {
+        throw new Error('User not found');
+      }
+      const userData = await response.json();
+      
+      // Update our cache
+      cachedUserMap[userId] = userData;
+      localStorage.setItem('cached_users', JSON.stringify(cachedUserMap));
+      
+      // Update our in-memory map
+      setUserMap(prev => ({ ...prev, [userId]: userData }));
+      
+      return userData;
+    } catch (error) {
+      console.error(`Error fetching user ${userId}:`, error);
+      return null;
+    }
+  };
 
   useEffect(() => {
     const fetchTasks = async () => {
-      setLoading(true)
+      setLoading(true);
       try {
         // Get project ID from localStorage if not provided as prop
-        const currentProjectId = projectId || localStorage.getItem("currentProjectId")
+        const currentProjectId = projectId || localStorage.getItem("currentProjectId");
         
         if (!currentProjectId) {
-          console.error("No project ID available")
-          return
+          console.error("No project ID available");
+          return;
         }
 
-        const response = await fetch(`${API_URL}/projects/${currentProjectId}/tasks`)
+        const response = await fetch(`${API_URL}/projects/${currentProjectId}/tasks`);
         if (!response.ok) {
-          throw new Error("Failed to fetch tasks")
+          throw new Error("Failed to fetch tasks");
         }
         
-        const tasks: Task[] = await response.json()
+        const tasks: Task[] = await response.json();
         
         // Group tasks by assignee
-        const tasksByAssignee: Record<string, Task[]> = {}
+        const tasksByAssignee: Record<string, Task[]> = {};
         
         tasks.forEach(task => {
-          if (!task.assignee) return
+          if (!task.assignee) return;
           
           if (!tasksByAssignee[task.assignee]) {
-            tasksByAssignee[task.assignee] = []
+            tasksByAssignee[task.assignee] = [];
           }
           
-          tasksByAssignee[task.assignee].push(task)
-        })
+          tasksByAssignee[task.assignee].push(task);
+        });
         
-        // Create user workload objects
-        const workloadData: UserWorkload[] = Object.entries(tasksByAssignee).map(([name, tasks]) => {
-          const completedTasks = tasks.filter(task => task.status_khanban === 'Done').length
-          const totalTasks = tasks.length
-          const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+        // Create user workload objects with user data from API
+        const workloadPromises = Object.entries(tasksByAssignee).map(async ([userId, tasks]) => {
+          const completedTasks = tasks.filter(task => task.status_khanban === 'Done').length;
+          const totalTasks = tasks.length;
+          const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+          
+          // Fetch user data
+          const userData = await fetchUserData(userId);
           
           return {
-            name,
+            id: userId,
+            name: userData?.name || userId,
             progress,
             tasks: `${completedTasks}/${totalTasks} Tasks`,
             completedTasks,
             totalTasks
-          }
-        })
+          };
+        });
         
-        setUsers(workloadData)
+        const workloadData = await Promise.all(workloadPromises);
+        setUsers(workloadData);
       } catch (error) {
-        console.error("Error fetching tasks:", error)
+        console.error("Error fetching tasks:", error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchTasks()
-  }, [projectId])
+    fetchTasks();
+  }, [projectId]);
 
   if (loading) {
     return (
@@ -89,7 +144,7 @@ const TeamWorkloadCard = ({ projectId }: TeamWorkloadCardProps) => {
       >
         <div className="p-4 text-center text-gray-500">Loading team workload...</div>
       </ProgressCard>
-    )
+    );
   }
 
   if (users.length === 0) {
@@ -100,7 +155,7 @@ const TeamWorkloadCard = ({ projectId }: TeamWorkloadCardProps) => {
       >
         <div className="p-4 text-center text-gray-500">No team members with assigned tasks</div>
       </ProgressCard>
-    )
+    );
   }
 
   return (
@@ -133,7 +188,7 @@ const TeamWorkloadCard = ({ projectId }: TeamWorkloadCardProps) => {
         ))}
       </div>
     </ProgressCard>
-  )
-}
+  );
+};
 
 export default TeamWorkloadCard

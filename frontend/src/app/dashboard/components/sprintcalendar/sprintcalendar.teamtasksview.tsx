@@ -4,6 +4,15 @@ import { MoreVertical, Calendar, MessageSquare } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Task } from "@/types/task";
 
+// Define user interface
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  picture?: string;
+}
+
 // Define developer interface
 interface Developer {
   id: string;
@@ -36,17 +45,20 @@ const TaskCard: React.FC<Task & { onMenuClick?: (taskId: string) => void }> = ({
 }) => {
   // Type color mapping based on priority
   const typeColors = {
-    'High': 'bg-red-100 text-red-800',
-    'Medium': 'bg-purple-100 text-purple-800',
-    'Low': 'bg-green-100 text-green-800',
+    low: "bg-green-100 text-green-800",
+    medium: "bg-yellow-100 text-yellow-800",
+    high: "bg-red-100 text-red-800",
+    Low: "bg-green-100 text-green-800",
+    Medium: "bg-yellow-100 text-yellow-800",
+    High: "bg-red-100 text-red-800"
   };
   
   // Status color mapping
   const statusColors = {
     'To Do': 'bg-blue-100 text-blue-800',
-    'In Progress': 'bg-yellow-100 text-yellow-800',
+    'In Progress': 'bg-purple-100 text-purple-800',
     'Done': 'bg-green-100 text-green-800',
-    'In Review': 'bg-orange-100 text-orange-800',
+    'In Review': 'bg-yellow-100 text-yellow-800',
     'Backlog': 'bg-gray-100 text-gray-800',
   };
   
@@ -170,6 +182,46 @@ export default function TeamTasksView({
 }: TeamTasksViewProps) {
   const [developers, setDevelopers] = useState<Developer[]>([]);
   const [loading, setLoading] = useState(false);
+  const [userMap, setUserMap] = useState<Record<string, User>>({});
+
+  // Function to get user data from API or cache
+  const fetchUserData = async (userId: string): Promise<User | null> => {
+    // Check if we already have this user in our map
+    if (userMap[userId]) {
+      return userMap[userId];
+    }
+
+    // Check if we have the user in localStorage
+    const cachedUsers = localStorage.getItem('cached_users');
+    const cachedUserMap: Record<string, User> = cachedUsers ? JSON.parse(cachedUsers) : {};
+    
+    if (cachedUserMap[userId]) {
+      // Update our in-memory map
+      setUserMap(prev => ({ ...prev, [userId]: cachedUserMap[userId] }));
+      return cachedUserMap[userId];
+    }
+
+    // If not in cache, fetch from API
+    try {
+      const response = await fetch(`${API_URL}/users/${userId}`);
+      if (!response.ok) {
+        throw new Error('User not found');
+      }
+      const userData = await response.json();
+      
+      // Update our cache
+      cachedUserMap[userId] = userData;
+      localStorage.setItem('cached_users', JSON.stringify(cachedUserMap));
+      
+      // Update our in-memory map
+      setUserMap(prev => ({ ...prev, [userId]: userData }));
+      
+      return userData;
+    } catch (error) {
+      console.error(`Error fetching user ${userId}:`, error);
+      return null;
+    }
+  };
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -203,22 +255,26 @@ export default function TeamTasksView({
           tasksByAssignee[task.assignee].push(task);
         });
         
-        // Create developer objects
-        const developersData: Developer[] = Object.entries(tasksByAssignee).map(([name, tasks]) => {
+        // Create developer objects with user data from API
+        const developerPromises = Object.entries(tasksByAssignee).map(async ([userId, tasks]) => {
           // Calculate hours based on story points (assuming 1 point = 2 hours)
           const totalPoints = tasks.reduce((sum, task) => sum + task.story_points, 0);
           const hoursAllocated = totalPoints * 2;
           
+          // Fetch user data
+          const userData = await fetchUserData(userId);
+          
           return {
-            id: name,
-            name: name,
-            role: "Team Member", // Default role
+            id: userId,
+            name: userData?.name || userId,
+            role: userData?.role || "Team Member", // Use role from API or default
             hoursAllocated: hoursAllocated,
             hoursTotal: 40, // Default work week
             tasks: tasks
           };
         });
         
+        const developersData = await Promise.all(developerPromises);
         setDevelopers(developersData);
       } catch (error) {
         console.error("Error fetching tasks:", error);
