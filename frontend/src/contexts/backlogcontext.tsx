@@ -9,7 +9,7 @@ import { UserStory } from "@/types/userstory"
 
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL!
-const CACHE_EXPIRATION_MS = 10 * 60 * 1000 
+const CACHE_EXPIRATION_MS = 25 * 60 * 1000 
 
 interface BacklogContextType {
   tasks: TaskColumns
