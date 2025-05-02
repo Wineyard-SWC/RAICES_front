@@ -127,7 +127,7 @@ export default function CalendarPageView({defaultViewMode = "week", onBack}: Cal
   return (
     <div>
       <div className="flex items-center gap-3">
-        <h1 className="text-4xl font-bold text-[#1e1e1e]">Sprint Calendar</h1>
+        <h1 className="text-4xl font-bold text-[#1e1e1e]">Sprint Workload Tracker</h1>
       </div>
       <div className="mb-2">
         <p className=" text-lg font-semibold text-[#694969] mt-2 mb-2">Track and manage task throught your sprint</p>
@@ -164,7 +164,7 @@ export default function CalendarPageView({defaultViewMode = "week", onBack}: Cal
               className={!showTeamView ? "px-3 py-1 rounded border border-[#4a2b4a] text-m bg-[#4A2B4D] text-white" : "px-3 py-1 rounded border border-[#4a2b4a] text-m bg-[#f5f0f1] text-[#4A2B4D]"}
               onClick={() => setShowTeamView(false)}
             >
-              Week View
+              Capacity View
             </button>
             <button 
               className={showTeamView ? "px-3 py-1 rounded border border-[#4a2b4a] text-m bg-[#4A2B4D] text-white" : "px-3 py-1 rounded border border-[#4a2b4a] text-m bg-[#f5f0f1] text-[#4A2B4D]"}

@@ -40,14 +40,14 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
     return (
         <div className={s.container}>
           <ProgressCard
-            title="Calendar & Burndown"
+            title="Sprint Workload Tracker"
             icon={<Calendar className={s.icon} />}
             footer={
               <Button variant="default" 
               className={`${s.button} mt-4`}
               onClick={onViewCalendar}
               >
-                View Calendar
+                View Full Workload
               </Button>
             }
           >

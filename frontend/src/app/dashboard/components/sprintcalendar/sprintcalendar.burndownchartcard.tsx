@@ -11,7 +11,7 @@ interface BurndownChartCardProps {
 
 const BurndownChartCard = ({actualPercentage, idealPercentage, burndownData }: BurndownChartCardProps) => (
   <ProgressCard
-    title="Burdown Chart"
+    title="Burndown Chart"
     icon={<Calendar className={s.icon}/>}
   >
     <div className="space-y-4">
