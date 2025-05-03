@@ -58,18 +58,20 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
     if (!burndownData) return
   
     try {
-      const { duration_days, total_story_points } = burndownData
+      const { duration_days, total_story_points, remaining_story_points } = burndownData
       const totalDays = duration_days + 1
       const idealDropPerDay = total_story_points / duration_days
+      const actualDropPerDay = (total_story_points - remaining_story_points) / duration_days
     
       const generatedData: BurndownDataPoint[] = []
       for (let day = 0; day < totalDays; day++) {
         const ideal = total_story_points - idealDropPerDay * day
+        const remaining = total_story_points - actualDropPerDay * day
         generatedData.push({
-          day: `Day ${day}`,
-          Ideal: parseFloat(ideal.toFixed(2)),
-          Remaining: total_story_points, 
-        })
+        day: `Day ${day}`,
+        Ideal: parseFloat(ideal.toFixed(2)),
+        Remaining: parseFloat(remaining.toFixed(2)),
+  })
       }
     
       setBurndownChartData(generatedData)

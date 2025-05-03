@@ -19,30 +19,47 @@ const BurndownChartCard = () => {
   const { burndownData } = useSprintDataContext()
 
   useEffect(() => {
-    if (!burndownData) return
-    
-    const { duration_days, total_story_points } = burndownData
+    if (
+      !burndownData ||
+      typeof burndownData.duration_days !== "number" ||
+      typeof burndownData.total_story_points !== "number" ||
+      typeof burndownData.remaining_story_points !== "number"
+    ) {
+      setChartData([])
+      setActualPercentage(0)
+      setIdealPercentage(0)
+      return
+    }
+  
+    const { duration_days, total_story_points, remaining_story_points } = burndownData
     const totalDays = duration_days + 1
+  
     const idealDropPerDay = total_story_points / duration_days
-    
+    const actualDropPerDay = (total_story_points - remaining_story_points) / duration_days
+  
     const generatedData: BurndownDataPoint[] = []
-    
+  
     for (let day = 0; day < totalDays; day++) {
       const ideal = total_story_points - idealDropPerDay * day
+      const remaining = total_story_points - actualDropPerDay * day
       generatedData.push({
         day: `Day ${day}`,
         Ideal: parseFloat(ideal.toFixed(2)),
-        Remaining: total_story_points, // This would be replaced with actual remaining points
+        Remaining: parseFloat(remaining.toFixed(2)),
       })
     }
-    
+  
     setChartData(generatedData)
-    
+  
     const initial = total_story_points
     const last = generatedData[generatedData.length - 1]
-    
-    setActualPercentage(Math.round(((initial - last.Remaining) / initial) * 100))
-    setIdealPercentage(Math.round(((initial - last.Ideal) / initial) * 100))
+  
+    setActualPercentage(
+      isNaN(last.Remaining) ? 0 : Math.round(((initial - last.Remaining) / initial) * 100)
+    )
+    setIdealPercentage(
+      isNaN(last.Ideal) ? 0 : Math.round(((initial - last.Ideal) / initial) * 100)
+    )
   }, [burndownData])
 
   return (
@@ -64,6 +81,5 @@ const BurndownChartCard = () => {
     </ProgressCard>
   )
 }
-
 
 export default BurndownChartCard
