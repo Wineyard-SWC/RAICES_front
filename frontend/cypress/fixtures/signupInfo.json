@@ -1,0 +1,9 @@
+{
+    "Fname":"Pruebas",
+    "Lname":"Wineyard",
+    "Email":"pruebaswineyard@gmail.com",
+    "Password":"prueba123",
+    "incompleteEmail":"pruebaswineyard",
+    "nonExistentTerminationEmail":"pruebaswineyard@noexiste.",
+    "AltMail":"pruebawineyard@gmail.com"
+}
