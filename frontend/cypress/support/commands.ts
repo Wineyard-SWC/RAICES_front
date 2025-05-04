@@ -1,5 +1,7 @@
 /// <reference types="cypress" />
 
+require("@4tw/cypress-drag-drop");
+
 Cypress.Commands.add('login', () => {
     cy.fixture('loginInfo').then((user) => {
       cy.visit('login'); // Cambia la ruta si es diferente
@@ -20,7 +22,7 @@ Cypress.Commands.add('login', () => {
       }
     }
   }
-
+  
 
 // ***********************************************
 // This example commands.ts shows you how to
