@@ -1,5 +1,5 @@
-describe('Incomplete Mail Test', () => {
-    it('Passes', () => {
+describe('Sign up with invalid termination test', () => {
+    it('passes', () => {
       cy.visit('/signup')
      // cy.get('text-[#4A2B4D]').click()
      
@@ -8,7 +8,7 @@ describe('Incomplete Mail Test', () => {
      cy.fixture('signupInfo').then((user) => {
       cy.get('.space-y-4 > :nth-child(1) > .w-full').type(user.Fname)
       cy.get('.space-y-4 > :nth-child(2) > .w-full').type(user.Lname)
-      cy.get(':nth-child(4) > .w-full').type(user.incompleteEmail)
+      cy.get(':nth-child(4) > .w-full').type(user.nonExistentTerminationEmail)
       cy.get(':nth-child(5) > .relative > .w-full').type(user.Password)
       cy.get(':nth-child(6) > .relative > .w-full').type(user.Password)
       cy.get('#terms').click()
