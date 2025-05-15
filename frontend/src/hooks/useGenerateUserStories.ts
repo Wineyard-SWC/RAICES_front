@@ -9,8 +9,8 @@ export const useGenerateUserStories = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [generatedOutput, setGeneratedOutput] = useState<UserStoryResponse| null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { sessionId, setSessionId} = useSessionContext();
-  const { language, setLanguage} = useLanguageContext();
+  const { sessionId} = useSessionContext();
+  const { language} = useLanguageContext();
   
 
   const route = process.env.NEXT_PUBLIC_USER_STORY_ROUTE!
@@ -31,8 +31,8 @@ export const useGenerateUserStories = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           "epic_description": epicDescription,
-          "session_id": currentSession_id,
-          "lang": lang || "en"
+          "session_id": currentSession_id || "",
+          "lang": "en"
       })
       });
     

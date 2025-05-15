@@ -11,6 +11,9 @@ import { projectInputStyles as input } from '../gen_requirements/styles/projecti
 import { useGenerateEpicsLogic } from './hooks/useGenerateEpicLogic';
 import ConfirmDialog from '@/components/confimDialog';
 import { useRouter } from 'next/navigation';
+import saveRequirements  from '../gen_requirements/utils/handleSave';
+import Toast from '@/components/toast';
+import useToast from '@/hooks/useToast';
 
 export default function GenerateEpicsPage() {
   const [reqDescription, setReqDescription] = useState('');
@@ -20,6 +23,10 @@ export default function GenerateEpicsPage() {
   const [showImportConfirm, setShowImportConfirm] = useState(false);
   const [showGenerateConfirm, setShowGenerateConfirm] = useState(false);
 
+  const [isSaving, setIsSaving] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const { toast, showToast, hideToast } = useToast();
 
   const {
     epics,
@@ -41,10 +48,62 @@ export default function GenerateEpicsPage() {
     setEpics,
     setSelectedIds,
     setSelectedEpicIds,
+    selectedProject
   } = useGenerateEpicsLogic(reqDescription, setReqDescription);
 
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+
+  const handleSaveWithFeedback = async () => {
+    try {
+      setIsSaving(true);
+      await handleSave();
+      showToast('Epics saved successfully!', 'success');
+    } catch (error) {
+      console.error('Error saving epics:', error);
+      showToast('Error saving epics. Please try again.', 'error');
+    } finally {
+      setIsSaving(false);
+      setShowSaveConfirm(false);
+    }
+  };
+  
+  const handleImportWithFeedback = async () => {
+    try {
+      setIsImporting(true);
+      await handleImportRequirements();
+      showToast('Requirements imported successfully!', 'success');
+    } catch (error) {
+      console.error('Error importing requirements:', error);
+      showToast('Error importing requirements. Please try again.', 'error');
+    } finally {
+      setIsImporting(false);
+      setShowImportConfirm(false);
+    }
+  };
+  
+  const handleGenerateWithFeedback = async () => {
+    try {
+      setIsGenerating(true);
+      await handleGenerate();
+      showToast('Epics generated successfully!', 'success');
+    } catch (error) {
+    } finally {
+      setIsGenerating(false);
+      setShowGenerateConfirm(false);
+    }
+  };
+  
+  const handleClearWithFeedback = () => {
+    handleClear();
+    setShowClearConfirm(false);
+    showToast('All info cleared successfully', 'success');
+  };
+  
+  const handleDeleteWithFeedback = (uuid: string) => {
+    handleDeleteEpic(uuid);
+    showToast('Epic deleted successfully', 'success');
+  };
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
@@ -64,6 +123,13 @@ export default function GenerateEpicsPage() {
       <LoadingScreen isLoading={isLoading} generationType="epics"/>
     
       <Navbar projectSelected={true} />
+
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        visible={toast.visible}
+        onClose={hideToast}
+      />
 
       <GeneratorView
         inputTitle={
@@ -94,10 +160,11 @@ export default function GenerateEpicsPage() {
             isSelected={selectedEpicIds.includes(epic.uuid)}
             onToggleSelect={() => toggleSelectEpic(epic.uuid)}
             editMode={editMode}
-            onUpdate={handleUpdateEpic}
-            onDelete={(uuid) => {
-              handleDeleteEpic(uuid)
+            onUpdate={(updatedEpic) => {
+              handleUpdateEpic(updatedEpic);
+              showToast('Epic updated successfully', 'success');
             }}
+            onDelete={(uuid) => handleDeleteWithFeedback(uuid)}
           />
         )}
         renderLeftContent={() => (
@@ -108,7 +175,7 @@ export default function GenerateEpicsPage() {
               className="text-[#4A2B4A] text-sm font-medium hover:underline"
               onClick={() => setShowImportConfirm(true)}
               >
-              Import from project's requirements
+              Import Requirements
             </button>
             </div>
           <div className="space-y-3 max-h-[60vh] overflow-y-auto">
@@ -136,12 +203,9 @@ export default function GenerateEpicsPage() {
         <ConfirmDialog
           open={showClearConfirm}
           title="Clear Epics Section"
-          message={`Are you sure you want to clear the epics and requirements?\nThis will reset all your progress in this and previous sections.`}
+          message={`Are you sure you want to clear the epics?\nThis will reset all your progress in this and next sections.`}
           onCancel={() => setShowClearConfirm(false)}
-          onConfirm={() => {
-            handleClear();
-            setShowClearConfirm(false);
-          }}
+          onConfirm={handleClearWithFeedback}
       />
       )}
 
@@ -149,12 +213,11 @@ export default function GenerateEpicsPage() {
         <ConfirmDialog
           open={showSaveConfirm}
           title="Save Epics"
-          message={`The epics you didn't select will not be included.\nYou can still access them as archived versions of the project.`}
+          message={`Saving your current progress.\n The epics and requirements you didn't select will not be included.\nYou can still access them as archived versions of the project.`}
           onCancel={() => setShowSaveConfirm(false)}
-          onConfirm={async () => {
-            await handleSave();
-            setShowSaveConfirm(false);
-          }}
+          onConfirm={handleSaveWithFeedback}
+          isLoading={isSaving}
+          confirmText={isSaving ? "Saving..." : "Save"}
         />
       )}
 
@@ -162,12 +225,11 @@ export default function GenerateEpicsPage() {
         <ConfirmDialog
           open={showImportConfirm}
           title="Import Requirements"
-          message={`Importing from the database will overwrite the current selection.\nDo you want to continue?`}
+          message={`Importing requirements from the database will bring in all saved requirements.\nThis will overwrite your current selection.\nDo you want to continue?`}
           onCancel={() => setShowImportConfirm(false)}
-          onConfirm={async () => {
-            await handleImportRequirements();
-            setShowImportConfirm(false);
-          }}
+          onConfirm={handleImportWithFeedback}
+          isLoading={isImporting}
+          confirmText={isImporting ? "Importing..." : "Import"}
         />
       )}
 
@@ -177,10 +239,9 @@ export default function GenerateEpicsPage() {
           title="Generating Epics"
           message={`Generating epics will overwrite the current selection and it will be lost if it is not saved.\nDo you want to continue?`}
           onCancel={() => setShowGenerateConfirm(false)}
-          onConfirm={async () => {
-            await handleGenerate();
-            setShowGenerateConfirm(false);
-          }}
+          onConfirm={handleGenerateWithFeedback}
+          isLoading={isGenerating}
+          confirmText={isGenerating ? "Generating..." : "Generate"}
         />
       )}
     </>

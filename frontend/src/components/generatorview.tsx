@@ -35,6 +35,8 @@ type GeneratorViewProps<T> = {
   onSelectAll?: () => void;
   isItemSelectable?: boolean;
   onSave?: () => void;
+  onNext?: () => void;
+  nextButtonText?: () => void;
 };
 
 const GeneratorView = <T,>({
@@ -86,32 +88,7 @@ const GeneratorView = <T,>({
     setCurrentTab(pathname)
   }, [pathname])
 
-
-  useEffect(() => {
-    const style = document.createElement('style');
-    style.innerHTML = `
-      @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(-10px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-      @keyframes fadeOut {
-        from { opacity: 1; transform: translateY(0); }
-        to { opacity: 0; transform: translateY(-10px); }
-      }
-      .animate-fadeIn {
-        animation: fadeIn 1s ease-in-out forwards;
-      }
-      .animate-fadeOut {
-        animation: fadeOut 1s ease-in-out forwards;
-      }
-    `;
-    document.head.appendChild(style);
-    
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, []); 
-
+  
   return (
     <div className="min-h-screen bg-[#EBE5EB]/30 px-4 py-10">
       <div className="mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-screen-xl min-h-[60vh]">
@@ -241,13 +218,7 @@ const GeneratorView = <T,>({
 
             <button
               className={`${gen.button} w-full flex justify-center items-center gap-2`}
-              onClick={() => {
-                if (onSave) {
-                  onSave();
-                  setSaveSuccess(true);
-                  setTimeout(() => setSaveSuccess(false), 3000);
-                }
-              }}
+              onClick={onSave}
               disabled={!isItemSelectable || items.length === 0 || !!userFriendlyError}
             >
               <Download className="w-5 h-5 text-[#4A2B4A]" />

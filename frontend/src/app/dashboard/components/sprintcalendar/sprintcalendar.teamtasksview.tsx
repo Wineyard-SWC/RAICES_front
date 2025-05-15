@@ -1,8 +1,9 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { MoreVertical, Calendar, MessageSquare } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Task } from "@/types/task";
+import { useKanban } from '@/contexts/unifieddashboardcontext';
 
 // Define user interface
 interface User {
@@ -27,8 +28,6 @@ interface TeamTasksViewProps {
   onTaskMenuClick?: (taskId: string) => void;
   projectId?: string;
 }
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 // Individual Task Card component matching your TaskCard format
 const TaskCard: React.FC<Task & { onMenuClick?: (taskId: string) => void }> = ({
@@ -175,118 +174,95 @@ const DeveloperSection: React.FC<{ developer: Developer, onTaskMenuClick?: (task
   );
 };
 
-// Main team tasks view component
+interface Workinguser {
+  id: string;
+  name: string;
+}
 export default function TeamTasksView({ 
   onTaskMenuClick,
   projectId
 }: TeamTasksViewProps) {
-  const [developers, setDevelopers] = useState<Developer[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [userMap, setUserMap] = useState<Record<string, User>>({});
-
-  // Function to get user data from API or cache
-  const fetchUserData = async (userId: string): Promise<User | null> => {
-    // Check if we already have this user in our map
-    if (userMap[userId]) {
-      return userMap[userId];
+  // Use the unified Kanban context instead of fetching data
+  const { tasks, isLoading, currentProjectId } = useKanban();
+  
+  // Helper function to get user info from assignee (which could be tuple or array)
+  const getUserFromAssignee = (assignee: [string, string] | Workinguser[] | string | null | undefined): { id: string; name: string } => {
+    // If it's null or undefined
+    if (!assignee) {
+      return { id: 'unassigned', name: 'Unassigned' };
     }
-
-    // Check if we have the user in localStorage
-    const cachedUsers = localStorage.getItem('cached_users');
-    const cachedUserMap: Record<string, User> = cachedUsers ? JSON.parse(cachedUsers) : {};
     
-    if (cachedUserMap[userId]) {
-      // Update our in-memory map
-      setUserMap(prev => ({ ...prev, [userId]: cachedUserMap[userId] }));
-      return cachedUserMap[userId];
+    // If it's a simple string (just the ID)
+    if (typeof assignee === 'string') {
+      return { id: assignee, name: assignee };
     }
-
-    // If not in cache, fetch from API
-    try {
-      const response = await fetch(`${API_URL}/users/${userId}`);
-      if (!response.ok) {
-        throw new Error('User not found');
-      }
-      const userData = await response.json();
-      
-      // Update our cache
-      cachedUserMap[userId] = userData;
-      localStorage.setItem('cached_users', JSON.stringify(cachedUserMap));
-      
-      // Update our in-memory map
-      setUserMap(prev => ({ ...prev, [userId]: userData }));
-      
-      return userData;
-    } catch (error) {
-      console.error(`Error fetching user ${userId}:`, error);
-      return null;
+    
+    // If it's an array of Workinguser objects
+    if (Array.isArray(assignee) && assignee.length > 0 && typeof assignee[0] === 'object') {
+      const firstUser = assignee[0] as Workinguser;
+      return { id: firstUser.id, name: firstUser.name };
     }
+    
+    // If it's a tuple [id, name]
+    if (Array.isArray(assignee) && assignee.length >= 2 && typeof assignee[0] === 'string') {
+      return { id: assignee[0], name: assignee[1] };
+    }
+    
+    return { id: 'unassigned', name: 'Unassigned' };
   };
 
-  useEffect(() => {
-    const fetchTasks = async () => {
-      setLoading(true);
-      try {
-        // Get project ID from localStorage if not provided as prop
-        const currentProjectId = projectId || localStorage.getItem("currentProjectId");
-        
-        if (!currentProjectId) {
-          console.error("No project ID available");
-          return;
-        }
+  // Memoized developers data processed from unified context
+  const developers = useMemo(() => {
+    if (!tasks) return [];
 
-        const response = await fetch(`${API_URL}/projects/${currentProjectId}/tasks`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch tasks");
-        }
-        
-        const tasks: Task[] = await response.json();
-        
-        // Group tasks by assignee
-        const tasksByAssignee: Record<string, Task[]> = {};
-        
-        tasks.forEach(task => {
-          if (!task.assignee) return;
-          
-          if (!tasksByAssignee[task.assignee]) {
-            tasksByAssignee[task.assignee] = [];
-          }
-          
-          tasksByAssignee[task.assignee].push(task);
-        });
-        
-        // Create developer objects with user data from API
-        const developerPromises = Object.entries(tasksByAssignee).map(async ([userId, tasks]) => {
-          // Calculate hours based on story points (assuming 1 point = 2 hours)
-          const totalPoints = tasks.reduce((sum, task) => sum + task.story_points, 0);
-          const hoursAllocated = totalPoints * 2;
-          
-          // Fetch user data
-          const userData = await fetchUserData(userId);
-          
-          return {
-            id: userId,
-            name: userData?.name || userId,
-            role: userData?.role || "Team Member", // Use role from API or default
-            hoursAllocated: hoursAllocated,
-            hoursTotal: 40, // Default work week
-            tasks: tasks
-          };
-        });
-        
-        const developersData = await Promise.all(developerPromises);
-        setDevelopers(developersData);
-      } catch (error) {
-        console.error("Error fetching tasks:", error);
-      } finally {
-        setLoading(false);
+    // Get all tasks from all columns (excluding backlog stories)
+    const allTasks: Task[] = [
+      ...tasks.todo,
+      ...tasks.inprogress,
+      ...tasks.inreview,
+      ...tasks.done
+    ].filter(task => 'assignee' in task && task.assignee) as Task[];
+
+    // Group tasks by assignee
+    const tasksByAssignee = allTasks.reduce((acc, task) => {
+      const user = getUserFromAssignee(task.assignee);
+      const userId = user.id;
+      
+      if (!acc[userId]) {
+        acc[userId] = [];
       }
-    };
+      acc[userId].push(task);
+      return acc;
+    }, {} as Record<string, Task[]>);
 
-    fetchTasks();
-  }, [projectId]);
+    // Create developer objects
+    return Object.entries(tasksByAssignee).map(([userId, tasks]) => {
+      const user = getUserFromAssignee(tasks[0].assignee);
+      
+      // Calculate hours based on story points (assuming 1 point = 2 hours)
+      const totalPoints = tasks.reduce((sum, task) => sum + (task.story_points || 0), 0);
+      const hoursAllocated = totalPoints * 2;
+      
+      return {
+        id: userId,
+        name: user.name,
+        role: "Team Member", // We could get this from user data if needed
+        hoursAllocated: hoursAllocated,
+        hoursTotal: 40, // Default work week
+        tasks: tasks
+      };
+    });
+  }, [tasks]);
 
-  if (loading) {
+  // Check if we're viewing the right project
+  const isCorrectProject = !projectId || projectId === currentProjectId;
+
+  // Don't render anything if we're looking at a different project
+  if (!isCorrectProject) {
+    return null;
+  }
+
+  if (isLoading) {
     return <div className="p-4 text-center">Loading team tasks...</div>;
   }
 

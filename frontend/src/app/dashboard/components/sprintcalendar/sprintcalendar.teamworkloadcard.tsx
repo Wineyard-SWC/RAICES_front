@@ -1,11 +1,9 @@
 import { Users } from "lucide-react"
 import { ProgressCard } from "../dashboard/dashboard.progresscard"
 import { Progress } from "@/components/progress"
-import {styles} from "../../styles/calendarstyles"
-import { useEffect, useState } from "react"
-import { Task } from "@/types/task"
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL
+import { styles } from "../../styles/calendarstyles"
+import { useMemo } from "react"
+import { useKanban } from "@/contexts/unifieddashboardcontext"
 
 // Interface for user data
 interface User {
@@ -14,6 +12,12 @@ interface User {
   email: string;
   role: string;
   picture?: string;
+}
+
+// Interface for Workinguser
+interface Workinguser {
+  id: string;
+  name: string;
 }
 
 interface UserWorkload {
@@ -30,113 +34,76 @@ interface TeamWorkloadCardProps {
 }
 
 const TeamWorkloadCard = ({ projectId }: TeamWorkloadCardProps) => {
-  const [users, setUsers] = useState<UserWorkload[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [userMap, setUserMap] = useState<Record<string, User>>({});
+  // Use the unified Kanban context instead of fetching data
+  const { tasks, isLoading, currentProjectId } = useKanban();
 
-  // Function to get user data from API or cache
-  const fetchUserData = async (userId: string): Promise<User | null> => {
-    // Check if we already have this user in our map
-    if (userMap[userId]) {
-      return userMap[userId];
+  // Helper function to get user info from assignee
+  const getUserFromAssignee = (assignee: Workinguser[] | null | undefined): { id: string; name: string } => {
+    if (!assignee || !Array.isArray(assignee) || assignee.length === 0) {
+      return { id: 'unassigned', name: 'Unassigned' };
     }
-
-    // Check if we have the user in localStorage
-    const cachedUsers = localStorage.getItem('cached_users');
-    const cachedUserMap: Record<string, User> = cachedUsers ? JSON.parse(cachedUsers) : {};
     
-    if (cachedUserMap[userId]) {
-      // Update our in-memory map
-      setUserMap(prev => ({ ...prev, [userId]: cachedUserMap[userId] }));
-      return cachedUserMap[userId];
-    }
-
-    // If not in cache, fetch from API
-    try {
-      const response = await fetch(`${API_URL}/users/${userId}`);
-      if (!response.ok) {
-        throw new Error('User not found');
-      }
-      const userData = await response.json();
-      
-      // Update our cache
-      cachedUserMap[userId] = userData;
-      localStorage.setItem('cached_users', JSON.stringify(cachedUserMap));
-      
-      // Update our in-memory map
-      setUserMap(prev => ({ ...prev, [userId]: userData }));
-      
-      return userData;
-    } catch (error) {
-      console.error(`Error fetching user ${userId}:`, error);
-      return null;
-    }
+    const firstUser = assignee[0];
+    return { id: firstUser.id, name: firstUser.name };
   };
 
-  useEffect(() => {
-    const fetchTasks = async () => {
-      setLoading(true);
-      try {
-        // Get project ID from localStorage if not provided as prop
-        const currentProjectId = projectId || localStorage.getItem("currentProjectId");
-        
-        if (!currentProjectId) {
-          console.error("No project ID available");
-          return;
-        }
+  // Memoized team workload data processed from unified context
+  const users = useMemo(() => {
+    if (!tasks) return [];
 
-        const response = await fetch(`${API_URL}/projects/${currentProjectId}/tasks`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch tasks");
-        }
-        
-        const tasks: Task[] = await response.json();
-        
-        // Group tasks by assignee
-        const tasksByAssignee: Record<string, Task[]> = {};
-        
-        tasks.forEach(task => {
-          if (!task.assignee) return;
-          
-          if (!tasksByAssignee[task.assignee]) {
-            tasksByAssignee[task.assignee] = [];
-          }
-          
-          tasksByAssignee[task.assignee].push(task);
-        });
-        
-        // Create user workload objects with user data from API
-        const workloadPromises = Object.entries(tasksByAssignee).map(async ([userId, tasks]) => {
-          const completedTasks = tasks.filter(task => task.status_khanban === 'Done').length;
-          const totalTasks = tasks.length;
-          const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-          
-          // Fetch user data
-          const userData = await fetchUserData(userId);
-          
-          return {
-            id: userId,
-            name: userData?.name || userId,
-            progress,
-            tasks: `${completedTasks}/${totalTasks} Tasks`,
-            completedTasks,
-            totalTasks
-          };
-        });
-        
-        const workloadData = await Promise.all(workloadPromises);
-        setUsers(workloadData);
-      } catch (error) {
-        console.error("Error fetching tasks:", error);
-      } finally {
-        setLoading(false);
+    // Get all tasks from all columns
+    const allTasks = [
+      ...tasks.todo,
+      ...tasks.inprogress,
+      ...tasks.inreview,
+      ...tasks.done
+    ].filter(task => 'assignee' in task && task.assignee);
+
+    // Group tasks by assignee
+    const tasksByAssignee: Record<string, any[]> = {};
+    
+    allTasks.forEach(task => {
+      if (!task.assignee) return;
+      
+      const user = getUserFromAssignee(task.assignee);
+      const userId = user.id;
+      
+      if (!tasksByAssignee[userId]) {
+        tasksByAssignee[userId] = [];
       }
-    };
+      
+      tasksByAssignee[userId].push(task);
+    });
 
-    fetchTasks();
-  }, [projectId]);
+    // Create user workload objects
+    return Object.entries(tasksByAssignee).map(([userId, tasks]) => {
+      const completedTasks = tasks.filter(task => task.status_khanban === 'Done').length;
+      const totalTasks = tasks.length;
+      const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+      
+      // Get user info from the assignee array
+      const user = getUserFromAssignee(tasks[0].assignee);
+      
+      return {
+        id: userId,
+        name: user.name,
+        progress,
+        tasks: `${completedTasks}/${totalTasks} Tasks`,
+        completedTasks,
+        totalTasks
+      };
+    });
+  }, [tasks]);
 
-  if (loading) {
+  // Check if we're viewing the right project
+  const isCorrectProject = !projectId || projectId === currentProjectId;
+
+  // Don't render anything if we're looking at a different project
+  if (!isCorrectProject) {
+    return null;
+  }
+
+  if (isLoading) {
     return (
       <ProgressCard
         title="Team Workload"
@@ -165,7 +132,7 @@ const TeamWorkloadCard = ({ projectId }: TeamWorkloadCardProps) => {
     >
       <div className="space-y-4">
         {users.map((user, idx) => (
-          <div key={idx}>
+          <div key={user.id}>
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded-full bg-gray-200 overflow-hidden">
@@ -191,4 +158,4 @@ const TeamWorkloadCard = ({ projectId }: TeamWorkloadCardProps) => {
   );
 };
 
-export default TeamWorkloadCard
+export default TeamWorkloadCard;

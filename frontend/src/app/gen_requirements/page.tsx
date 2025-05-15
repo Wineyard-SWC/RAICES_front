@@ -16,6 +16,8 @@ import { useRequirementsLogic } from './hooks/useRequirementsLogic';
 import { useEpicContext } from '@/contexts/epiccontext';
 import ConfirmDialog from '@/components/confimDialog';
 import { useRouter } from 'next/navigation';
+import useToast from '@/hooks/useToast';
+import Toast from '@/components/toast';
 
 export default function RequirementsPage() {
   const { projectDescription, setProjectDescription } = useProjectContext();
@@ -24,8 +26,10 @@ export default function RequirementsPage() {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [showGenerateConfirm, setShowGenerateConfirm] = useState(false);
-
-
+  const { toast, showToast, hideToast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const {
     requirements,
@@ -41,6 +45,20 @@ export default function RequirementsPage() {
 
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+
+  const handleSaveWithConfirmation = async () => {
+    try {
+      setIsSaving(true);
+      await handleSave(requirements, selectedIds, selectedProject);
+      showToast('Requirements saved successfully!', 'success');
+    } catch (error) {
+      console.error('Error saving requirements:', error);
+      showToast('Error saving requirements. Please try again.', 'error');
+    } finally {
+      setIsSaving(false);
+      setShowSaveConfirm(false);
+    }
+  };
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
@@ -60,6 +78,13 @@ export default function RequirementsPage() {
       <LoadingScreen isLoading={isLoading} generationType="requirements" />
     
       <Navbar projectSelected={true} />
+
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        visible={toast.visible}
+        onClose={hideToast}
+      />
 
       <GeneratorView
         showInput={true}
@@ -89,16 +114,26 @@ export default function RequirementsPage() {
             idTitle={`${req.idTitle}`}
             isSelected={selectedIds.includes(req.uuid)}
             onToggleSelect={() => toggleSelectRequirement(req.uuid,setSelectedIds)}
-            onUpdate={(updated) =>
+            onUpdate={(updated) =>{
               setRequirements((prev) =>
                 prev.map((r) => (r.uuid === updated.uuid ? updated : r))
               )
-            }
+              showToast('Requirement updated successfully', 'success');
+            }}
             editMode={editMode}
-            onDelete={(deletedId) => handleDeleteRequirement(deletedId, setRequirements, setSelectedIds, setEpics)}
+            onDelete={
+              (deletedId) => {handleDeleteRequirement(deletedId, setRequirements, setSelectedIds, setEpics)
+              showToast('Requirement deleted successfully', 'success');
+              }
+            }
           />
         )}
-        onSelectAll={() => handleSelectAll(requirements, setSelectedIds)}
+        onSelectAll={() => {
+          handleSelectAll(requirements, setSelectedIds);
+          if (requirements.length > 0) {
+            showToast('All requirements selected', 'success');
+          }
+        }}
         isLoading={isLoading}
         error={error}
         onSave={() => setShowSaveConfirm(true)}
@@ -108,11 +143,12 @@ export default function RequirementsPage() {
       <ConfirmDialog
         open={showClearConfirm}
         title="Clear Requirements Section"
-        message={`Are you sure you want to clear the requirements and description?\nThis will reset all your progress in this section.`}
+        message={`Are you sure you want to clear the requirements section?\nThis will reset your progress in all sections.`}
         onCancel={() => setShowClearConfirm(false)}
-        onConfirm={() => {
+        onConfirm={() => { 
           handleClear();
           setShowClearConfirm(false);
+          showToast('All info cleared successfully', 'success');
         }}
       />
       )}
@@ -123,10 +159,9 @@ export default function RequirementsPage() {
           title="Save Requirements"
           message={`Only the selected requirements will be saved.\nUnselected ones will remain archived in the project history.`}
           onCancel={() => setShowSaveConfirm(false)}
-          onConfirm={async () => {
-            await handleSave(requirements, selectedIds, selectedProject);
-            setShowSaveConfirm(false);
-          }}
+          onConfirm={handleSaveWithConfirmation}
+          isLoading={isSaving}
+          confirmText={isSaving ? "Saving..." : "Save"}
         />
       )}
 
@@ -134,12 +169,17 @@ export default function RequirementsPage() {
         <ConfirmDialog
           open={showGenerateConfirm}
           title="Generating Requirements"
-          message={`Generating requirements will overwrite the current selection and it will be lost if it is not saved.\nDo you want to continue?`}
+          message={`Generating requirements will overwrite the current selection and restart all your progress in this and next sections it will be lost if it is not saved.\nDo you want to continue?`}
           onCancel={() => setShowGenerateConfirm(false)}
           onConfirm={async () => {
+            if (projectDescription.trim() === "") {
+              showToast('A project description must be provided first to generate content', 'info');
+            }
             await handleGenerate();
             setShowGenerateConfirm(false);
           }}
+          isLoading={isGenerating}
+          confirmText={isGenerating ? "Generating..." : "Generate"}
         />
       )}
     </>

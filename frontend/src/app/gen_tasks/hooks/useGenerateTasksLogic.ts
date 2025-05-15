@@ -11,6 +11,10 @@ import { getProjectUserStories } from "@/utils/getProjectUserStories"
 import { buildTasksPrompt }   from "@/utils/prompt";
 import { buildTasksPayload }  from "@/utils/buildTasksPayload";
 import { Sprint, SprintFormData } from "@/types/sprint"
+import { useUserStories } from "@/contexts/saveduserstoriescontext";
+import { useTasks } from "@/contexts/taskcontext"
+import { useUser } from "@/contexts/usercontext"
+import { useGeneratedTasks } from "@/contexts/generatedtaskscontext"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
@@ -22,16 +26,68 @@ export const useGenerateTasksLogic = () => {
     (typeof window !== "undefined" && localStorage.getItem("currentProjectId")) ||
     ""
 
+  const tasksContext = useTasks();
+  const { tasks: generatedTasks, addTasks, clearTasks, updateTask, deleteTask, handleSelectAll, handleToggleSelectTask  } = useGeneratedTasks()
+  
+  const { 
+    getUserStoriesForProject,
+    setUserStoriesForProject,
+    loadUserStoriesIfNeeded
+  } = useUserStories();
+
+  const savedUserStories = getUserStoriesForProject(projectId);
+
+  const { userData } = useUser();
+    
+    const getUserInfo = (): [string, string] => {
+      const userId = localStorage.getItem("userId") || "RAICES_IA";
+      const userName = userData?.name || "RAICES_IA";
+      return [userId, userName];
+    };
+    const userInfo = getUserInfo();
+
   // User Stories
   const [userStories, setUserStories] = useState<UserStory[]>([])
   const [isLoadingStories, setIsLoadingStories] = useState(false)
   const [storiesError, setStoriesError] = useState<string | null>(null)
 
+
+
   // Tasks
   const [selectedUserStories, setSelectedUserStories] = useState<string[]>([])
-  const [generatedTasks, setGeneratedTasks] = useState<Task[]>([])
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null)
+  const [isLoadingUnassigned, setIsLoadingUnassigned] = useState(false)
+  const [isSavingTasks, setIsSavingTasks] = useState(false)
+
+
+
+  const loadTasksIfNeeded = async () => {
+    if (!projectId) return [];
+    
+    try {
+      const fetchFunction = async (projId: string) => {
+        const response = await fetch(`${API_URL}/projects/${projId}/tasks`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return data;
+      };
+      
+      return await tasksContext.loadTasksIfNeeded(projectId, fetchFunction);
+    } catch (error) {
+      console.error('Error loading tasks:', error);
+      return [];
+    }
+  };
 
   // Derived
   const groupedByUserStory = generatedTasks.reduce(
@@ -47,124 +103,173 @@ export const useGenerateTasksLogic = () => {
     {} as Record<string, string>
   )
 
-  // Fetch user stories
-  useEffect(() => {
+   useEffect(() => {
     if (!projectId) return
-    setIsLoadingStories(true)
-    getProjectUserStories(projectId)
-      .then(setUserStories)
-      .catch((e) => {
-        console.error(e)
-        setStoriesError("Failed to load user stories")
-      })
-      .finally(() => setIsLoadingStories(false))
-  }, [projectId])
 
-  // console.log(userStories);
+    setIsLoadingStories(true);
+
+    // Usar el context con cache
+    const loadUserStories = async () => {
+      try {
+        // Intentar cargar desde cache primero
+        const stories = await loadUserStoriesIfNeeded(
+          projectId,
+          getProjectUserStories,
+          10 * 60 * 1000 
+        );
+        
+        setUserStories(stories);
+      } catch (e) {
+        // Fallback: si el context falla, cargar directamente
+        try {
+          const stories = await getProjectUserStories(projectId);
+          setUserStories(stories);
+          setUserStoriesForProject(projectId, stories);
+        } catch (err) {
+          setStoriesError("Failed to load user stories");
+        }
+      } finally {
+        setIsLoadingStories(false);
+      }
+    };
+
+    // Si ya hay stories en cache, usarlas
+    if (savedUserStories && savedUserStories.length > 0) {
+      setUserStories(savedUserStories);
+      setIsLoadingStories(false);
+    } else {
+      loadUserStories();
+    }
+  }, [projectId]);
+
 
   const toggleSelectUserStory = (id: string) =>
     setSelectedUserStories((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     )
 
-    const handleGenerate = async () => {
-      if (!selectedUserStories.length) {
-        setError("Please select at least one user story");
-        return;
-      }
+  const handleGenerate = async () => {
+    if (!selectedUserStories.length) {
+      setError("Please select at least one user story");
+      return;
+    }
     
-      setIsLoading(true);
-      setError(null);
+    setIsLoading(true);
+    setError(null);
     
-      try {
-        // hooks/useGenerateTasksLogic.ts  (fragmento)
-        const stories = userStories
-          .filter(us => selectedUserStories.includes(us.uuid))
-          .map(({ uuid, title, description, acceptanceCriteria }) => ({
-            id: uuid,
-            title,
-            description,
-            acceptanceCriteria          // ← ¡nuevo!
-          }));
+    try {
+      const stories = userStories
+        .filter(us => selectedUserStories.includes(us.uuid))
+        .map(({ uuid, title, description, acceptanceCriteria }) => ({
+          id: uuid,
+          title,
+          description,
+          acceptanceCriteria: acceptanceCriteria.map(ac => ac.description)         
+      }));
         
-        //console.log("this is stories:");
-        //console.log(stories);
-
-        const payload = buildTasksPayload(stories);   // ya enviará el campo
-
-
-        console.log(payload);
+      const payload = buildTasksPayload(stories);   
       
-        const res = await fetch(
-        "https://stk-formador-25.azurewebsites.net/epics/generate-from-prompt/",
-        { method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload) }
+      const res = await fetch(
+      "https://stk-formador-25.azurewebsites.net/epics/generate-from-prompt/",{ 
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload) }
       );
       
       const { success, data, error: srvErr } = await res.json();
-      //console.log(data);
       if (!success) throw new Error(srvErr || "Generation failed");
       
-      console.log("this is data:");
-      console.log(data);
-      setGeneratedTasks(parseTasksFromApi(data));
+      const parsedTasks = parseTasksFromApi(data)
+      addTasks(parsedTasks)
       
+
       } catch (e: any) {
         console.error(e);
         setError(e.message ?? "Failed to generate tasks.");
-        setGeneratedTasks([]);
       } finally {
         setIsLoading(false);
       }
     };
 
+  const handleImportUnassignedTasks = async () => {
+    setIsLoadingUnassigned(true);
+    setError(null);
+    
+    try {
+      const allTasks = await loadTasksIfNeeded();
+      
+      const unassignedTasks = allTasks.filter(task => 
+        !task.sprint_id || task.sprint_id === '' || task.sprint_id === null
+      );
+      
+      const transformedTasks: Task[] = unassignedTasks.map(task => ({
+        ...task,
+        selected: true,
+        user_story_title: userStoryTitles[task.user_story_id] || 'Unassigned'
+      }));
+      
+      addTasks(transformedTasks);
+      
+    } catch (e: any) {
+      console.error('Error importing unassigned tasks:', e);
+      setError(e.message ?? "Failed to import unassigned tasks.");
+    } finally {
+      setIsLoadingUnassigned(false);
+    }
+  };
 
-
-  
-  // ←––––––––––––––––––––––––––––––
-
-  // Save tasks
-  // en GenerateTasksPage (hooks/useGenerateTasksLogic.ts) → handleSave:
-  // hooks/useGenerateTasksLogic.ts
   const handleSave = async () => {
-    if (generatedTasks.length === 0) {
-      setError("No tasks to save");
+     const selectedTasks = generatedTasks.filter(t => 
+      t.selected && 
+      t.user_story_title !== "Unassigned" && 
+      t.user_story_id && 
+      userStories.some(us => us.uuid === t.user_story_id) 
+    );
+
+    if (selectedTasks.length === 0) {
+      setError("No valid tasks to save. Tasks without a valid user story cannot be saved.");
       return;
     }
-    setIsLoading(true);
+    
+    setIsSavingTasks(true);
     setError(null);
 
     try {
-      // 1️⃣ Guarda SOLO las tareas (aún sin sprint)
-      await postTasks(projectId, generatedTasks);
-
-      // 2️⃣ Ahora calculamos los totales por historia
-      //    - total_tasks = número de tasks asociadas
-      //    - points      = suma de story_points de esas tasks
+      const savedTasks = await postTasks(projectId, selectedTasks, tasksContext);
       const updatedStories = userStories.map(us => {
-        const tasksOfStory = generatedTasks.filter(t => t.user_story_id === us.uuid);
+        const tasksOfStory = savedTasks.filter(t => t.user_story_id === us.uuid);
         const totalTasks = tasksOfStory.length;
         const sumPoints  = tasksOfStory.reduce((sum, t) => sum + (t.story_points || 0), 0);
+        const completedCriteria = us.acceptanceCriteria?.filter(ac => ac.date_completed)?.length || 0;
+        
+        const task_list = tasksOfStory.map(t => t.id)
+
         return {
-          // campos mínimos que el endpoint espera:
-          uuid: us.uuid,                   // id interno
-          idTitle: us.idTitle,             // p.e. "US-123"
-          title: us.title,
-          description: us.description,
+          uuid: us.uuid,  //1                 
+          idTitle: us.idTitle, //1             
+          title: us.title, //1
+          description: us.description, //1
           acceptanceCriteria: us.acceptanceCriteria,
-          priority: us.priority,
-          comments: us.comments || [],
-          status_khanban: us.status_khanban || "Backlog",
-          projectRef: projectId,
-          points: sumPoints,
-          total_tasks: totalTasks,
-          task_completed: 0,               // o si llevas cuenta, el filtrado de completadas
+          priority: us.priority, //1
+          comments: us.comments || [], //1
+          status_khanban: us.status_khanban || "Backlog", //1
+          projectRef: projectId, //1
+          points: sumPoints, //1
+          total_tasks: totalTasks, //1
+          task_completed: 0, //1
+          completed_acceptanceCriteria: completedCriteria,//1
+          total_acceptanceCriteria: us.acceptanceCriteria?.length || 0, //1
+          deadline: us.deadline || '', //1
+          date_completed: us.date_completed || '',//1
+          assigned_sprint: us.assigned_sprint || '',//1
+          assignee: us.assignee || [],//1
+          task_list: task_list.length > 0 ? task_list : (us.task_list || []),
+          epicRef: us.assigned_epic
         };
       });
-+
-      // 3️⃣ Envío batch para actualizar las historias
-      await fetch(
-        `${API_URL}/projects/${projectId}/userstories/batch`,
+
+
+      const response = await fetch(`${API_URL}/projects/${projectId}/userstories/batch`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -172,37 +277,77 @@ export const useGenerateTasksLogic = () => {
         }
       );
 
-      // 4️⃣ Navega a Sprint Planning; allí se creará el sprint
+      const responseData = await response.json();
+
+      const enrichedUserStories: UserStory[] = responseData.map((res: any, idx: number) => ({
+        ...updatedStories[idx], 
+        id: res.id,             
+        selected: false          
+      }));
+
+      setUserStoriesForProject(projectId, enrichedUserStories);
+
+      
       router.push(`/sprint_planning?projectId=${projectId}`);
     } catch (e: any) {
       console.error(e);
       setError("Failed to save tasks.");
     } finally {
-      setIsLoading(false);
+      setIsSavingTasks(false);
     }
   };
 
   const handleUpdateTask = (id: string, data: Partial<Task>) =>
-    setGeneratedTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, ...data } : t))
-    )
+    updateTask(id, data)
+
+
   const handleDeleteTask = (id: string) =>
-    setGeneratedTasks((prev) => prev.filter((t) => t.id !== id))
+    deleteTask(id)
+
+  
   const handleAddTask = (form: TaskFormData) => {
+    const now = new Date().toISOString()
+    const userStory = userStories.find(us => us.uuid === form.user_story_id)
+
     const nt: Task = {
       id: `temp-${Date.now()}`,
-      ...form,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      title: form.title,
+      description: form.description,
+      date: now,
+      user_story_id: form.user_story_id,
+      user_story_title: userStory?.title,
+      assignee: form.assignee,
+      status_khanban: form.status_khanban,
+      priority: form.priority,
+      story_points: form.story_points,
+      deadline: form.deadline,
+      created_at: now,
+      updated_at: now,
       comments: [],
       selected: true,
+      created_by: userInfo,
+      date_created:  now,
+      modified_by: userInfo,
+      date_modified: now,
+      finished_by: ['', ''],
+      date_completed: '',
     }
-    setGeneratedTasks((prev) => [...prev, nt])
+    addTasks([nt])
   }
-  const handleSelectAll = () =>
-    setGeneratedTasks((prev) => prev.map((t) => ({ ...t, selected: true })))
+  const handleSelectAlltasks = () =>
+    handleSelectAll()
+  
+  const allSelected = generatedTasks.every(t => t.selected)
+  const toggleSelectAllTasks = () => {
+    if (allSelected) {
+      generatedTasks.forEach(t => updateTask(t.id, { selected: false }))
+    } else {
+      handleSelectAll()
+    }
+  }
+
   const handleClear = () => {
-    setGeneratedTasks([])
+    clearTasks()
     setSelectedUserStories([])
   }
 
@@ -222,7 +367,13 @@ export const useGenerateTasksLogic = () => {
     handleUpdateTask,
     handleDeleteTask,
     handleAddTask,
-    handleSelectAll,
+    handleSelectAlltasks,
     handleClear,
+    handleToggleSelectTask,
+    toggleSelectAllTasks,
+    isSavingTasks,
+    allSelected,
+    handleImportUnassignedTasks,
+    isLoadingUnassigned
   }
 }

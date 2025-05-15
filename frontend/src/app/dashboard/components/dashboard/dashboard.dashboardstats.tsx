@@ -6,7 +6,7 @@ import { dashboardStatsStyles as s } from "../../styles/dashboardstyles"
 import { BurndownChart } from "@/components/burndownchart"
 import { useEffect, useState, useMemo } from "react"
 import { useSprintDataContext } from "@/contexts/sprintdatacontext"
-import { useBacklogContext } from "@/contexts/backlogcontext"
+import { useKanban } from "@/contexts/unifieddashboardcontext"
 
 type Props = {
   onViewSprintDetails: () => void;
@@ -25,12 +25,8 @@ const todayString = today.toLocaleDateString('en-US', {
     month: 'long',    
     day: 'numeric',   
 })
-const apiURL = process.env.NEXT_PUBLIC_API_URL!
-
 
 const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
-  
-
   // State for burndown chart
   const [burndownChartData, setBurndownChartData] = useState<BurndownDataPoint[]>([])
   const [actualPercentage, setActualPercentage] = useState(0)
@@ -50,8 +46,8 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
     refreshVelocityData 
   } = useSprintDataContext()
   
-  // Use the backlog context to get task data
-  const { tasks, refreshAll: refreshTasks } = useBacklogContext()
+  // Use the unified Kanban context instead of backlog context
+  const { tasks, refreshKanban } = useKanban()
 
   // Process burndown data for chart
   useEffect(() => {
@@ -183,20 +179,34 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
     calculateSprintDates()
   }, [burndownData])
 
-  // Refresh data when component mounts
+  // Refresh data when component mounts - IMPROVED VERSION TO AVOID CIRCULAR DEPENDENCY
   useEffect(() => {
+    let isActive = true
+    
     const loadData = async () => {
       try {
+        // Stagger the calls to avoid timing issues
         await refreshBurndownData()
-        await refreshVelocityData()
-        await refreshTasks()
+        
+        if (isActive) {
+          await new Promise(resolve => setTimeout(resolve, 100)) // Small delay
+          await refreshVelocityData()
+        }
+        
+        if (isActive) {
+          await new Promise(resolve => setTimeout(resolve, 100)) // Small delay
+          await refreshKanban()
+        }
       } catch (error) {
         console.error("Error refreshing data:", error)
       }
     }
     
     loadData()
-  }, [])
+    
+    // Cleanup function to prevent state updates if component unmounts
+    return () => { isActive = false }
+  }, []) // Remove all dependencies to avoid infinite loop
 
   return (
     <div className={s.container}>
