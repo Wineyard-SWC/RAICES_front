@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import Navbar from "@/components/NavBar"
 
-import { BacklogProvider } from "@/contexts/backlogcontext"
 import SprintDetailsPage from "./components/sprintdetails/sprintdetails.view"
 import DashboardMainPage from "./components/dashboard/dashboard.view"
 import ProductBacklogPage from "./components/productbacklog/productbacklog.view"
@@ -30,7 +29,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <BacklogProvider>
+    <>
       <Navbar projectSelected={true} />
       <main className="min-h-screen py-10 bg-[#EBE5EB]/30">
         <div className="container mx-auto px-4">
@@ -63,6 +62,6 @@ export default function DashboardPage() {
         )}
         {/*---------------------------------------ProductBacklogView-------------------------------------*/}
       </main>
-    </BacklogProvider>
+    </>
   )
 }

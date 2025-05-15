@@ -2,16 +2,8 @@
 
 import React, { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import {
-  ListChecks,
-  Plus,
-  Save,
-  ArrowRight,
-  RefreshCw,
-  Trash2,
-  Filter,
-  Search,
-} from "lucide-react"
+import {ListChecks,Plus,Save,ArrowRight,RefreshCw,Trash2,
+        Filter,Search,Download,ChevronDown,ChevronRight} from "lucide-react"
 import Navbar from "@/components/NavBar"
 import ConfirmDialog from "@/components/confimDialog"
 import TaskCard from "./components/taskcard"
@@ -20,6 +12,10 @@ import ManualTaskForm from "./components/ManualTaskForm"
 import type { Task, TaskFormData } from "@/types/task"
 import { useGenerateTasksLogic } from "./hooks/useGenerateTasksLogic"
 import LoadingTasks from "@/components/animations/loadingTasks"
+import Toast from '@/components/toast';
+import useToast from '@/hooks/useToast';
+
+
 
 export default function GenerateTasksPage() {
   const router = useRouter()
@@ -45,37 +41,129 @@ export default function GenerateTasksPage() {
     handleUpdateTask,
     handleDeleteTask,
     handleAddTask,
-    handleSelectAll,
+    handleSelectAlltasks,
+    handleToggleSelectTask,
     handleClear,
+    toggleSelectAllTasks,
+    allSelected,
+    isSavingTasks,
+    handleImportUnassignedTasks,
+    isLoadingUnassigned
   } = useGenerateTasksLogic()
 
+
+  const handleSaveWithFeedback = async () => {
+    try {
+      setIsSaving(true);
+      setIsSaving(false);
+      setShowSaveConfirm(false);
+      await handleSave();
+    } catch (error) {
+      console.error('Error saving tasks:', error);
+      showToast('Error saving tasks. Please try again.', 'error');
+    } finally {
+      showToast('Tasks saved successfully!', 'success');
+    }
+  };
+  
+  const handleGenerateWithFeedback = async () => {
+    try {
+      setIsGenerating(true);      
+      setShowGenerateConfirm(false);
+      await handleGenerate();
+      showToast('Tasks generated successfully!', 'success');
+    } catch (error) {
+      showToast('Error generating tasks. Please try again.', 'error');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+  
+  const handleClearWithFeedback = () => {
+    handleClear();
+    setShowClearConfirm(false);
+    showToast('All tasks cleared successfully', 'success');
+  };
+
+  const handleImportWithFeedback = async () => {
+    try {
+      await handleImportUnassignedTasks();
+      showToast('Unassigned tasks imported successfully!', 'success');
+    } catch (error) {
+      showToast('Error importing unassigned tasks. Please try again.', 'error');
+    }
+  };
+
+  const handleUpdateWithFeedback = (taskId: string, updatedData: Partial<Task>) => {
+    handleUpdateTask(taskId, updatedData);
+    showToast('Task updated successfully!', 'success');
+  };
+
+  const handleDeleteWithFeedback = (taskId: string) => {
+    handleDeleteTask(taskId);
+    showToast('Task deleted successfully!', 'success');
+  };
+
+  const handleSubmitWithFeedback = (data: TaskFormData) => {
+    handleAddTask(data);
+    setShowAddTaskModal(false);
+    showToast('Task added successfully!', 'success');
+  };
+
   // UI states
+  const [isSaving, setIsSaving] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const { toast, showToast, hideToast } = useToast();
   const [searchTerm, setSearchTerm] = useState("")
   const [filterPriority, setFilterPriority] = useState<string | null>(null)
   const [selectedUserStoryFilter, setSelectedUserStoryFilter] = useState<string | null>(null)
   const [showFilters, setShowFilters] = useState(false)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [showSaveConfirm, setShowSaveConfirm] = useState(false)
+  const [showGenerateConfirm, setShowGenerateConfirm] = useState(false);
   const [showSprintPlanningConfirm, setShowSprintPlanningConfirm] = useState(false)
   const [showAddTaskModal, setShowAddTaskModal] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({})
+
+   const toggleSection = (storyId: string) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [storyId]: !prev[storyId]
+    }))
+  }
 
   // Filtrar tareas
-  const filteredTasks = generatedTasks.filter((task) => {
+  const groupedFilteredTasks = generatedTasks.reduce((acc, task) => {
     const matchesSearch =
       !searchTerm ||
       task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.description.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesPriority = !filterPriority || task.priority === filterPriority
-    const matchesStory =
-      !selectedUserStoryFilter || task.user_story_id === selectedUserStoryFilter
-    return matchesSearch && matchesPriority && matchesStory
-  })
+      task.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesPriority = !filterPriority || task.priority === filterPriority;
+    const matchesStory = !selectedUserStoryFilter || task.user_story_id === selectedUserStoryFilter;
+  
+    if (matchesSearch && matchesPriority && matchesStory) {
+      const storyId = task.user_story_id ?? 'Unassigned';
+      if (!acc[storyId]) acc[storyId] = [];
+      acc[storyId].push(task);
+    }
+  
+    return acc;
+  }, {} as Record<string, Task[]>);
+
+
 
   return (
     <>
-      <LoadingTasks isLoading={isLoadingStories || isLoading} />
+      <LoadingTasks isLoading={isLoadingStories || isLoading} useFlower={isSavingTasks} />
       <Navbar projectSelected />
+
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        visible={toast.visible}
+        onClose={hideToast}
+      />
 
       <div className="min-h-screen bg-[#F5F0F1]/30">
         <div className="max-w-screen-xl mx-auto px-4 py-8">
@@ -101,7 +189,7 @@ export default function GenerateTasksPage() {
                 Clear All
               </button>
               <button
-                onClick={handleGenerate}
+                onClick={()=>{setShowGenerateConfirm(true)}}
                 disabled={selectedUserStories.length === 0 || isLoading}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                   selectedUserStories.length === 0 || isLoading
@@ -135,10 +223,10 @@ export default function GenerateTasksPage() {
           </div>
 
           {/* Contenido principal */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[60vh] ">
             {/* Sidebar de User Stories */}
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-xl shadow-sm p-4">
+            <div className="lg:col-span-1 h-full">
+              <div className="bg-white rounded-xl shadow-sm p-4 flex flex-col h-full mb-4">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-lg font-semibold text-[#4A2B4D]">User Stories</h2>
                   <button
@@ -147,14 +235,12 @@ export default function GenerateTasksPage() {
                         selectedUserStories.includes(us.uuid)
                       )
                       if (allSelected) {
-                        // Deselecciona todas
                         userStories.forEach(us => {
                           if (selectedUserStories.includes(us.uuid)) {
                             toggleSelectUserStory(us.uuid)
                           }
                         })
                       } else {
-                        // Selecciona las que faltan
                         userStories.forEach(us => {
                           if (!selectedUserStories.includes(us.uuid)) {
                             toggleSelectUserStory(us.uuid)
@@ -169,7 +255,7 @@ export default function GenerateTasksPage() {
                 </div>
 
                 {storiesError && <p className="text-red-600">{storiesError}</p>}
-                <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-2">
+                <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2 flex-1">
                   {userStories.map((us) => (
                     <div
                       key={us.uuid}
@@ -194,10 +280,10 @@ export default function GenerateTasksPage() {
 
 
             {/* Tasks area */}
-            <div className="lg:col-span-3 bg-white rounded-xl shadow-sm p-4">
+            <div className="lg:col-span-3 bg-white rounded-xl shadow-sm p-4 flex flex-col h-full">
               {/* Search & Filters */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                <div className="relative w-full sm:w-64">
+                <div className="relative w-full">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <input
                     type="text"
@@ -257,6 +343,7 @@ export default function GenerateTasksPage() {
                         User Story
                       </label>
                       <select
+                        aria-label="Select User Stories"
                         value={selectedUserStoryFilter || ""}
                         onChange={(e) =>
                           setSelectedUserStoryFilter(e.target.value || null)
@@ -284,31 +371,92 @@ export default function GenerateTasksPage() {
                   </div>
                 </div>
               )}
-
-              {filteredTasks.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredTasks.map((task) => (
-                    <TaskCard
-                      key={task.id}
-                      task={task}
-                      editMode
-                      onUpdate={(data) => handleUpdateTask(task.id, data)}
-                      onDelete={() => handleDeleteTask(task.id)}
-                      onEdit={() => setEditingTask(task)}
-                      userStoryTitle={userStoryTitles[task.user_story_id]}
-                    />
-                  ))}
+              <div className="overflow-y-auto flex-1 pr-2 space-y-6 min-h-0">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold text-[#4A2B4D]">Tasks</h3>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={toggleSelectAllTasks}
+                      className="text-sm text-[#4A2B4D] hover:underline"
+                    >
+                      {allSelected ? "Deselect All Tasks" : "Select All Tasks"}
+                    </button>
+                    <button
+                      onClick={handleImportWithFeedback}
+                      disabled={isLoadingUnassigned}
+                      className={`flex items-center gap-2 px-3 py-1 rounded-lg transition-colors ${
+                        isLoadingUnassigned
+                          ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                          : "bg-[#4A2B4D] text-white hover:bg-[#3a2239]"
+                      }`}
+                    >
+                      <Download className="w-4 h-4" />
+                      {isLoadingUnassigned ? "Importing..." : "Import Unassigned Tasks"}
+                    </button>
+                  </div>
                 </div>
-              ) : generatedTasks.length > 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-gray-500">No tasks match your filters.</p>
-                </div>
+                 {Object.entries(groupedFilteredTasks).length > 0 ? (
+                  <div className="overflow-y-auto max-h-[60vh] pr-2 space-y-6 ">
+                    {Object.entries(groupedFilteredTasks).map(([storyId, tasks]) => {
+                      const isCollapsed = collapsedSections[storyId]
+                      const storyTitle = userStoryTitles[storyId] ?? "Unassigned"
+                      
+                      return (
+                        <div key={storyId} className="border border-gray-200 rounded-lg shadow-sm bg-white">
+                          {/* Card Header */}
+                          <div 
+                            onClick={() => toggleSection(storyId)}
+                            className="p-4 cursor-pointer hover:bg-gray-50 transition-colors border-b border-gray-100"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                {isCollapsed ? (
+                                  <ChevronRight className="w-5 h-5 text-[#4A2B4D]" />
+                                ) : (
+                                  <ChevronDown className="w-5 h-5 text-[#4A2B4D]" />
+                                )}
+                                <h3 className="text-lg font-semibold text-[#4A2B4D]">
+                                  {storyTitle}
+                                </h3>
+                              </div>
+                              <div className="flex items-center gap-4">
+                                <span className="text-sm text-gray-600">
+                                  {tasks.length} task{tasks.length !== 1 ? 's' : ''}
+                                </span>
+                                <span className="text-sm text-gray-600">
+                                  {tasks.filter(t => t.selected).length} selected
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Card Content */}
+                          {!isCollapsed && (
+                            <div className="p-4 space-y-4">
+                              {tasks.map((task) => (
+                                <TaskCard
+                                  key={task.id}
+                                  task={task}
+                                  editMode
+                                  onUpdate={(data) => handleUpdateWithFeedback(task.id, data)}
+                                  onDelete={() => handleDeleteWithFeedback(task.id)}
+                                  onEdit={() => setEditingTask(task)}
+                                  onSelect={() => handleToggleSelectTask(task.id)}
+                                  userStoryTitle={storyTitle}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
               ) : (
                 <div className="text-center py-12">
                   <p className="text-gray-500">
                     {selectedUserStories.length > 0
-                      ? "Select user stories and click 'Generate Tasks' to create tasks automatically."
-                      : "Select at least one user story from the sidebar to generate tasks."}
+                      ? "No tasks match your filters."
+                      : "Select user stories and click 'Generate Tasks' to create tasks automatically."}
                   </p>
                   <button
                     onClick={() => setShowAddTaskModal(true)}
@@ -319,6 +467,7 @@ export default function GenerateTasksPage() {
                   </button>
                 </div>
               )}
+              </div>
             </div>
           </div>
         </div>
@@ -331,10 +480,7 @@ export default function GenerateTasksPage() {
           title="Clear Tasks"
           message="Are you sure you want to clear all tasks? This action cannot be undone."
           onCancel={() => setShowClearConfirm(false)}
-          onConfirm={() => {
-            handleClear()
-            setShowClearConfirm(false)
-          }}
+          onConfirm={handleClearWithFeedback}
         />
       )}
 
@@ -342,12 +488,27 @@ export default function GenerateTasksPage() {
         <ConfirmDialog
           open
           title="Save Tasks"
-          message="Are you sure you want to save these tasks to your project?"
+          message={
+            generatedTasks.some(t => t.selected && t.user_story_title === "Unassigned" && t.user_story_id === "Unassigned")
+              ? `Are you sure you want to save these tasks to your project? Tasks marked as "Unassigned" will be skipped as they don't have a valid user story.\n\nTasks that are not currently selected will not be saved.`
+              : `Are you sure you want to save this tasks to your project.\nThe tasks that are not currently selected will not be saved.`
+          }
           onCancel={() => setShowSaveConfirm(false)}
-          onConfirm={() => {
-            handleSave()
-            setShowSaveConfirm(false)
-          }}
+          onConfirm={handleSaveWithFeedback}
+          isLoading={isSaving}
+          confirmText={isSaving ? "Saving..." : "Save"}
+        />
+      )}
+
+      {showGenerateConfirm && (
+        <ConfirmDialog
+          open={showGenerateConfirm}
+          title="Generate Tasks"
+          message={`Generating tasks will overwrite the AI generated tasks of the same user story, new ones will be integrated to the current list.\nManual tasks you've created will stay as they are.`}
+          onCancel={() => setShowGenerateConfirm(false)}
+          onConfirm={handleGenerateWithFeedback}
+          isLoading={isGenerating}
+          confirmText={isGenerating ? "Generating..." : "Generate"}
         />
       )}
 
@@ -358,7 +519,7 @@ export default function GenerateTasksPage() {
           message="Make sure to save your tasks before proceeding to Sprint Planning. Do you want to continue?"
           onCancel={() => setShowSprintPlanningConfirm(false)}
           onConfirm={() => {
-            router.push(`/dashboard?projectId=${projectId}`)
+            router.push(`/sprint_planning?projectId=${projectId}`)
             setShowSprintPlanningConfirm(false)
           }}
         />
@@ -370,11 +531,8 @@ export default function GenerateTasksPage() {
         open
         onClose={() => setEditingTask(null)}
         onUpdate={(taskId, updatedData) => {
-          // Aquí sí recibes BOTH el id y los datos actualizados
-          handleUpdateTask(taskId, updatedData)
-          setEditingTask(null)
+          handleUpdateWithFeedback(taskId, updatedData)
         }}
-        /*  👇  añade esto */
         userStories={userStories.map((us) => ({ id: us.uuid, title: us.title }))}
     />
     )}
@@ -382,12 +540,11 @@ export default function GenerateTasksPage() {
 
       {showAddTaskModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-lg max-w-lg w-full p-6">
+          <div className="bg-[#F5F0F1] rounded-xl shadow-lg max-w-lg w-full p-6">
             <h2 className="text-xl font-bold text-[#4A2B4D] mb-4">Add New Task</h2>
             <ManualTaskForm
               onSubmit={(data) => {
-                handleAddTask(data)
-                setShowAddTaskModal(false)
+                handleSubmitWithFeedback(data)
               }}
               onCancel={() => setShowAddTaskModal(false)}
               userStories={userStories.map((us) => ({ id: us.uuid, title: us.title }))}

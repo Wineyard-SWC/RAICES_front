@@ -9,12 +9,14 @@ export const useGenerateRequirements = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [generatedOutput, setGeneratedOutput] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
-    const { sessionId, setSessionId} = useSessionContext();
-    const { language, setLanguage} = useLanguageContext();
+    const { sessionId,setSessionId} = useSessionContext();
+    const { language,setLanguage} = useLanguageContext();
 
     const apiUrl = process.env.NEXT_PUBLIC_REQUIREMENT_ROUTE!;
 
-    const lang = language
+   
+    const lang = language || "en"
+
 
     const generate = async (projectDescription: string) => {
       setIsLoading(true);

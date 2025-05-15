@@ -1,7 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useRequirementContext } from '@/contexts/requirementcontext';
 import { useSelectedRequirementContext } from '@/contexts/selectedrequirements';
 import { useEpicContext } from '@/contexts/epiccontext';
+import { useSelectedEpicsContext } from '@/contexts/selectedepics';
+import { useUserStoryContext } from '@/contexts/userstorycontext';
+import { useSelectedUserStoriesContext } from '@/contexts/selecteduserstories';
 import { Requirement } from '@/types/requirement';
 import { useGenerateRequirements } from '@/hooks/useGenerateRequirements';
 import { parseRequirementsFromAPI } from '@/utils/parseRequirementsFromApi';
@@ -16,7 +19,20 @@ export const useRequirementsLogic = ({
   const { requirements, setRequirements } = useRequirementContext();
   const { selectedIds, setSelectedIds } = useSelectedRequirementContext();
   const { epics, setEpics } = useEpicContext();
-  const selectedProject = localStorage.getItem("currentProjectId");
+  const { setSelectedEpicIds} = useSelectedEpicsContext();
+  const { setSelectedUserStoriesIds} = useSelectedUserStoriesContext();
+  const { userStories,setUserStories} = useUserStoryContext();
+  const selectedProject = typeof window !== 'undefined' ? 
+    localStorage.getItem("currentProjectId") : null;
+  const epicRefHistory = useRef<Map<string, string>>(new Map());
+
+  const isEqualJSON = useCallback((a: any, b: any): boolean => {
+    try {
+      return JSON.stringify(a) === JSON.stringify(b);
+    } catch {
+      return false;
+    }
+  }, []);
 
   const {
     generate,
@@ -38,49 +54,113 @@ export const useRequirementsLogic = ({
 
   useEffect(() => {
     if (epics.length === 0 || requirements.length === 0) return;
-
-    const reqMap = new Map<string, Requirement>();
-    requirements.forEach(req => {
-      reqMap.set(req.uuid, req);
+  
+    const reqMap = new Map(requirements.map(r => [r.uuid, r]));
+    const selectedIdsSet = new Set(selectedIds);
+    let changed = false;
+  
+    const updatedReqs = requirements.map(req => {
+      if (
+        selectedIdsSet.has(req.uuid) &&
+        (!req.epicRef || req.epicRef === '') &&
+        !epicRefHistory.current.has(req.uuid)
+      ) {
+        const matchedEpic = epics.find(e =>
+          e.relatedRequirements.some(r => r.uuid === req.uuid)
+        );
+        if (matchedEpic) {
+          epicRefHistory.current.set(req.uuid, matchedEpic.idTitle);
+          changed = true;
+          return { ...req, epicRef: matchedEpic.idTitle };
+        }
+      }
+  
+      if (
+        selectedIdsSet.has(req.uuid) &&
+        !req.epicRef &&
+        epicRefHistory.current.has(req.uuid)
+      ) {
+        changed = true;
+        return { ...req, epicRef: epicRefHistory.current.get(req.uuid) };
+      }
+  
+      return req;
     });
-
+  
+    if (changed && !isEqualJSON(updatedReqs, requirements)) {
+      setRequirements(updatedReqs);
+    }
+  
     const updatedEpics = epics.map(epic => {
-      const currentRelated = epic.relatedRequirements.filter(req =>
-        selectedIds.includes(req.uuid)
-      );
-
-      const newRelated = requirements
-        .filter(req => selectedIds.includes(req.uuid) && req.epicRef === epic.idTitle)
-        .filter(req => !currentRelated.some(r => r.uuid === req.uuid));
-
-      const fullList = [...currentRelated, ...newRelated].map(req => ({
-        uuid: req.uuid,
-        idTitle: req.idTitle,
-        title: req.title,
-        description: req.description,
+      const currentRelated = epic.relatedRequirements.filter(r => selectedIdsSet.has(r.uuid));
+      const newRelated = requirements.filter(r =>
+        selectedIdsSet.has(r.uuid) &&
+        epicRefHistory.current.get(r.uuid) === epic.idTitle &&
+        !currentRelated.some(c => c.uuid === r.uuid)
+      ).map(r => ({
+        uuid: r.uuid,
+        idTitle: r.idTitle,
+        title: r.title,
+        description: r.description
       }));
-
-      return {
-        ...epic,
-        relatedRequirements: fullList,
-      };
+  
+      const merged = [...currentRelated, ...newRelated];
+      if (!isEqualJSON(merged, epic.relatedRequirements)) {
+        return { ...epic, relatedRequirements: merged };
+      }
+      return epic;
     });
+  
+    if (!isEqualJSON(updatedEpics, epics)) {
+      setEpics(updatedEpics);
+    }
+  }, [selectedIds, requirements, epics]);
+  
+  const resetEpicsAndUserStories = useCallback(() => {
+    if (epics) {
+      setEpics([]);
+      setSelectedEpicIds([]);
+    }
+    
+    if (userStories) {
+      setUserStories([]);
+      setSelectedUserStoriesIds([]);
+    }
+  }, [
+    epics, 
+    userStories, 
+    setEpics, 
+    setSelectedEpicIds, 
+    setUserStories, 
+    setSelectedUserStoriesIds
+  ]);
 
-    setEpics(updatedEpics);
-  }, [selectedIds, requirements, setEpics]);
-
-  const handleGenerate = () => {
+  const handleGenerate = useCallback(() => {
     setSelectedIds([]);
     setRequirements([]);
+    resetEpicsAndUserStories();
+
     if (projectDescription.trim() === "") return;
     generate(projectDescription);
-  };
+  }, [
+    projectDescription, 
+    setSelectedIds, 
+    setRequirements, 
+    resetEpicsAndUserStories, 
+    generate
+  ]);
 
-  const handleClear = () => {
+  const handleClear = useCallback(() => {
     setProjectDescription("");
     setRequirements([]);
     setSelectedIds([]);
-  };
+    resetEpicsAndUserStories();
+  }, [
+    setProjectDescription, 
+    setRequirements, 
+    setSelectedIds, 
+    resetEpicsAndUserStories
+  ]);
 
   return {
     requirements,

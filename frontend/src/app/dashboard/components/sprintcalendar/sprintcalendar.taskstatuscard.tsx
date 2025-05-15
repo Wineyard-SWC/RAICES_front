@@ -1,93 +1,70 @@
-import {styles} from "../../styles/calendarstyles"
+import { styles } from "../../styles/calendarstyles"
 import { ProgressCard } from "../dashboard/dashboard.progresscard"
 import { ListChecks } from "lucide-react"
-import { useEffect, useState } from "react"
-import { Task } from "@/types/task"
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL
+import { useMemo } from "react"
+import { useKanban } from "@/contexts/unifieddashboardcontext"
 
 interface TaskStatusCardProps {
   projectId?: string
 }
 
 const TaskStatusCard = ({ projectId }: TaskStatusCardProps) => {
-  const [statusCounts, setStatusCounts] = useState({
-    todo: 0,
-    inProgress: 0,
-    inReview: 0,
-    done: 0
-  })
-  const [loading, setLoading] = useState(false)
+  const { tasks, isLoading, currentProjectId } = useKanban()
 
-  useEffect(() => {
-    const fetchTasks = async () => {
-      setLoading(true)
-      try {
-        // Get project ID from localStorage if not provided as prop
-        const currentProjectId = projectId || localStorage.getItem("currentProjectId")
-        
-        if (!currentProjectId) {
-          console.error("No project ID available")
-          return
-        }
-
-        const response = await fetch(`${API_URL}/projects/${currentProjectId}/tasks`)
-        if (!response.ok) {
-          throw new Error("Failed to fetch tasks")
-        }
-        
-        const tasks: Task[] = await response.json()
-        
-        // Count tasks by status
-        const counts = {
-          todo: 0,
-          inProgress: 0,
-          inReview: 0,
-          done: 0
-        }
-        
-        tasks.forEach(task => {
-          if (task.status_khanban === 'To Do') {
-            counts.todo++
-          } else if (task.status_khanban === 'In Progress') {
-            counts.inProgress++
-          } else if (task.status_khanban === 'In Review') {
-            counts.inReview++
-          } else if (task.status_khanban === 'Done') {
-            counts.done++
-          }
-        })
-        
-        setStatusCounts(counts)
-      } catch (error) {
-        console.error("Error fetching tasks:", error)
-      } finally {
-        setLoading(false)
+  // Calculate task counts from the unified context
+  const statusCounts = useMemo(() => {
+    // Check if we have tasks data
+    if (!tasks) {
+      return {
+        todo: 0,
+        inProgress: 0,
+        inReview: 0,
+        done: 0
       }
     }
 
-    fetchTasks()
-  }, [projectId])
+    // Count tasks by status directly from the organized columns
+    return {
+      todo: tasks.todo?.length || 0,
+      inProgress: tasks.inprogress?.length || 0,
+      inReview: tasks.inreview?.length || 0,
+      done: tasks.done?.length || 0
+    }
+  }, [tasks])
+
+  // Check if we're viewing the right project
+  const isCorrectProject = !projectId || projectId === currentProjectId
+
+  // Don't render anything if we're looking at a different project
+  if (!isCorrectProject) {
+    return null
+  }
 
   return (
     <ProgressCard
       title="Task Status"
-      icon={<ListChecks className={styles.icon} />} 
+      icon={<ListChecks className={styles.icon} />}
     >
-      <div className={styles.taskStatusGrid}>
-        <div className="bg-blue-100 rounded flex items-center justify-center py-2">
-          <span className="text-sm font-medium text-blue-800">{statusCounts.todo} To Do</span>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <span className="text-gray-500">Loading tasks...</span>
         </div>
-        <div className="bg-purple-100 rounded flex items-center justify-center py-2">
-          <span className="text-sm font-medium text-purple-800">{statusCounts.inProgress} In Progress</span>
+      ) : (
+        <div className={styles.taskStatusGrid}>
+          <div className="bg-blue-100 rounded flex items-center justify-center py-2">
+            <span className="text-sm font-medium text-blue-800">{statusCounts.todo} To Do</span>
+          </div>
+          <div className="bg-purple-100 rounded flex items-center justify-center py-2">
+            <span className="text-sm font-medium text-purple-800">{statusCounts.inProgress} In Progress</span>
+          </div>
+          <div className="bg-yellow-100 rounded flex items-center justify-center py-2">
+            <span className="text-sm font-medium text-yellow-800">{statusCounts.inReview} Review</span>
+          </div>
+          <div className="bg-green-100 rounded flex items-center justify-center py-2">
+            <span className="text-sm font-medium text-green-800">{statusCounts.done} Done</span>
+          </div>
         </div>
-        <div className="bg-yellow-100 rounded flex items-center justify-center py-2">
-          <span className="text-sm font-medium text-yellow-800">{statusCounts.inReview} Review</span>
-        </div>
-        <div className="bg-green-100 rounded flex items-center justify-center py-2">
-          <span className="text-sm font-medium text-green-800">{statusCounts.done} Done</span>
-        </div>
-      </div>
+      )}
     </ProgressCard>
   )
 }

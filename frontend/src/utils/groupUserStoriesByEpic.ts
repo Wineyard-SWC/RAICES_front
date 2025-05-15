@@ -3,13 +3,16 @@ import { UserStory } from "@/types/userstory";
 export const groupUserStoriesByEpic = (
   stories: UserStory[]
 ): Record<string, UserStory[]> => {
-  return stories.reduce((acc, story) => {
-    if (story.assigned_epic === 'UNASSIGNED') return acc;
-    const epicKey = story.assigned_epic;
-    if (!acc[epicKey]) {
-      acc[epicKey] = [];
+  const grouped = {} as Record<string, UserStory[]>;
+  
+  // Agrupar las historias por épica
+  stories.forEach(story => {
+    const epicKey = story.assigned_epic || 'UNASSIGNED';
+    if (!grouped[epicKey]) {
+      grouped[epicKey] = [];
     }
-    acc[epicKey].push(story);
-    return acc;
-  }, {} as Record<string, UserStory[]>);
+    grouped[epicKey].push({...story});
+  });
+  
+  return grouped;
 };

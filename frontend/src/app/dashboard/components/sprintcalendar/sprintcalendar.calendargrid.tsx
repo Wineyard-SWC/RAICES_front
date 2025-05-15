@@ -1,8 +1,9 @@
 import CalendarTaskCard from "./sprintcalendar.taskcard"
-import {styles} from "../../styles/calendarstyles"
-import { useEffect, useState } from "react"
+import { styles } from "../../styles/calendarstyles"
+import { useEffect, useState, useMemo } from "react"
 import { Task } from "@/types/task"
 import { useUser } from "@/contexts/usercontext"
+import { useKanban } from "@/contexts/unifieddashboardcontext"
 import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
 
@@ -43,7 +44,11 @@ interface CalendarGridProps {
   weekOffset?: number
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL
+// Interface for Workinguser
+interface Workinguser {
+  id: string;
+  name: string;
+}
 
 // Calculate capacity per day (story points)
 const calculateDailyCapacity = (teamSize = 3) => {
@@ -102,8 +107,9 @@ const distributeTasksByCompletionDate = (tasks: Task[], weekOffset: number = 0) 
 };
 
 const CalendarGrid = ({ projectId, weekOffset = 0 }: CalendarGridProps) => {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Use the unified Kanban context instead of fetching data
+  const { tasks: kanbanTasks, isLoading, currentProjectId } = useKanban();
+  
   const [taskDistribution, setTaskDistribution] = useState<{[key: number]: Task[]}>({0: [], 1: [], 2: [], 3: [], 4: []});
   const [capacityUsage, setCapacityUsage] = useState<number[]>([0, 0, 0, 0, 0]);
   const [dates, setDates] = useState(getDates(weekOffset));
@@ -112,99 +118,72 @@ const CalendarGrid = ({ projectId, weekOffset = 0 }: CalendarGridProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
-  // Function to filter tasks based on search term and status
-  const filterTasks = (tasks: Task[]) => {
-    return tasks.filter(task => {
+  // Helper function to check if task is assigned to current user
+  const isTaskAssignedToMe = (task: Task, userId: string | null): boolean => {
+    if (!userId || !task.assignee) return false;
+    
+    // Handle assignee as Workinguser array
+    if (Array.isArray(task.assignee)) {
+      return task.assignee.some(user => user.users[0] === userId);
+    }
+    
+    // Handle assignee as tuple [id, name]
+    if (Array.isArray(task.assignee) && task.assignee.length >= 2) {
+      return task.assignee[0] === userId;
+    }
+    
+    // Handle assignee as string (fallback)
+    if (typeof task.assignee === 'string') {
+      return task.assignee === userId;
+    }
+    
+    return false;
+  };
+
+  // Get all tasks from kanban context (exclude stories)
+  const allTasks = useMemo(() => {
+    if (!kanbanTasks) return [];
+    
+    return [
+      ...kanbanTasks.todo,
+      ...kanbanTasks.inprogress,
+      ...kanbanTasks.inreview,
+      ...kanbanTasks.done
+    ].filter(item => {
+      // Filter to only include Tasks (not Stories)
+      // Tasks have user_story_id while Stories have tasklist
+      return 'user_story_id' in item || 
+             ('assignee' in item && !('tasklist' in item));
+    }) as Task[];
+  }, [kanbanTasks]);
+
+  // Function to filter tasks based on search term, status, and user assignment
+  const filterTasks = useMemo(() => {
+    return allTasks.filter(task => {
       const matchesSearch = 
         task.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
         (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase()));
       
       const matchesStatus = statusFilter ? task.status_khanban === statusFilter : true;
       
-      return matchesSearch && matchesStatus;
+      const matchesUser = showOnlyMyTasks ? isTaskAssignedToMe(task, userId) : true;
+      
+      return matchesSearch && matchesStatus && matchesUser;
     });
-  };
+  }, [allTasks, searchTerm, statusFilter, showOnlyMyTasks, userId]);
 
+  // Check if we're viewing the right project
+  const isCorrectProject = !projectId || projectId === currentProjectId;
+
+  // Update dates when weekOffset changes
   useEffect(() => {
-    // Update dates when weekOffset changes
     setDates(getDates(weekOffset));
   }, [weekOffset]);
 
+  // Effect to update task distribution when filters change
   useEffect(() => {
-    const fetchTasks = async () => {
-      setLoading(true);
-      try {
-        // Get project ID from localStorage if not provided as prop
-        const currentProjectId = projectId || localStorage.getItem("currentProjectId");
-        
-        if (!currentProjectId) {
-          console.error("No project ID available");
-          setLoading(false);
-          return;
-        }
-
-        const response = await fetch(`${API_URL}/projects/${currentProjectId}/tasks`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch tasks");
-        }
-        
-        const allTasks: Task[] = await response.json();
-        
-        // Update dates every time we fetch tasks to ensure they're current
-        const currentDates = getDates(weekOffset);
-        setDates(currentDates);
-        
-        // Filter tasks based on the showOnlyMyTasks state and userId
-        const filteredTasks = showOnlyMyTasks && userId 
-          ? allTasks.filter(task => task.assignee === userId)
-          : allTasks;
-        
-        setTasks(filteredTasks);
-        
-        // Distribute tasks by completion date
-        const distributed = distributeTasksByCompletionDate(filteredTasks, weekOffset);
-        setTaskDistribution(distributed);
-        
-        // Calculate capacity usage for each day
-        const dailyCapacity = calculateDailyCapacity();
-        const usage = Object.values(distributed).map(dayTasks => {
-          const totalPoints = dayTasks.reduce((sum, task) => sum + (task.story_points || 0), 0);
-          return Math.min(Math.round((totalPoints / dailyCapacity) * 100), 100);
-        });
-        
-        setCapacityUsage(usage);
-      } catch (error) {
-        console.error("Error fetching tasks:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTasks();
-    
-    // Set up refresh at midnight
-    const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(0, 0, 0, 0);
-    
-    const timeUntilMidnight = tomorrow.getTime() - now.getTime();
-    
-    const midnightRefresh = setTimeout(() => {
-      fetchTasks();
-      // After the first refresh, set up a daily interval
-      const dailyInterval = setInterval(fetchTasks, 24 * 60 * 60 * 1000);
-      return () => clearInterval(dailyInterval);
-    }, timeUntilMidnight);
-    
-    return () => clearTimeout(midnightRefresh);
-  }, [projectId, userId, showOnlyMyTasks]);
-
-  // Effect to update task distribution when search term or status filter changes
-  useEffect(() => {
-    if (tasks.length > 0) {
-      const filtered = filterTasks(tasks);
-      const distribution = distributeTasksByCompletionDate(filtered, weekOffset);
+    if (filterTasks.length >= 0) {
+      const distribution = distributeTasksByCompletionDate(filterTasks, weekOffset);
       setTaskDistribution(distribution);
       
       // Calculate capacity usage for each day
@@ -216,7 +195,7 @@ const CalendarGrid = ({ projectId, weekOffset = 0 }: CalendarGridProps) => {
       
       setCapacityUsage(usage);
     }
-  }, [tasks, dates, searchTerm, statusFilter]);
+  }, [filterTasks, weekOffset, dates]);
 
   // Get status color for task card border
   const getStatusColor = (status: string) => {
@@ -253,8 +232,13 @@ const CalendarGrid = ({ projectId, weekOffset = 0 }: CalendarGridProps) => {
       default: return 'text-gray-800';
     }
   };
+
+  // Don't render anything if we're looking at a different project
+  if (!isCorrectProject) {
+    return null;
+  }
   
-  if (loading) {
+  if (isLoading) {
     return <div className="p-4 text-center">Loading sprint calendar...</div>;
   }
   
@@ -278,6 +262,7 @@ const CalendarGrid = ({ projectId, weekOffset = 0 }: CalendarGridProps) => {
           </div>
           <div className="flex gap-2">
             <select 
+              aria-label="statusfilter"
               className="h-9 px-3 py-1 rounded border border-gray-300 text-sm bg-white"
               value={statusFilter || ""}
               onChange={(e) => setStatusFilter(e.target.value || null)}

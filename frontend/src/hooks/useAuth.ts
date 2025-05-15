@@ -5,13 +5,14 @@ import { useRouter } from 'next/navigation';
 import { useUser } from '../contexts/usercontext';
 import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider, githubProvider } from '../utils/firebaseConfig';
+import { useKanban } from '@/contexts/unifieddashboardcontext';
 
 export const useAuth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { setUserId } = useUser();
   const router = useRouter();
   const API_URL = process.env.NEXT_PUBLIC_API_URL!;
+  const { setUserId, userData, isLoading: userLoading } = useUser();
 
   const firebaseErrorMap: { [key: string]: string } = {
     'auth/user-not-found': 'No user found with this email address.',
@@ -22,6 +23,8 @@ export const useAuth = () => {
     'auth/network-request-failed': 'Network error. Please check your connection.',
     'auth/account-exists-with-different-credential': 'Account already in use in other method'
   };
+
+  const {reset} = useKanban();
 
   const loginWithEmail = async (email: string, password: string) => {
     if (!email || !password) {
@@ -45,10 +48,13 @@ export const useAuth = () => {
       localStorage.setItem('authToken', token);
       localStorage.setItem('userId', user.uid);
 
+      await validateTokenWithBackend(token);
+      
       setUserId(user.uid);
 
-      await validateTokenWithBackend(token);
-      router.push('/projects');
+      setTimeout(() => {
+        if (!userLoading) router.push('/projects');
+      }, 500);
     } catch (err: any) {
       const code = err?.code || ''
       setError(firebaseErrorMap[code] || err.message || 'Something went wrong. Please try again.')
@@ -71,7 +77,13 @@ export const useAuth = () => {
       setUserId(userCredential.user.uid);
 
       await validateTokenWithBackend(token);
-      router.push('/projects');
+
+      setUserId(userCredential.user.uid);
+
+      setTimeout(() => {
+        if (!userLoading) router.push('/projects');
+      }, 500);
+
     } 
 
     catch (err: any) 
@@ -99,6 +111,14 @@ export const useAuth = () => {
       setUserId(userCredential.user.uid);
 
       await validateTokenWithBackend(token);
+
+      setUserId(userCredential.user.uid);
+      
+      setTimeout(() => {
+        if (!userLoading) router.push('/projects');
+      }, 500);
+      
+      
       router.push('/projects');
     } 
 
@@ -131,11 +151,26 @@ export const useAuth = () => {
     return response.json();
   };
 
+  const logout = async () => {
+    try {
+      await auth.signOut();
+      setUserId('');
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userId');
+      reset()
+      router.push('/login');
+    } catch (err: any) {
+      setError('Error during logout: ' + err.message);
+    }
+  };
+
   return {
     loginWithEmail,
     loginWithGoogle,
     loginWithGithub,
-    isLoading,
+    logout,
+    isLoading: isLoading || userLoading,
     error,
+    userData,
   };
 };

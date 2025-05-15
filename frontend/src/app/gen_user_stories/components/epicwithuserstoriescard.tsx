@@ -17,6 +17,8 @@ type Props = {
   onUpdate: (updated: UserStory) => void;
   availableEpics: {uuid: string, id: string; title: string }[];
   onDelete:  (uuid: string) => void;
+  onDeleteWithToast?: () => void;
+  onUpdateWithToast?: () => void;
 };
 
 const EpicUserStoryGroup = ({
@@ -28,6 +30,8 @@ const EpicUserStoryGroup = ({
   onUpdate,
   availableEpics,
   onDelete,
+  onDeleteWithToast,
+  onUpdateWithToast
 }: Props) => {
   const [expanded, setExpanded] = useState(true);
   
@@ -44,6 +48,7 @@ const EpicUserStoryGroup = ({
     
     if (onDelete) {
       onDelete(storyUuid);
+      onDeleteWithToast?.();
     }
   };
 
@@ -71,6 +76,7 @@ const EpicUserStoryGroup = ({
             onToggleSelect={() => toggleSelectStory(story.uuid)}
             availableEpics={availableEpics}
             onDelete={handleDelete}
+            onUpdateWithToast={onUpdateWithToast}
            />
           ))}
         </div>

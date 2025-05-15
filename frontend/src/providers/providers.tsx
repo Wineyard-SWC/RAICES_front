@@ -12,8 +12,11 @@ import { SelectedUserStoriesProvider } from "@/contexts/selecteduserstories"
 import { LanguageProvider } from "@/contexts/languagecontext"
 import { TaskProvider } from "@/contexts/taskcontext"
 import { SprintProvider } from "@/contexts/sprintcontext"
-import { BacklogProvider } from "@/contexts/backlogcontext"
 import { SprintDataProvider } from "@/contexts/sprintdatacontext"
+import { UserStoryProvider  as SavedUserStoryProvider} from "@/contexts/saveduserstoriescontext"
+import { AssignmentProvider } from "@/contexts/userstoriesepicsrelationshipcontext"
+import { GeneratedTasksProvider } from "@/contexts/generatedtaskscontext"
+import { KanbanProvider } from "@/contexts/unifieddashboardcontext"
 
 interface ProvidersProps {
   children: ReactNode
@@ -33,12 +36,18 @@ export function AllProviders({ children }: { children: React.ReactNode }) {
                       <SelectedEpicProvider>
                         <SelectedUserStoriesProvider>
                           <LanguageProvider>
-                            <BacklogProvider>
                               <SprintDataProvider>
-                                {children}
-                                <div id="modal-root" />
+                                <SavedUserStoryProvider>
+                                  <AssignmentProvider>
+                                    <GeneratedTasksProvider>
+                                      <KanbanProvider>
+                                        {children}
+                                        <div id="modal-root" />
+                                      </KanbanProvider>
+                                    </GeneratedTasksProvider>
+                                  </AssignmentProvider>
+                                </SavedUserStoryProvider>
                               </SprintDataProvider>
-                            </BacklogProvider>
                           </LanguageProvider>
                         </SelectedUserStoriesProvider>
                       </SelectedEpicProvider>
