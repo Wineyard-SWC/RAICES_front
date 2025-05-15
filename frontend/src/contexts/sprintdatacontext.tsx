@@ -23,12 +23,25 @@ interface VelocityPoint {
   Actual: number
 }
 
+interface SprintComparisonData {
+  sprint_id: string
+  sprint_name: string
+  is_current: boolean
+  total_story_points: number
+  completed_story_points: number
+  completion_percentage: number
+  scope_changes: number
+  bugs_found: number
+}
+
 interface SprintDataContextType {
   burndownData: BurndownData | null
   teamMembers: TeamMember[]
   velocityData: VelocityPoint[]
+  sprintComparison: SprintComparisonData[]
   refreshBurndownData: () => Promise<void>
   refreshVelocityData: () => Promise<void>
+  refreshSprintComparison: () => Promise<void>
 }
 
 const SprintDataContext = createContext<SprintDataContextType | undefined>(undefined)
@@ -43,24 +56,15 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
   const [burndownData, setBurndownData] = useState<BurndownData | null>(null)
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [velocityData, setVelocityData] = useState<VelocityPoint[]>([])
+  const [sprintComparison, setSprintComparison] = useState<SprintComparisonData[]>([])
   const [isClient, setIsClient] = useState(false)
   const [project_id, setProjectId] = useState<string | null>(null)
   const apiURL = process.env.NEXT_PUBLIC_API_URL || ""
 
   useEffect(() => {
     setIsClient(true)
-    
     const storedProjectId = localStorage.getItem("currentProjectId")
     setProjectId(storedProjectId)
-
-    const storedBurndown = localStorage.getItem("sprint_burndown")
-    if (storedBurndown) setBurndownData(JSON.parse(storedBurndown))
-    
-    const storedTeamMembers = localStorage.getItem("sprint_team_members")
-    if (storedTeamMembers) setTeamMembers(JSON.parse(storedTeamMembers))
-    
-    const storedVelocity = localStorage.getItem("sprint_velocity_data")
-    if (storedVelocity) setVelocityData(JSON.parse(storedVelocity))
   }, [])
 
   const fetchBurndownData = async () => {
@@ -70,20 +74,12 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
       const response = await fetch(`${apiURL}/api/burndown?projectId=${project_id}`)
       const data = await response.json()
       
-      const { duration_days, total_story_points, remaining_story_points, team_members, start_date, name} = data
+      const { duration_days, total_story_points, remaining_story_points, team_members } = data
 
       const burndown: BurndownData = { duration_days, total_story_points, remaining_story_points }
 
       setBurndownData(burndown)
       setTeamMembers(team_members || [])
-
-      // Save to localStorage
-      localStorage.setItem("sprint_burndown", JSON.stringify(burndown))
-      localStorage.setItem("sprint_team_members", JSON.stringify(team_members || []))
-      localStorage.setItem("sprint_duration_days", String(duration_days))
-      localStorage.setItem("sprint_total_story_points", String(total_story_points))
-      localStorage.setItem("sprint_start_date", String(start_date))
-      localStorage.setItem("sprint_name", String(name))
     } catch (error) {
       console.error("Error fetching burndown data:", error)
     }
@@ -95,22 +91,37 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
     try {
       const response = await fetch(`${apiURL}/api/velocitytrend?projectId=${project_id}`)
       const data = await response.json()
-
       setVelocityData(data)
-      localStorage.setItem("sprint_velocity_data", JSON.stringify(data))
     } catch (error) {
       console.error("Error fetching velocity data:", error)
     }
   }
 
-  // Load data once client is ready and project ID is available
+  const fetchSprintComparison = async () => {
+    if (!project_id || !apiURL) {
+      console.log("Missing project_id or apiURL", { project_id, apiURL })
+      return
+    }
+    
+    try {
+      const url = `${apiURL}/api/sprints/comparison?projectId=${project_id}`
+      console.log("Fetching from:", url)
+      const response = await fetch(url)
+      const data = await response.json()
+      console.log("Received sprint comparison data:", data)
+      setSprintComparison(data)
+    } catch (error) {
+      console.error("Error fetching sprint comparison:", error)
+    }
+  }
+
   useEffect(() => {
     if (isClient && project_id) {
-      if (!burndownData) fetchBurndownData()
-      if (!velocityData || velocityData.length === 0) fetchVelocityData()
+      fetchBurndownData()
+      fetchVelocityData()
+      fetchSprintComparison()
     }
   }, [isClient, project_id])
-
 
   return (
     <SprintDataContext.Provider
@@ -118,8 +129,10 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
         burndownData,
         teamMembers,
         velocityData,
+        sprintComparison,
         refreshBurndownData: fetchBurndownData,
         refreshVelocityData: fetchVelocityData,
+        refreshSprintComparison: fetchSprintComparison,
       }}
     >
       {children}
