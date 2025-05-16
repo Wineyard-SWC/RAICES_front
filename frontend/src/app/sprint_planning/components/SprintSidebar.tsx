@@ -52,11 +52,15 @@ export default function SprintSidebar({
     >
       {/* ───── flecha para abrir / cerrar ───── */}
       <button
-        onClick={onToggle}
-        className="absolute top-1/2 -left-3 z-10 h-12 w-6 -translate-y-1/2 transform rounded-l-md border border-gray-200 bg-white text-[#4a2b4a] hover:bg-[#f5f0f1]"
-      >
-        {isOpen ? <ChevronRight className="mx-auto h-5 w-5" /> : <ChevronLeft className="mx-auto h-5 w-5" />}
-      </button>
+      aria-label={isOpen ? 'Close sidebar' : 'Open sidebar'}
+      onClick={onToggle}
+      className="absolute top-1/2 -left-3 z-10 h-12 w-6 …"
+    >
+      {isOpen
+        ? <ChevronRight className="mx-auto h-5 w-5" />
+        : <ChevronLeft className="mx-auto h-5 w-5" />}
+    </button>
+
 
       {/* ───── contenido interno ───── */}
       {isOpen && (
