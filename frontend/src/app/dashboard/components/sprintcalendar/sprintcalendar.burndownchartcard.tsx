@@ -20,8 +20,15 @@ const BurndownChartCard = () => {
 
   useEffect(() => {
     if (!burndownData) return
-    
+  
     const { duration_days, total_story_points } = burndownData
+
+    if (duration_days <= 0 || total_story_points <= 0) {
+      setChartData([])
+      setActualPercentage(0)
+      setIdealPercentage(0)
+      return
+    }
     const totalDays = duration_days + 1
     const idealDropPerDay = total_story_points / duration_days
     
@@ -32,7 +39,7 @@ const BurndownChartCard = () => {
       generatedData.push({
         day: `Day ${day}`,
         Ideal: parseFloat(ideal.toFixed(2)),
-        Remaining: total_story_points, // This would be replaced with actual remaining points
+        Remaining: total_story_points, 
       })
     }
     
@@ -40,9 +47,14 @@ const BurndownChartCard = () => {
     
     const initial = total_story_points
     const last = generatedData[generatedData.length - 1]
-    
-    setActualPercentage(Math.round(((initial - last.Remaining) / initial) * 100))
-    setIdealPercentage(Math.round(((initial - last.Ideal) / initial) * 100))
+
+    if (last && initial > 0) {
+      setActualPercentage(Math.round(((initial - last.Remaining) / initial) * 100))
+      setIdealPercentage(Math.round(((initial - last.Ideal) / initial) * 100))
+    } else {
+      setActualPercentage(0)
+      setIdealPercentage(0)
+    }
   }, [burndownData])
 
   return (

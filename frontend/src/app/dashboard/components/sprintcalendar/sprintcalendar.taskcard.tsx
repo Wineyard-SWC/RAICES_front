@@ -11,8 +11,7 @@ interface User {
 
 // Interface for Workinguser
 interface Workinguser {
-  id: string;
-  name: string;
+  users:[string,string]
 }
 
 interface Props {
@@ -38,16 +37,16 @@ const CalendarTaskCard = ({ title, type, time, borderColor, bgColor, textColor, 
       const firstAssignee = assignee[0];
       
       // Use the name from the Workinguser object directly
-      setUserName(firstAssignee.name);
+      setUserName(firstAssignee.users[1]);
       
       // Optional: Cache the full user data if not already cached
       const cachedUsers = localStorage.getItem('cached_users');
       const users: Record<string, User> = cachedUsers ? JSON.parse(cachedUsers) : {};
       
       // Check if we already have this user cached
-      if (!users[firstAssignee.id]) {
+      if (!users[firstAssignee.users[0]]) {
         // Fetch the user data from the API for additional details
-        fetch(`${API_URL}/users/${firstAssignee.id}`)
+        fetch(`${API_URL}/users/${firstAssignee.users[0]}`)
           .then(response => {
             if (!response.ok) {
               throw new Error('User not found');
@@ -56,7 +55,7 @@ const CalendarTaskCard = ({ title, type, time, borderColor, bgColor, textColor, 
           })
           .then(userData => {
             // Cache the user data for future use
-            users[firstAssignee.id] = userData;
+            users[firstAssignee.users[0]] = userData;
             localStorage.setItem('cached_users', JSON.stringify(users));
           })
           .catch(error => {
