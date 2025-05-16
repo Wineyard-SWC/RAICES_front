@@ -182,7 +182,6 @@ export const TasksKanban = ({ onNavigate, view }: TasksKanbanProps) => {
     )
   }
 
-  console.log(localTasks)
   return (
     <Card className="border border-[#D3C7D3] shadow-sm">
       <CardHeader className="pb-2 flex flex-row items-center justify-between">

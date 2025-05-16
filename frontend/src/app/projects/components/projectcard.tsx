@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { FaCalendarAlt, FaUsers } from "react-icons/fa"
 import { MdBarChart, MdAccessTime } from "react-icons/md"
 import { MoreVertical, Edit, Trash, UserPlus, LogOut, ChevronDown, ChevronUp } from "lucide-react"
+import { useKanban } from "@/contexts/unifieddashboardcontext"
 
 import type { Project } from "@/types/project"
 import { cardStyles, statusColor, priorityColor } from "../styles/project.module"
@@ -63,6 +64,8 @@ export default function ProjectCard({
   const [showLeaveModal, setShowLeaveModal] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false);
 
+  const {setCurrentProject, refreshKanban} = useKanban();
+
   // Para formatear la fecha en tu card
   const formatDate = (dateStr: string) => {
     const options: Intl.DateTimeFormatOptions = {
@@ -78,8 +81,12 @@ export default function ProjectCard({
     if ((e.target as HTMLElement).closest(".project-menu")) {
       return
     }
-    router.push(`/dashboard?projectId=${id}`)
     localStorage.setItem("currentProjectId", id)
+    console.log("id en project card",id)
+    setCurrentProject(id)
+    refreshKanban()
+    router.push(`/dashboard?projectId=${id}`)
+    
   }
 
   const toggleMenu = (e: React.MouseEvent) => {
@@ -132,7 +139,7 @@ export default function ProjectCard({
 
           {/* Botón de menú */}
           <div className="project-menu relative">
-            <button onClick={toggleMenu} className={cardStyles.menu}>
+            <button aria-label='moreoptions' onClick={toggleMenu} className={cardStyles.menu}>
               <MoreVertical size={20} />
             </button>
             {menuOpen && (

@@ -59,6 +59,7 @@ export const useAuth = () => {
       const code = err?.code || ''
       setError(firebaseErrorMap[code] || err.message || 'Something went wrong. Please try again.')
     } finally {
+      reset();
       setIsLoading(false);
     }
   };
@@ -94,6 +95,7 @@ export const useAuth = () => {
 
     finally 
     {
+      reset();
       setIsLoading(false);
     }
   };
@@ -119,6 +121,8 @@ export const useAuth = () => {
       }, 500);
       
       
+      reset();
+
       router.push('/projects');
     } 
 
@@ -153,11 +157,15 @@ export const useAuth = () => {
 
   const logout = async () => {
     try {
+      reset(); // Limpia KanbanContext
+      
       await auth.signOut();
       setUserId('');
+      
       localStorage.removeItem('authToken');
       localStorage.removeItem('userId');
-      reset()
+      localStorage.removeItem('currentProjectId');
+      
       router.push('/login');
     } catch (err: any) {
       setError('Error during logout: ' + err.message);

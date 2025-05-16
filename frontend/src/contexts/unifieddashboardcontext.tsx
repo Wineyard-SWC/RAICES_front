@@ -1,6 +1,7 @@
 "use client"
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from "react"
+import React, { createContext, useContext, 
+  useState, useCallback, useEffect, useRef } from "react"
 import { TaskColumns, TaskOrStory } from "@/types/taskkanban"
 import { KanbanStatus, Task, TaskFormData } from "@/types/task"
 import { UserStory } from "@/types/userstory"
@@ -78,11 +79,15 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const tasksContext = useTasks()
   const storiesContext = useUserStories()
   const { userId, userData, isLoading: isUserLoading, error: userError } = useUser()
+  const [loadingProjectId, setLoadingProjectId] = useState<string | null>(null)
 
+  
   const reset = () => {
     setCurrentProjectId(null)
     setError(null)
     setIsLoading(false)
+    tasksContext.clearAllCache()
+    storiesContext.clearAllCache()
     localStorage.removeItem("currentProjectId")
    }
 
@@ -131,14 +136,13 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }
 
   // Helper para convertir entre formatos internos (Task requiere [string, string][], TaskFormData requiere Workinguser[])
-  const convertAssigneeToTupleFormat = (assignee: Workinguser[]): [string, string][] => {
-    return assignee.map(wu => wu.users)
-  }
+  const convertWorkingusersToTuples = (users: Workinguser[]): [string, string][] => {
+    return users.map(u => u.users);
+  };
 
-  const convertAssigneeFromTupleFormat = (assignee: [string, string][]): Workinguser[] => {
-    return assignee.map(tuple => ({ users: tuple }))
-  }
-
+  const convertTuplesToWorkingusers = (tuples: [string, string][]): Workinguser[] => {
+    return tuples.map(t => ({ users: t }));
+  };
   // Convertir tasks array a TaskColumns
   const convertTasksToColumns = useCallback((tasks: Task[]): TaskColumns => {
     const columns: TaskColumns = {
@@ -172,7 +176,7 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         const firstItem = task.assignee[0]
         if (Array.isArray(firstItem)) {
           // Es array de tuplas, convertir a Workinguser[]
-          processedTask.assignee = convertAssigneeFromTupleFormat(task.assignee as [string, string][])
+          processedTask.assignee = task.assignee
         }
         // Si ya es Workinguser[], mantenerlo tal como está
       }
@@ -682,22 +686,32 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Refresh functions
   const refreshTasksForProject = useCallback(async (projectId: string) => {
+    // Verificar si ya estamos cargando este proyecto
+    if (loadingProjectId === projectId) {
+      return
+    }
+    
     try {
       await tasksContext.loadTasksIfNeeded(projectId, fetchTasks, 1000 * 60 * 5)
     } catch (err) {
       console.error('Error refreshing tasks:', err)
       setError(err instanceof Error ? err : new Error('Failed to refresh tasks'))
     }
-  }, [tasksContext, fetchTasks])
+  }, [tasksContext, fetchTasks, loadingProjectId])
 
-  const refreshStoriesForProject = useCallback(async (projectId: string) => {
+   const refreshStoriesForProject = useCallback(async (projectId: string) => {
+    // Verificar si ya estamos cargando este proyecto
+    if (loadingProjectId === projectId) {
+      return
+    }
+    
     try {
       await storiesContext.loadUserStoriesIfNeeded(projectId, getProjectUserStories, 1000 * 60 * 5)
     } catch (err) {
       console.error('Error refreshing stories:', err)
       setError(err instanceof Error ? err : new Error('Failed to refresh stories'))
     }
-  }, [storiesContext])
+  }, [storiesContext, loadingProjectId])
 
   // Refresh kanban data
   const refreshKanban = useCallback(async () => {
@@ -718,23 +732,7 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [currentProjectId, refreshTasksForProject, refreshStoriesForProject])
 
-  // Cargar proyecto inicial desde localStorage
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedProjectId = localStorage.getItem("currentProjectId")
-      if (storedProjectId && !currentProjectId) {
-        setCurrentProject(storedProjectId)
-      }
-    }
-  }, [setCurrentProject])
 
-  // Cargar datos cuando cambia el proyecto
-  useEffect(() => {
-    if (currentProjectId) {
-      refreshTasksForProject(currentProjectId)
-      refreshStoriesForProject(currentProjectId)
-    }
-  }, [currentProjectId])
 
   // Combinar datos para el Kanban
   const tasks = currentProjectId 

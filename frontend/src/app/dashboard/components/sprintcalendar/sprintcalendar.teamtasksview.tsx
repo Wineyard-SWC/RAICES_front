@@ -175,8 +175,7 @@ const DeveloperSection: React.FC<{ developer: Developer, onTaskMenuClick?: (task
 };
 
 interface Workinguser {
-  id: string;
-  name: string;
+  users: [string,string]
 }
 export default function TeamTasksView({ 
   onTaskMenuClick,
@@ -185,30 +184,35 @@ export default function TeamTasksView({
   // Use the unified Kanban context instead of fetching data
   const { tasks, isLoading, currentProjectId } = useKanban();
   
-  // Helper function to get user info from assignee (which could be tuple or array)
-  const getUserFromAssignee = (assignee: [string, string] | Workinguser[] | string | null | undefined): { id: string; name: string } => {
-    // If it's null or undefined
+  const getUserFromAssignee = (
+    assignee: [string, string] | Workinguser[] | Workinguser | string | null | undefined
+  ): { id: string; name: string } => {
     if (!assignee) {
-      return { id: 'unassigned', name: 'Unassigned' };
+      return { id: "unassigned", name: "Unassigned" };
     }
-    
-    // If it's a simple string (just the ID)
-    if (typeof assignee === 'string') {
+
+    if (typeof assignee === "string") {
       return { id: assignee, name: assignee };
     }
-    
-    // If it's an array of Workinguser objects
-    if (Array.isArray(assignee) && assignee.length > 0 && typeof assignee[0] === 'object') {
-      const firstUser = assignee[0] as Workinguser;
-      return { id: firstUser.id, name: firstUser.name };
+
+    // Check if it's a single Workinguser object
+    if (!Array.isArray(assignee) && typeof assignee === "object" && "users" in assignee) {
+      const user = assignee as Workinguser;
+      return { id: user.users[0], name: user.users[1] };
     }
-    
+
+    // If it's an array of Workinguser objects
+    if (Array.isArray(assignee) && assignee.length > 0 && typeof assignee[0] === "object" && "users" in assignee[0]) {
+      const user = assignee[0] as Workinguser;
+      return { id: user.users[0], name: user.users[1] };
+    }
+
     // If it's a tuple [id, name]
-    if (Array.isArray(assignee) && assignee.length >= 2 && typeof assignee[0] === 'string') {
+    if (Array.isArray(assignee) && assignee.length >= 2 && typeof assignee[0] === "string" && typeof assignee[1] === "string") {
       return { id: assignee[0], name: assignee[1] };
     }
-    
-    return { id: 'unassigned', name: 'Unassigned' };
+
+    return { id: "unassigned", name: "Unassigned" };
   };
 
   // Memoized developers data processed from unified context
@@ -246,9 +250,9 @@ export default function TeamTasksView({
       return {
         id: userId,
         name: user.name,
-        role: "Team Member", // We could get this from user data if needed
+        role: "Team Member", 
         hoursAllocated: hoursAllocated,
-        hoursTotal: 40, // Default work week
+        hoursTotal: 40, 
         tasks: tasks
       };
     });

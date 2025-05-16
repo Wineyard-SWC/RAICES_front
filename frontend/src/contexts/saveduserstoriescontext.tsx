@@ -149,6 +149,7 @@ export const UserStoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setErrorState(prev => ({ ...prev, [projectId]: null }))
 
     try {
+
       const fetchedUserStories = await fetchFunction(projectId)
       
       setUserStoriesByProject(prev => ({

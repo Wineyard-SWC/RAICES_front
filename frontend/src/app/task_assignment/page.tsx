@@ -25,6 +25,7 @@ export default function TaskAssignmentPage() {
   // UI state
   const [taskFilter, setTaskFilter] = useState<"all" | "unassigned" | "assigned">("all")
   const [selectedMember, setSelectedMember] = useState<string | null>(null)
+  const [selectedMemberName, setselectedMemberName] = useState<string | null>(null)
   const [assignModalOpen, setAssignModalOpen] = useState(false)
   const [taskToAssign, setTaskToAssign] = useState<Task | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
@@ -103,23 +104,25 @@ export default function TaskAssignmentPage() {
   })
 
   // Asignar tarea a miembro
-  const assignTask = (taskId: string, memberId: string) => {
-    console.log(tasks);
-    setTasks(tasks.map(t =>
-      t.id === taskId
-        ? { ...t, assignee: memberId, assignee_id: memberId, sprint_id: sprint.id }
-        : t
-    ))
+  const assignTask = (taskId: string, memberId: string,name:string) => {
+    setTasks(tasks.map(t => {
+      if (t.id !== taskId) return t;
+      return {
+        ...(t as Task),
+        assignee: [{ users: [memberId, name] }],
+        assignee_id: memberId,
+        sprint_id: sprint.id
+      };
+    }));
 
-    console.log(memberId)
     setAssignModalOpen(false)
     setTaskToAssign(null)
   }
 
   // Abrir modal de asignación
   const openAssignModal = (task: Task) => {
-    if (selectedMember && !task.assignee_id) {
-      assignTask(task.id, selectedMember)
+    if (selectedMember && selectedMemberName && !task.assignee_id) {
+      assignTask(task.id, selectedMember,selectedMemberName)
       return
     }
     setTaskToAssign(task)
@@ -135,7 +138,6 @@ export default function TaskAssignmentPage() {
 
   // Guardar y volver a planificación
   const saveAssignments = () => {
-    console.log("🔍 Tareas antes de volver a planning:", tasks)
     router.push(
       `/sprint_planning?projectId=${projectId}${safeSprintId ? `&sprintId=${safeSprintId}` : ``}`
     )
@@ -408,7 +410,7 @@ export default function TaskAssignmentPage() {
                     className={`w-full text-left border rounded-md p-3 hover:bg-gray-50 transition-colors ${
                       wouldOverload ? "border-red-300" : "border-gray-200"
                     }`}
-                    onClick={() => assignTask(taskToAssign.id, member.id)}
+                    onClick={() => assignTask(taskToAssign.id, member.id,member.name)}
                   >
                     <div className="flex items-center gap-3">
                       <img

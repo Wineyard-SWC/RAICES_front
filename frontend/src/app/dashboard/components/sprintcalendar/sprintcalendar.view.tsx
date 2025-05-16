@@ -1,5 +1,3 @@
-// Here's how you can modify your CalendarPageView component to integrate the team tasks view
-
 import { useState, useEffect } from "react"
 import SprintProgressCard from "./sprintcalendar.progresscard"
 import BurndownChartCard from "./sprintcalendar.burndownchartcard"
@@ -7,74 +5,8 @@ import TaskStatusCard from "./sprintcalendar.taskstatuscard"
 import TeamWorkloadCard from "./sprintcalendar.teamworkloadcard"
 import CalendarControls from "./sprintcalendar.calendarcontrols"
 import CalendarGrid from "./sprintcalendar.calendargrid"
-import TeamTasksView from "./sprintcalendar.teamtasksview" // Import the new component
+import TeamTasksView from "./sprintcalendar.teamtasksview" 
 
-// Sample developer data for the team view
-const developerData = [
-  {
-    id: "1",
-    name: "Jorge Castro",
-    role: "Lead Backend Developer",
-    hoursAllocated: 24,
-    hoursTotal: 40,
-    tasks: [
-      {
-        id: "task1",
-        title: "Implement user authentication",
-        description: "Add email/password and social login options.",
-        dateRange: { start: "1", end: "6" },
-        status: "In Progress",
-        type: "STORY",
-        points: 8
-      },
-      {
-        id: "task2",
-        title: "Implement user authentication",
-        description: "Add email/password and social login options.",
-        dateRange: { start: "3", end: "6" },
-        status: "In Progress",
-        type: "STORY",
-        points: 8
-      }
-    ]
-  },
-  {
-    id: "2",
-    name: "Alicia Garza",
-    role: "Backend Developer",
-    hoursAllocated: 24,
-    hoursTotal: 40,
-    tasks: [
-      {
-        id: "task3",
-        title: "Optimize database queries for product listing",
-        description: "Improve performance of main product catalog",
-        dateRange: { start: "1", end: "6" },
-        status: "In Progress",
-        type: "TASK",
-        points: 3
-      },
-      {
-        id: "task4",
-        title: "Implement email notification system",
-        description: "Send emails for account actions and order updates",
-        dateRange: { start: "1", end: "6" },
-        status: "To do",
-        type: "STORY",
-        points: 4
-      },
-      {
-        id: "task5",
-        title: "Fix checkout payment processing error",
-        description: "Address issue with payment gateway integration",
-        dateRange: { start: "1", end: "6" },
-        status: "To do",
-        type: "BUG",
-        points: 5
-      }
-    ]
-  }
-];
 
 interface CalendarPageProps {
   defaultViewMode?: "week" | "month"
@@ -167,7 +99,6 @@ export default function CalendarPageView({defaultViewMode = "week", onBack}: Cal
 
   // Handler for task menu clicks
   const handleTaskMenuClick = (taskId: string) => {
-    console.log(`Task menu clicked: ${taskId}`);
     // Add your task menu handling logic here
   };
   

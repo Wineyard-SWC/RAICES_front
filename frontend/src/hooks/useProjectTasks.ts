@@ -24,7 +24,6 @@ export const useProjectTasks = (projectId: string | null) => {
       
       const response = await fetch(API_URL + `/projects/${projectId}/tasks/khanban`);
       const rawTasks: Task[] = await response.json();
-      console.log("rawtasks",rawTasks)
       const grouped: TaskColumns = {
         backlog: [],
         todo: [],
@@ -45,7 +44,6 @@ export const useProjectTasks = (projectId: string | null) => {
         grouped[statusKey].push(task);
       });
 
-      console.log(grouped)
 
       setTasks(grouped);
     } catch (err) {

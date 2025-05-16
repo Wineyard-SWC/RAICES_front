@@ -46,8 +46,17 @@ interface CalendarGridProps {
 
 // Interface for Workinguser
 interface Workinguser {
-  id: string;
-  name: string;
+  users :[string,string]
+}
+
+export const convertAssigneeToWorkinguser = (assignee: any[] | undefined): Workinguser[] => {
+  if (!Array.isArray(assignee)) return []
+
+  return assignee
+    .filter(a => Array.isArray(a.users)) 
+    .map(a => ({
+      users: [a.users[0] || "", a.users[1] || ""]
+    }));
 }
 
 // Calculate capacity per day (story points)
@@ -106,10 +115,11 @@ const distributeTasksByCompletionDate = (tasks: Task[], weekOffset: number = 0) 
   return distribution;
 };
 
+
 const CalendarGrid = ({ projectId, weekOffset = 0 }: CalendarGridProps) => {
   // Use the unified Kanban context instead of fetching data
   const { tasks: kanbanTasks, isLoading, currentProjectId } = useKanban();
-  
+
   const [taskDistribution, setTaskDistribution] = useState<{[key: number]: Task[]}>({0: [], 1: [], 2: [], 3: [], 4: []});
   const [capacityUsage, setCapacityUsage] = useState<number[]>([0, 0, 0, 0, 0]);
   const [dates, setDates] = useState(getDates(weekOffset));
@@ -121,22 +131,17 @@ const CalendarGrid = ({ projectId, weekOffset = 0 }: CalendarGridProps) => {
   // Helper function to check if task is assigned to current user
   const isTaskAssignedToMe = (task: Task, userId: string | null): boolean => {
     if (!userId || !task.assignee) return false;
-    
-    // Handle assignee as Workinguser array
+
+    // Si assignee es del tipo Workinguser[]
     if (Array.isArray(task.assignee)) {
-      return task.assignee.some(user => user.users[0] === userId);
+      return task.assignee.some(user => Array.isArray(user.users) && user.users[0] === userId);
     }
-    
-    // Handle assignee as tuple [id, name]
-    if (Array.isArray(task.assignee) && task.assignee.length >= 2) {
-      return task.assignee[0] === userId;
-    }
-    
-    // Handle assignee as string (fallback)
+
+    // Fallback si viene como string (muy raro en tu caso)
     if (typeof task.assignee === 'string') {
       return task.assignee === userId;
     }
-    
+
     return false;
   };
 
@@ -310,7 +315,7 @@ const CalendarGrid = ({ projectId, weekOffset = 0 }: CalendarGridProps) => {
                     isCurrentDay ? (
                       capacityUsage[idx] > 90 ? 'bg-red-500' : 
                       capacityUsage[idx] > 75 ? 'bg-yellow-500' : 'bg-green-500'
-                    ) : 'bg-gray-400' // Past days always use gray
+                    ) : 'bg-gray-400' 
                   }`} 
                   style={{ width: `${capacityUsage[idx]}%` }}
                 ></div>
@@ -338,7 +343,7 @@ const CalendarGrid = ({ projectId, weekOffset = 0 }: CalendarGridProps) => {
                   borderColor={getStatusColor(task.status_khanban)}
                   bgColor={getStatusBgColor(task.status_khanban)}
                   textColor={getStatusTextColor(task.status_khanban)}
-                  assignee={task.assignee}
+                  assignee={convertAssigneeToWorkinguser(task.assignee)}
                 />
               ))}
               {isCurrentDay && taskDistribution[dayIndex].length === 0 && (
