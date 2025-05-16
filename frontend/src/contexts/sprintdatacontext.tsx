@@ -32,6 +32,13 @@ interface SprintComparisonData {
   completion_percentage: number
   scope_changes: number
   bugs_found: number
+  risk_assessment: string
+  tasks_per_day: number
+  estimated_days_remaining?: number
+  quality_metrics: {
+    bugs_found: number
+    priority_distribution: string
+  }
 }
 
 interface SprintDataContextType {
