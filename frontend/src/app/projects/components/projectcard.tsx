@@ -82,11 +82,11 @@ export default function ProjectCard({
       return
     }
     localStorage.setItem("currentProjectId", id)
+
     console.log("id en project card",id)
     setCurrentProject(id)
     refreshKanban()
-    router.push(`/dashboard?projectId=${id}`)
-    
+    router.push(`/dashboard?projectId=${id}`)    
   }
 
   const toggleMenu = (e: React.MouseEvent) => {
