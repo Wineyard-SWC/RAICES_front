@@ -1,6 +1,9 @@
 "use client"
 
 import { createContext, useContext, useEffect, useState } from "react"
+import { useTasks } from "@/contexts/taskcontext"
+
+
 
 interface BurndownData {
   duration_days: number
@@ -67,6 +70,8 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
   const [isClient, setIsClient] = useState(false)
   const [project_id, setProjectId] = useState<string | null>(null)
   const apiURL = process.env.NEXT_PUBLIC_API_URL || ""
+  
+  const {getTasksForProject} = useTasks();
 
   useEffect(() => {
     setIsClient(true)
@@ -74,11 +79,34 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
     setProjectId(storedProjectId)
   }, [])
 
+
+  const getTaskDataForGraphs = async() => {
+    if (!project_id || !apiURL) return
+    
+    const currentprojecttasks = getTasksForProject(project_id)
+    
+    const requiredData = currentprojecttasks.map(t => ({
+      status_khanban: t.status_khanban,
+      story_points: t.story_points
+    }), []);
+    return requiredData
+  }
+
+
   const fetchBurndownData = async () => {
     if (!project_id || !apiURL) return
     
+    const tasksData = await getTaskDataForGraphs() || []
+
     try {
-      const response = await fetch(`${apiURL}/api/burndown?projectId=${project_id}`)
+      const response = await fetch(`${apiURL}/api/burndown`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              projectId: project_id,
+              tasks: tasksData
+            })
+          })
       const data = await response.json()
       
       const { duration_days, total_story_points, remaining_story_points, team_members } = data
@@ -95,8 +123,18 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
   const fetchVelocityData = async () => {
     if (!project_id || !apiURL) return
 
+    const tasksData = await getTaskDataForGraphs() || []
+
     try {
-      const response = await fetch(`${apiURL}/api/velocitytrend?projectId=${project_id}`)
+      const response = await fetch(`${apiURL}/api/velocitytrend`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              projectId: project_id,
+              tasks: tasksData
+            })
+          })
+          
       const data = await response.json()
       setVelocityData(data)
     } catch (error) {
@@ -109,7 +147,7 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
       console.log("Missing project_id or apiURL", { project_id, apiURL })
       return
     }
-    
+
     try {
       const url = `${apiURL}/api/sprints/comparison?projectId=${project_id}`
       console.log("Fetching from:", url)
