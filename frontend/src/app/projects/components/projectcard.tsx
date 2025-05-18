@@ -80,6 +80,7 @@ export default function ProjectCard({
     }
     router.push(`/dashboard?projectId=${id}`)
     localStorage.setItem("currentProjectId", id)
+    
   }
 
   const toggleMenu = (e: React.MouseEvent) => {
