@@ -7,6 +7,13 @@ import { FaCalendarAlt, FaUsers } from "react-icons/fa"
 import { MdBarChart, MdAccessTime } from "react-icons/md"
 import { MoreVertical, Edit, Trash, UserPlus, LogOut, ChevronDown, ChevronUp } from "lucide-react"
 import { useKanban } from "@/contexts/unifieddashboardcontext"
+import { useRequirementContext } from "@/contexts/requirementcontext"
+import { useEpicContext } from "@/contexts/epiccontext"
+import { useUserStoryContext } from "@/contexts/userstorycontext"
+import { useSelectedRequirementContext } from "@/contexts/selectedrequirements"
+import { useSelectedEpicsContext } from "@/contexts/selectedepics"
+import { useSelectedUserStoriesContext } from "@/contexts/selecteduserstories"
+import { useGeneratedTasks } from "@/contexts/generatedtaskscontext"
 
 import type { Project } from "@/types/project"
 import { cardStyles, statusColor, priorityColor } from "../styles/project.module"
@@ -19,6 +26,7 @@ import InviteCodeModal from "./invite_code_modal"
 import EditProjectModal from "./edit_project_modal"
 import DeleteProjectModal from "./delete_project_modal"
 import LeaveProjectModal from "./leave_project_modal"
+
 
 // Modales
 type Props = Pick<
@@ -64,6 +72,13 @@ export default function ProjectCard({
   const [showLeaveModal, setShowLeaveModal] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false);
 
+  const {setRequirements} = useRequirementContext()
+  const {setSelectedIds} = useSelectedRequirementContext()
+  const {setEpics} = useEpicContext()
+  const {setSelectedEpicIds} = useSelectedEpicsContext();
+  const {setUserStories} = useUserStoryContext();
+  const {setSelectedUserStoriesIds} = useSelectedUserStoriesContext();
+  const {clearTasks} = useGeneratedTasks()
   const {setCurrentProject, refreshKanban} = useKanban();
 
   // Para formatear la fecha en tu card
@@ -86,6 +101,13 @@ export default function ProjectCard({
     console.log("id en project card",id)
     setCurrentProject(id)
     refreshKanban()
+    setRequirements([])
+    setSelectedIds([])
+    setEpics([])
+    setSelectedEpicIds([])
+    setUserStories([])
+    setSelectedUserStoriesIds([])
+    clearTasks()
     router.push(`/dashboard?projectId=${id}`)    
   }
 

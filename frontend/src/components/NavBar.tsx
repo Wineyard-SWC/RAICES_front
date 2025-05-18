@@ -8,6 +8,14 @@ import Image from "next/image"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useUser } from "@/contexts/usercontext"
 import { useProjects } from "@/hooks/useProjects"
+import { useKanban } from "@/contexts/unifieddashboardcontext"
+import { useRequirementContext } from "@/contexts/requirementcontext"
+import { useEpicContext } from "@/contexts/epiccontext"
+import { useUserStoryContext } from "@/contexts/userstorycontext"
+import { useSelectedRequirementContext } from "@/contexts/selectedrequirements"
+import { useSelectedEpicsContext } from "@/contexts/selectedepics"
+import { useSelectedUserStoriesContext } from "@/contexts/selecteduserstories"
+import { useGeneratedTasks } from "@/contexts/generatedtaskscontext"
 
 type NavbarProps = {
   projectSelected: boolean
@@ -43,11 +51,19 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
   const [generateOpen, setGenerateOpen] = useState(false)
   const [projectMenuOpen, setProjectMenuOpen] = useState(false)
   const [currentProject, setCurrentProject] = useState<string>("Seleccionar proyecto")
-
   const { userId } = useUser();
-  const { projects, loading } = useProjects(userId);   // 🔄 misma query que en ProjectsPage
+  const { projects, loading } = useProjects(userId); 
   const recentProjects = projects.slice(0, 3);
 
+  const {setRequirements} = useRequirementContext()
+  const {setSelectedIds} = useSelectedRequirementContext()
+  const {setEpics} = useEpicContext()
+  const {setSelectedEpicIds} = useSelectedEpicsContext();
+  const {setUserStories} = useUserStoryContext();
+  const {setSelectedUserStoriesIds} = useSelectedUserStoriesContext();
+  const {clearTasks} = useGeneratedTasks()
+  const {setCurrentProject:NewActiveProject, refreshKanban} = useKanban();
+  
   // Efecto para sincronizar el estado activo con la ruta actual
   useEffect(() => {
     // Primero intentamos obtener la pestaña del parámetro de consulta
@@ -182,6 +198,15 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
     localStorage.setItem("currentProjectName", projectName)
     setCurrentProject(projectName)
     setProjectMenuOpen(false)
+    NewActiveProject(projectId)
+    refreshKanban()
+    setRequirements([])
+    setSelectedIds([])
+    setEpics([])
+    setSelectedEpicIds([])
+    setUserStories([])
+    setSelectedUserStoriesIds([])
+    clearTasks()
     router.push(`/dashboard?projectId=${projectId}`)
   }
 

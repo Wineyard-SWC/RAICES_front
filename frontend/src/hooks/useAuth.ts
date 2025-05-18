@@ -6,6 +6,13 @@ import { useUser } from '../contexts/usercontext';
 import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider, githubProvider } from '../utils/firebaseConfig';
 import { useKanban } from '@/contexts/unifieddashboardcontext';
+import { useRequirementContext } from "@/contexts/requirementcontext"
+import { useEpicContext } from "@/contexts/epiccontext"
+import { useUserStoryContext } from "@/contexts/userstorycontext"
+import { useSelectedRequirementContext } from "@/contexts/selectedrequirements"
+import { useSelectedEpicsContext } from "@/contexts/selectedepics"
+import { useSelectedUserStoriesContext } from "@/contexts/selecteduserstories"
+import { useGeneratedTasks } from "@/contexts/generatedtaskscontext"
 
 export const useAuth = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -13,6 +20,13 @@ export const useAuth = () => {
   const router = useRouter();
   const API_URL = process.env.NEXT_PUBLIC_API_URL!;
   const { setUserId, userData, isLoading: userLoading } = useUser();
+  const {setRequirements} = useRequirementContext()
+  const {setSelectedIds} = useSelectedRequirementContext()
+  const {setEpics} = useEpicContext()
+  const {setSelectedEpicIds} = useSelectedEpicsContext();
+  const {setUserStories} = useUserStoryContext();
+  const {setSelectedUserStoriesIds} = useSelectedUserStoriesContext();
+  const {clearTasks} = useGeneratedTasks()
 
   const firebaseErrorMap: { [key: string]: string } = {
     'auth/user-not-found': 'No user found with this email address.',
@@ -25,6 +39,16 @@ export const useAuth = () => {
   };
 
   const {reset} = useKanban();
+
+  const resetdata = () => {
+    setRequirements([])
+    setSelectedIds([])
+    setEpics([])
+    setSelectedEpicIds([])
+    setUserStories([])
+    setSelectedUserStoriesIds([])
+    clearTasks()
+  }
 
   const loginWithEmail = async (email: string, password: string) => {
     if (!email || !password) {
@@ -60,6 +84,7 @@ export const useAuth = () => {
       setError(firebaseErrorMap[code] || err.message || 'Something went wrong. Please try again.')
     } finally {
       reset();
+      resetdata();
       setIsLoading(false);
     }
   };
@@ -96,6 +121,7 @@ export const useAuth = () => {
     finally 
     {
       reset();
+      resetdata();
       setIsLoading(false);
     }
   };
@@ -122,6 +148,8 @@ export const useAuth = () => {
       
       
       reset();
+      resetdata();
+
 
       router.push('/projects');
     } 
@@ -158,7 +186,8 @@ export const useAuth = () => {
   const logout = async () => {
     try {
       reset(); // Limpia KanbanContext
-      
+      resetdata();
+
       await auth.signOut();
       setUserId('');
       
