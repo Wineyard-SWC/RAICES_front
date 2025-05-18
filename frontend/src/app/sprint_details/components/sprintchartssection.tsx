@@ -63,9 +63,9 @@ const SprintChartsSection = () => {
             <div className="text-center text-sm text-gray-500">Loading burndown chart...</div>
           </div>
         ) : chartData.length > 0 ? (
-          <BurndownChart data={chartData} height={250}/>
+          <BurndownChart data={chartData} height={300}/>
         ) : (
-          <div className="bg-gray-100 rounded-md p-2 h-[250px] flex items-center justify-center">
+          <div className="bg-gray-100 rounded-md p-2 h-[300px] flex items-center justify-center">
             <div className="text-center text-sm text-gray-500">No data available</div>
           </div>
         )}
@@ -78,9 +78,9 @@ const SprintChartsSection = () => {
             <div className="text-center text-sm text-gray-500">Loading velocity chart...</div>
           </div>
         ) : velocityData.length > 0 ? (
-          <VelocityTrendChart data={velocityData} height={250} />
+          <VelocityTrendChart data={velocityData} height={300} />
         ) : (
-          <div className="bg-gray-100 rounded-md p-2 h-[250px] flex items-center justify-center">
+          <div className="bg-gray-100 rounded-md p-2 h-[300px] flex items-center justify-center">
             <div className="text-center text-sm text-gray-500">No data available</div>
           </div>
         )}
