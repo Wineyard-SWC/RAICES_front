@@ -13,12 +13,19 @@ import { useGenerateUserStoriesLogic } from './hooks/useGenerateUserStoriesLogic
 import { UserStory } from '@/types/userstory';
 import ConfirmDialog from '@/components/confimDialog';
 import { useRouter } from 'next/navigation';
+import Toast from '@/components/toast';
+import useToast from '@/hooks/useToast';
 
 export default function GenerateUserStoriesPage() {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [showImportConfirm, setShowImportConfirm] = useState(false);
+  const [showImportUSConfirm, setShowImportUSConfirm] = useState(false);
   const [showGenerateConfirm, setShowGenerateConfirm] = useState(false);
+  const { toast, showToast, hideToast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const {
     epicDescription,
@@ -28,6 +35,7 @@ export default function GenerateUserStoriesPage() {
     handleGenerate,
     handleSave,
     handleImportEpics,
+    handleImportUserStories,
     handleDeleteStory,
     handleUpdateStory,
     handleSelectAll,
@@ -36,21 +44,11 @@ export default function GenerateUserStoriesPage() {
     selectedEpicIds,
     userStories,
     groupedByEpic,
+    groupingVersion,
     allEpicOptions,
     error,
     isLoading
   } = useGenerateUserStoriesLogic();
-  
-  const unassignedTuple: [string, UserStory[]] | null = userStories.some(
-    us => us.assigned_epic === 'UNASSIGNED'
-  )
-    ? ['UNASSIGNED', userStories.filter(us => us.assigned_epic === 'UNASSIGNED')]
-    : null;
-  
-  const allItems: [string, UserStory[]][] = [
-    ...Object.entries(groupedByEpic),
-    ...(unassignedTuple ? [unassignedTuple] : [])
-  ];
 
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -64,9 +62,73 @@ export default function GenerateUserStoriesPage() {
     }
   }, [router]);
 
+
+  const handleSaveWithFeedback = async () => {
+    try {
+      await handleSave();
+      showToast('User stories saved successfully!', 'success');
+    } catch (error) {
+      console.error('Error saving user stories:', error);
+      showToast('Error saving user stories. Please try again.', 'error');
+    } finally {
+      setShowSaveConfirm(false);
+    }
+  };
+  
+  const handleImportWithFeedback = async () => {
+    try {
+      await handleImportEpics();
+      showToast('Epics and requirements imported successfully!', 'success');
+    } catch (error) {
+      console.error('Error importing epics:', error);
+      showToast('Error importing epics. Please try again.', 'error');
+    } finally {
+      setShowImportConfirm(false);
+    }
+  };
+
+  const handleImportUSWithFeedback = async () => {
+    try {
+      await handleImportUserStories();
+      showToast('User stories imported successfully!', 'success');
+    } catch (error) {
+      console.error('Error importing user stories:', error);
+      showToast('Error importing user stories. Please try again.', 'error');
+    } finally {
+      setShowImportUSConfirm(false);
+    }
+  };
+  
+  const handleGenerateWithFeedback = async () => {
+    try {
+      await handleGenerate();
+      if (!isLoading){
+        showToast('User stories generated successfully!', 'success');
+      }
+    } catch (error) {
+      showToast('Error generating user stories. Please try again.', 'error');
+    } finally {
+      setShowGenerateConfirm(false);
+    }
+  };
+  
+  const handleClearWithFeedback = () => {
+    handleClear();
+    setShowClearConfirm(false);
+    showToast('All info cleared successfully.', 'success');
+  };
+
+  const handleDeleteWithToast = () => {
+    showToast('User story deleted successfully.', 'success');
+  };
+  
+  const handleUpdateWithToast = () => {
+    showToast('User story updated successfully.', 'success');
+  };
+
   if (loading) {
     return null; 
-  } 
+  }
 
   return (
     <>
@@ -74,6 +136,12 @@ export default function GenerateUserStoriesPage() {
       
       <Navbar projectSelected={true} />
       
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        visible={toast.visible}
+        onClose={hideToast}
+      />
 
       <GeneratorView
         inputTitle={
@@ -96,7 +164,7 @@ export default function GenerateUserStoriesPage() {
         onToggleEdit={() => setEditMode(!editMode)}
         isLoading={isLoading}
         error={error}
-        items={allItems}
+        items={Object.entries(groupedByEpic)}
         renderItem={([epicId, stories]) => (
             <EpicUserStoryGroup
               key={epicId}
@@ -108,6 +176,8 @@ export default function GenerateUserStoriesPage() {
               onUpdate={handleUpdateStory}
               availableEpics={allEpicOptions}
               onDelete={handleDeleteStory}
+              onDeleteWithToast={handleDeleteWithToast}
+              onUpdateWithToast={handleUpdateWithToast}
             />
         )}
         
@@ -119,7 +189,13 @@ export default function GenerateUserStoriesPage() {
               className="text-[#4A2B4A] text-sm font-medium hover:underline"
               onClick={() => setShowImportConfirm(true)}
               >
-              Import from project's epics
+              Import Epics and Requirements
+            </button>
+            <button 
+              className="text-[#4A2B4A] text-sm font-medium hover:underline"
+              onClick={() => setShowImportUSConfirm(true)}
+              >
+              Import User Stories
             </button>
             </div>
             <div className="space-y-3 max-h-[60vh] overflow-y-auto">
@@ -145,12 +221,9 @@ export default function GenerateUserStoriesPage() {
         <ConfirmDialog
           open={showClearConfirm}
           title="Clear User Stories Section"
-          message={`Are you sure you want to clear the user stories and epics?\nThis will reset all your progress in this and previous sections.`}
+          message={`Are you sure you want to clear the user stories\nThis will reset all your progress in this section.`}
           onCancel={() => setShowClearConfirm(false)}
-          onConfirm={() => {
-            handleClear();
-            setShowClearConfirm(false);
-          }}
+          onConfirm={handleClearWithFeedback}
       />
       )}
 
@@ -158,12 +231,11 @@ export default function GenerateUserStoriesPage() {
         <ConfirmDialog
           open={showSaveConfirm}
           title="Save User Stories"
-          message={`The stories you didn't select will not be included.\nYou can still access them later as part of the archived project.`}
+          message={`Importing from the database will bring in all epics and their related requirements.\nThis will overwrite your current selection.\nAre you sure you want to continue?`}
           onCancel={() => setShowSaveConfirm(false)}
-          onConfirm={async () => {
-            await handleSave();
-            setShowSaveConfirm(false);
-          }}
+          onConfirm={handleSaveWithFeedback}
+          isLoading={isSaving}
+          confirmText={isSaving ? "Saving..." : "Save"}
         />
       )}
 
@@ -171,13 +243,24 @@ export default function GenerateUserStoriesPage() {
       {showImportConfirm && (
         <ConfirmDialog
           open={showImportConfirm}
-          title="Import Epics"
-          message={`Importing from the database will overwrite the current epics.\nAre you sure you want to continue?`}
+          title="Import Epics and Requirementes"
+          message={`Importing from the database will overwrite the current epics and requirements.\nAre you sure you want to continue?`}
           onCancel={() => setShowImportConfirm(false)}
-          onConfirm={async () => {
-            await handleImportEpics();
-            setShowImportConfirm(false);
-          }}
+          onConfirm={handleImportWithFeedback}
+          isLoading={isImporting}
+          confirmText={isImporting ? "Importing..." : "Import"}
+        />
+      )}
+
+      {showImportUSConfirm && (
+        <ConfirmDialog
+          open={showImportUSConfirm}
+          title="Import User Stories"
+          message={`Importing from the database will overwrite the current user stories.\nAre you sure you want to continue?`}
+          onCancel={() => setShowImportUSConfirm(false)}
+          onConfirm={handleImportUSWithFeedback}
+          isLoading={isImporting}
+          confirmText={isImporting ? "Importing..." : "Import"}
         />
       )}
 
@@ -187,10 +270,9 @@ export default function GenerateUserStoriesPage() {
           title="Generating User Stories"
           message={`Generating user stories will overwrite the current selection and it will be lost if it is not saved.\nDo you want to continue?`}
           onCancel={() => setShowGenerateConfirm(false)}
-          onConfirm={async () => {
-            await handleGenerate();
-            setShowGenerateConfirm(false);
-          }}
+          onConfirm={handleGenerateWithFeedback}
+          isLoading={isGenerating}
+          confirmText={isGenerating ? "Generating..." : "Generate"}
         />
       )}
     </>

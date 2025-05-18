@@ -6,18 +6,19 @@ import { TasksKanban } from "../dashboard/dashboard.taskskanban";
 import { TaskColumns, TaskOrStory } from "@/types/taskkanban";
 import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
-  import { useBacklogContext } from "@/contexts/backlogcontext";
+import { useKanban } from "@/contexts/unifieddashboardcontext";
 
 interface ProductBacklogViewProps {
   onBack: () => void;
 }
 
 const ProductBacklogPage: React.FC<ProductBacklogViewProps> = ({onBack}) => {
-  const { tasks, searchTerm, setSearchTerm, deleteStory } = useBacklogContext()
+  const [searchTerm, setSearchTerm] = useState("");
   const [BacklogactiveView, setBacklogActiveView] = useState<"backlog" | "kanban">("kanban")
   const [currentPage, setCurrentPage] = useState(0)
   const [itemsPerPage, setItemsPerPage] = useState(5)
   const isAdmin = true
+  const { tasks } = useKanban();
   
   // Filtrar elementos en revisión
   const reviewItems = tasks?.inreview ?? []
@@ -189,8 +190,8 @@ const ProductBacklogPage: React.FC<ProductBacklogViewProps> = ({onBack}) => {
                         status="In Review"
                         title={item.title}
                         description={item.description}
-                        author={item.assignee ?? ""}
-                        reviewer={item.assignee ?? "Not Assigned"}
+                        author={""}
+                        reviewer={"Not Assigned"}
                         progress={100}
                         comments={item.comments ?? []}
                       />

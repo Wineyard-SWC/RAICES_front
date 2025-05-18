@@ -101,6 +101,7 @@ export default function AddTeamMemberCard({ projectId, already, onAdd }: Props) 
             ) : (
               <>
                 <select
+                  aria-label="Members"
                   className="w-full p-2 border rounded mb-4"
                   value={selected}
                   onChange={e => setSel(e.target.value)}

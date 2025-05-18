@@ -1,11 +1,13 @@
 // components/LoadingTasks.tsx
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState,useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import DefaultLoading from "./DefaultLoading";
 
 interface LoadingTasksProps {
   isLoading: boolean;
+  useFlower?: boolean;
 }
 
 // Mensajes de carga para tasks
@@ -38,7 +40,7 @@ function useLoadingMessages(isLoading: boolean) {
   return visibleMessages;
 }
 
-const LoadingTasks: React.FC<LoadingTasksProps> = ({ isLoading }) => {
+const LoadingTasks: React.FC<LoadingTasksProps> = ({ isLoading, useFlower }) => {
   const visibleMessages = useLoadingMessages(isLoading);
 
   return (
@@ -231,7 +233,12 @@ const LoadingTasks: React.FC<LoadingTasksProps> = ({ isLoading }) => {
             ))}
           </div>
         </motion.div>
+      )} 
+      {useFlower && (
+        <DefaultLoading/>
       )}
+      
+
     </AnimatePresence>
   );
 };

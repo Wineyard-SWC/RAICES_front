@@ -1,71 +1,68 @@
-import {styles} from "../../styles/calendarstyles"
+import { styles } from "../../styles/calendarstyles"
 import { Activity } from "lucide-react"
 import { ProgressCard } from "../dashboard/dashboard.progresscard"
-import { useEffect, useState } from "react"
+import { useMemo } from "react"
 import { Task } from "@/types/task"
 import { PieChart, Pie, Cell, ResponsiveContainer, Label } from "recharts"
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL
+import { useKanban } from "@/contexts/unifieddashboardcontext"
 
 interface SprintProgressCardProps {
   projectId?: string
 }
 
 const SprintProgressCard = ({ projectId }: SprintProgressCardProps) => {
-  const [completedTasks, setCompletedTasks] = useState(0)
-  const [totalTasks, setTotalTasks] = useState(0)
-  const [loading, setLoading] = useState(false)
+  // Use the unified Kanban context instead of fetching data
+  const { tasks, isLoading, currentProjectId } = useKanban()
 
-  useEffect(() => {
-    const fetchTasks = async () => {
-      setLoading(true)
-      try {
-        // Get project ID from localStorage if not provided as prop
-        const currentProjectId = projectId || localStorage.getItem("currentProjectId")
-        
-        if (!currentProjectId) {
-          console.error("No project ID available")
-          return
-        }
+  // Calculate task stats using useMemo
+  const taskStats = useMemo(() => {
+    if (!tasks) return { completedTasks: 0, totalTasks: 0, completionPercentage: 0 }
 
-        const response = await fetch(`${API_URL}/projects/${currentProjectId}/tasks`)
-        if (!response.ok) {
-          throw new Error("Failed to fetch tasks")
-        }
-        
-        const tasks: Task[] = await response.json()
-        
-        // Count tasks with status "In Progress", "In Review", "To Do", and "Done" as the total
-        const relevantTasks = tasks.filter(task => 
-          task.status_khanban === 'In Progress' || 
-          task.status_khanban === 'In Review' || 
-          task.status_khanban === 'To Do' || 
-          task.status_khanban === 'Done'
-        )
-        
-        // Count only tasks with status "Done" as completed tasks
-        const doneTasks = tasks.filter(task => task.status_khanban === 'Done')
-        
-        setTotalTasks(relevantTasks.length)
-        setCompletedTasks(doneTasks.length)
-      } catch (error) {
-        console.error("Error fetching tasks:", error)
-      } finally {
-        setLoading(false)
-      }
+    // Get all tasks (exclude stories) from all columns
+    const allTasksAndStories = [
+      ...tasks.todo,
+      ...tasks.inprogress,
+      ...tasks.inreview,
+      ...tasks.done
+    ]
+
+    // Filter to only include Tasks (not Stories)
+    const allTasks = allTasksAndStories.filter(item => {
+      // Tasks have user_story_id while Stories have tasklist
+      return 'user_story_id' in item || 
+             ('assignee' in item && !('tasklist' in item));
+    }) as Task[]
+
+    // Count only tasks with status "Done" as completed tasks
+    const doneTasks = allTasks.filter(task => task.status_khanban === 'Done')
+
+    // Total tasks includes all task statuses
+    const totalTasks = allTasks.length
+    const completedTasks = doneTasks.length
+
+    const completionPercentage = totalTasks > 0 
+      ? Math.round((completedTasks / totalTasks) * 100) 
+      : 0
+
+    return {
+      completedTasks,
+      totalTasks,
+      completionPercentage
     }
+  }, [tasks])
 
-    fetchTasks()
-  }, [projectId])
+  // Check if we're viewing the right project
+  const isCorrectProject = !projectId || projectId === currentProjectId
 
-  const completionPercentage = totalTasks > 0 
-    ? Math.round((completedTasks / totalTasks) * 100) 
-    : 0
+  // Don't render anything if we're looking at a different project
+  if (!isCorrectProject) {
+    return null
+  }
 
   // Data for the gauge chart
   const gaugeData = [
-    { name: 'Completed', value: completionPercentage },
-    { name: 'Remaining', value: 100 - completionPercentage }
+    { name: 'Completed', value: taskStats.completionPercentage },
+    { name: 'Remaining', value: 100 - taskStats.completionPercentage }
   ]
 
   // Colors for the gauge chart
@@ -77,38 +74,46 @@ const SprintProgressCard = ({ projectId }: SprintProgressCardProps) => {
       icon={<Activity className={styles.icon} />}
     >
       <div className="space-y-4">
-        {/* Gauge Chart */}
-        <div className="w-full h-52">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={gaugeData}
-                cx="50%"
-                cy="50%"
-                startAngle={180}
-                endAngle={0}
-                innerRadius="65%"
-                outerRadius="95%"
-                paddingAngle={0}
-                dataKey="value"
-              >
-                {gaugeData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-                <Label
-                  value={`${completionPercentage}%`}
-                  position="center"
-                  fill="#888888"
-                  style={{ fontSize: '28px', fontWeight: 'bold' }}
-                />
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-        <div className={styles.progressText}>
-          <span>{completionPercentage}% completed</span>
-          <span>{completedTasks} of {totalTasks} tasks</span>
-        </div>
+        {isLoading ? (
+          <div className="w-full h-52 flex items-center justify-center">
+            <span className="text-gray-500">Loading sprint progress...</span>
+          </div>
+        ) : (
+          <>
+            {/* Gauge Chart */}
+            <div className="w-full h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={gaugeData}
+                    cx="50%"
+                    cy="50%"
+                    startAngle={180}
+                    endAngle={0}
+                    innerRadius="65%"
+                    outerRadius="95%"
+                    paddingAngle={0}
+                    dataKey="value"
+                  >
+                    {gaugeData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                    <Label
+                      value={`${taskStats.completionPercentage}%`}
+                      position="center"
+                      fill="#888888"
+                      style={{ fontSize: '28px', fontWeight: 'bold' }}
+                    />
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className={styles.progressText}>
+              <span>{taskStats.completionPercentage}% completed</span>
+              <span>{taskStats.completedTasks} of {taskStats.totalTasks} tasks</span>
+            </div>
+          </>
+        )}
       </div>
     </ProgressCard>
   )

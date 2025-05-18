@@ -11,6 +11,7 @@ import CreateProjectModal from "./components/create_project_modal"
 import JoinProjectModal from "./components/join_project_modal"
 import Navbar from "@/components/NavBar"
 import { useRouter } from "next/navigation"
+import { useKanban } from "@/contexts/unifieddashboardcontext"
 
 export default function ProjectsPage() {
   // Obtén el userId desde el contexto de usuario
@@ -29,7 +30,7 @@ export default function ProjectsPage() {
   // Utiliza el hook para traer los proyectos del usuario
   const { projects: fetchedProjects, loading } = useProjects(userId)
   const { createProject, loading: creatingProject } = useCreateProject(userId)
-
+  const {setCurrentProject} = useKanban();
   // Estados para búsqueda y filtro
   const [projects, setProjects] = useState<Project[]>([])
   const [searchQuery, setSearchQuery] = useState("")
@@ -86,9 +87,12 @@ export default function ProjectsPage() {
   }
 
   const handleProjectSelect = (projectId: string) => {
+    if (selectedProject && selectedProject !== projectId) {
+    }
+  
     setSelectedProject(projectId)
-    // Guardar el ID del proyecto seleccionado en localStorage
     localStorage.setItem("currentProjectId", projectId)
+    setCurrentProject(projectId)
   }
 
   const handleCreateProject = async (projectData: any) => {

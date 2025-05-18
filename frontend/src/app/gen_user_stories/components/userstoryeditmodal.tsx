@@ -24,9 +24,11 @@ const UserStoryEditModal = ({ open, onClose, userStory, onSave, availableEpics, 
     setDescription,
     priority,
     setPriority,
+    points,
+    setPoints,
     assigned_epic,
     setEpicId,
-    acceptance_criteria,
+    acceptanceCriteria,
     addCriterion,
     removeCriterion,
     updateCriterion,
@@ -42,6 +44,16 @@ const UserStoryEditModal = ({ open, onClose, userStory, onSave, availableEpics, 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   
+  const formatDateOrDefault = (dateString: string | undefined) => {
+    if (!dateString) return 'Not set';
+    
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    } catch (e) {
+      return 'Invalid date';
+    }
+  };
 
   const modalContent = (
     <Dialog open={open} onClose={handleTryClose} className="relative z-50">
@@ -100,38 +112,77 @@ const UserStoryEditModal = ({ open, onClose, userStory, onSave, availableEpics, 
                 </option>
               ))}
             </select>
-            
           </div>
           
+          <div className="space-y-1 text-lg">
+            <label className="text-lg font-medium text-black">Story Points</label>
+            <input 
+              type="number"
+              min="0"
+              className={`w-full border p-2 rounded-md bg-white ${errors.points ? 'border-red-500' : 'border-gray-300'}`} 
+              value={points} 
+              onChange={(e) => setPoints(Number(e.target.value))} 
+              aria-label="Edit points" 
+            />
+            {errors.points && <p className="text-red-500 text-lg mt-1">{errors.points}</p>}
+          </div>
+
           <div className="space-y-2 text-lg">
             <label className="text-lg font-medium text-black">Acceptance Criteria</label>
-            <div className="space-y-2">
-              {acceptance_criteria.map((criterion, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <input
-                    className="text-lg flex-1 border border-gray-300 p-2 rounded-md bg-white"
-                    value={criterion}
-                    onChange={(e) => updateCriterion(i, e.target.value)}
-                    aria-label="Edit acceptance criteria"
-                  />
-                  <button 
-                    onClick={() => removeCriterion(i)}
-                    className="text-lg text-red-500 p-1 hover:bg-red-50 rounded-md"
-                    aria-label="Remove criterion"
-                  >
-                    ✕
-                  </button>
-                </div>  
+            <div className="space-y-4">
+              {acceptanceCriteria.map((criterion, i) => (
+                <div key={i} className="border border-gray-200 rounded-lg p-3 bg-white">
+                  <div className="flex items-center gap-2 mb-2">
+                    <input
+                      className="text-lg flex-1 border border-gray-300 p-2 rounded-md bg-white"
+                      value={criterion.description}
+                      onChange={(e) => updateCriterion(i, e.target.value)}
+                      aria-label="Edit acceptance criteria"
+                      placeholder="Enter acceptance criteria description"
+                    />
+                    <button 
+                      onClick={() => removeCriterion(i)}
+                      className="text-lg text-red-500 p-1 hover:bg-red-50 rounded-md"
+                      aria-label="Remove criterion"
+                      type="button"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  
+                  {/* Metadata fields in smaller text */}
+                  <div className="text-xs text-gray-500 space-y-1 mt-1">
+                    <div className="flex justify-between">
+                      <span>Created: {formatDateOrDefault(criterion.date_created)}</span>
+                      <span>By: {criterion.created_by[1]}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Modified: {formatDateOrDefault(criterion.date_modified)}</span>
+                      <span>By: {criterion.modified_by[1]}</span>
+                    </div>
+                    {criterion.date_completed && (
+                      <div className="flex justify-between">
+                        <span>Completed: {formatDateOrDefault(criterion.date_completed)}</span>
+                        <span>By: {criterion.finished_by[1]}</span>
+                      </div>
+                    )}
+                  </div>
+                </div> 
               ))}
-              {errors.acceptance_criteria && <p className="text-red-500 text-lg mt-1">{errors.acceptance_criteria}</p>}
-               <div className="text-lg flex justify-center">  
+              
+              {errors.acceptanceCriteria && (
+                <p className="text-red-500 text-lg mt-1">{errors.acceptanceCriteria}</p>
+              )}
+              
+              <div className="text-lg flex justify-center">  
                 <button
                   onClick={addCriterion}
                   className="text-lg text-[#4A2B4A] underline mt-1"
+                  type="button"
                 >
                   + Add another criterion
                 </button>
-               </div>
+              </div>
             </div>
           </div>
           
@@ -142,6 +193,7 @@ const UserStoryEditModal = ({ open, onClose, userStory, onSave, availableEpics, 
                 setShowDeleteConfirm(true);
               }}
               className="px-4 py-2 bg-red-500 text-white rounded-md"
+              type="button"
             >
               Delete
             </button>
@@ -149,12 +201,14 @@ const UserStoryEditModal = ({ open, onClose, userStory, onSave, availableEpics, 
               <button
                 onClick={handleTryClose}
                 className="px-4 py-2 border border-gray-300 rounded-md text-black"
+                type="button"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
                 className="px-4 py-2 bg-[#4A2B4A] text-white rounded-md"
+                type="button"
               >
                 Save
               </button>

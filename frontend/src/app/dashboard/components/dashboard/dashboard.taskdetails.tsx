@@ -3,7 +3,12 @@ import { X,Trash } from "lucide-react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { TaskOrStory } from "@/types/taskkanban"
-import { useBacklogContext } from "@/contexts/backlogcontext"
+import { useUser } from "@/contexts/usercontext"
+import { useKanban } from "@/contexts/unifieddashboardcontext"
+import { useMemo } from "react"
+import { Task } from "@/types/task"
+import { UserStory } from "@/types/userstory"
+
 
 interface TaskDetailModalProps {
   open: boolean
@@ -13,64 +18,88 @@ interface TaskDetailModalProps {
 
 const TaskDetailModal = ({ open, onClose, task }: TaskDetailModalProps) => {
   const [newComment, setNewComment] = useState("")
-  const userId = localStorage.getItem("userId")!
-  const project_id = localStorage.getItem("currentProjectId")
+  const { userId, userData } = useUser()
+  const { currentProjectId, tasks, updateTask, updateStory  } = useKanban()
   const apiURL = process.env.NEXT_PUBLIC_API_URL!
-
-  const { tasks, setTasks } = useBacklogContext()
+  const project_id=currentProjectId
   const columns = ["backlog", "todo", "inprogress", "inreview", "done"] as const
+
+  const currentTask = useMemo(() => {
+    for (const column of Object.values(tasks)) {
+      const foundTask = column.find(t => t.id === task.id)
+      if (foundTask) return foundTask
+    }
+    return task
+  }, [tasks, task.id])
+
+
+  const isTask = (item: TaskOrStory): item is Task => {
+    return 'user_story_id' in item || 
+          (!('acceptanceCriteria' in item) && !('assigned_epic' in item))
+  }
+
+  const isUserStory = (item: TaskOrStory): item is UserStory => {
+    return 'acceptanceCriteria' in item || 'assigned_epic' in item
+  }
+
 
   const handleSubmit = async () => {
     const comment = {
       id: crypto.randomUUID(),
       user_id: userId,
-      user_name: "Your Name",
+      user_name: userData?.name || "Unknown User",
       text: newComment.trim(),
       timestamp: new Date().toISOString(),
     }
 
-    const res = await fetch(`${apiURL}/projects/${project_id}/tasks/${task.id}/comments`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(comment),
-    })
-
-    if (res.ok) {
-      setNewComment("")
-      setTasks((prev) => {
-        const updated = { ...prev }
-        columns.forEach((col) => {
-          updated[col] = updated[col].map((t) =>
-            t.id === task.id && Array.isArray(t.comments)
-              ? { ...t, comments: [...t.comments, comment] }
-              : t
-          )
+    try {
+      // Usar las funciones helper para distinguir
+      if (isUserStory(currentTask)) {
+        const updatedComments = Array.isArray(currentTask.comments)
+          ? [...currentTask.comments, comment]
+          : [comment]
+        
+        await updateStory(task.id, {
+          comments: updatedComments
         })
-        return updated
-      })
+      } else {
+        // Es una Task
+        const updatedComments = Array.isArray(currentTask.comments)
+          ? [...currentTask.comments, comment]
+          : [comment]
+        
+        await updateTask(task.id, {
+          comments: updatedComments
+        })
+      }
+      
+      setNewComment("")
+    } catch (error) {
+      console.error('Error adding comment:', error)
     }
   }
 
   const handleDelete = async (commentId: string) => {
-    const res = await fetch(`${apiURL}/projects/${project_id}/tasks/${task.id}/comments/${commentId}`, {
-      method: "DELETE",
-    })
+    if (!currentProjectId || !('comments' in currentTask)) return
 
-    if (res.ok) {
-      setTasks((prev) => {
-        const updated = { ...prev }
-        columns.forEach((col) => {
-          updated[col] = updated[col].map((t) =>
-            t.id === task.id && Array.isArray(t.comments)
-              ? { ...t, comments: t.comments.filter((c) => c.id !== commentId) }
-              : t
-          )
+    try {
+      const updatedComments = Array.isArray(currentTask.comments)
+        ? currentTask.comments.filter(c => c.id !== commentId)
+        : []
+      
+      if (isUserStory(currentTask)) {
+        await updateStory(task.id, {
+          comments: updatedComments
         })
-        return updated
-      })
+      } else {
+        await updateTask(task.id, {
+          comments: updatedComments
+        })
+      }
+    } catch (error) {
+      console.error('Error deleting comment:', error)
     }
   }
-
 
   return (
     <Dialog open={open} onClose={onClose} className="relative z-50">
@@ -87,33 +116,33 @@ const TaskDetailModal = ({ open, onClose, task }: TaskDetailModalProps) => {
           <div className="space-y-4">
             <div>
               <p className="text-lg font-semibold text-black">Title:</p>
-              <p className="text-md text-black">{task.title}</p>
+              <p className="text-md text-black">{currentTask.title}</p>
             </div>
 
             <div>
               <p className="text-lg font-semibold text-black">Description:</p>
-              <p className="text-md text-black">{task.description}</p>
+              <p className="text-md text-black">{currentTask.description}</p>
             </div>
 
             <div className="flex justify-between gap-4">
-              {"date" in task && (
+              {"date" in currentTask && (
                 <div>
                   <p className="text-lg font-semibold text-black">Date:</p>
-                  <p className="text-md text-black">{task.date}</p>
+                  <p className="text-md text-black">{currentTask.date}</p>
                 </div>
               )}
               <div>
                 <p className="text-lg font-semibold text-black">Priority:</p>
-                <p className="text-md text-black">{task.priority}</p>
+                <p className="text-md text-black">{currentTask.priority}</p>
               </div>
             </div>
 
-            {"comments" in task && Array.isArray(task.comments) && (
+            {"comments" in currentTask && Array.isArray(currentTask.comments) && (
               <div>
                 <p className="text-lg font-semibold text-black mb-2">Comments:</p>
-                {task.comments.length > 0 ? (
+                {currentTask.comments.length > 0 ? (
                   <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
-                    {task.comments.map((c) => (
+                    {currentTask.comments.map((c) => (
                       <div
                         key={c.id}
                         className="bg-white border border-gray-200 p-2 rounded-md relative"
@@ -157,9 +186,9 @@ const TaskDetailModal = ({ open, onClose, task }: TaskDetailModalProps) => {
 
             <div className="flex justify-end gap-2">
               <button
-                className="px-4 py-2 bg-[#4A2B4A] text-white rounded-md"
+                className="px-4 py-2 bg-[#4A2B4A] text-white rounded-md disabled:opacity-50"
                 onClick={handleSubmit}
-                disabled={!newComment.trim()}
+                disabled={!newComment.trim() || !userId}
               >
                 Submit Comment
               </button>

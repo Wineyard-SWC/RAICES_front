@@ -6,7 +6,7 @@ import { dashboardStatsStyles as s } from "../../styles/dashboardstyles"
 import { BurndownChart } from "@/components/burndownchart"
 import { useEffect, useState, useMemo } from "react"
 import { useSprintDataContext } from "@/contexts/sprintdatacontext"
-import { useBacklogContext } from "@/contexts/backlogcontext"
+import { useKanban } from "@/contexts/unifieddashboardcontext"
 
 type Props = {
   onViewSprintDetails: () => void;
@@ -25,12 +25,11 @@ const todayString = today.toLocaleDateString('en-US', {
     month: 'long',    
     day: 'numeric',   
 })
-const apiURL = process.env.NEXT_PUBLIC_API_URL!
+
+
 
 
 const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
-  
-
   // State for burndown chart
   const [burndownChartData, setBurndownChartData] = useState<BurndownDataPoint[]>([])
   const [actualPercentage, setActualPercentage] = useState(0)
@@ -50,65 +49,81 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
     refreshVelocityData 
   } = useSprintDataContext()
   
-  // Use the backlog context to get task data
-  const { tasks, refreshAll: refreshTasks } = useBacklogContext()
+  // Use the unified Kanban context instead of backlog context
+  const { tasks, refreshKanban } = useKanban()
 
+  const setChartData = (duration_days: number, total_story_points: number) => {
+    const totalDays = duration_days + 1
+    const idealDropPerDay = total_story_points / duration_days
+    const generatedData: BurndownDataPoint[] = []
+
+    for (let day = 0; day < totalDays; day++) {
+      const ideal = total_story_points - idealDropPerDay * day
+      const remaining = getRemainingPointsForDay(day, duration_days, total_story_points)
+
+      generatedData.push({
+        day: `Day ${day}`,
+        Ideal: parseFloat(ideal.toFixed(2)),
+        Remaining: parseFloat(remaining.toFixed(2))
+      })
+    }
+
+    // Actualizar estado
+    setBurndownChartData(generatedData)
+
+    if (generatedData.length > 0) {
+      const last = generatedData[generatedData.length - 1]
+      const initial = total_story_points
+
+      setActualPercentage(Math.round(((initial - last.Remaining) / initial) * 100))
+      setIdealPercentage(Math.round(((initial - last.Ideal) / initial) * 100))
+    }
+  }
+
+  const getRemainingPointsForDay = (day: number, duration: number, totalPoints: number): number => {
+    // Calcular la fecha correspondiente al día del sprint
+    const sprintStart = localStorage.getItem("sprint_start_date")
+    if (!sprintStart) return totalPoints
+
+    const startDate = new Date(sprintStart)
+    const currentDate = new Date(startDate)
+    currentDate.setDate(startDate.getDate() + day)
+
+    // Filtrar tareas que no estén completadas antes de esta fecha
+    const allTasks = Object.values(tasks).flat() // combinar todas las columnas
+
+    const remainingPoints = allTasks.reduce((sum, task) => {
+      const taskCompletedDate = new Date(task.date_completed || "")
+      const isDone = task.status_khanban?.toLowerCase() === "done"
+      const completedBeforeOrOnDay = isDone && taskCompletedDate <= currentDate
+
+      // Si no se completó aún (o se completó después del día), aún cuenta
+      if (!completedBeforeOrOnDay) {
+        return sum + (task.story_points || 0)
+      }
+      return sum
+    }, 0)
+
+    return remainingPoints
+  }
   // Process burndown data for chart
   useEffect(() => {
-    if (!burndownData) return
-  
-    try {
-      const { duration_days, total_story_points } = burndownData
-      const totalDays = duration_days + 1
-      const idealDropPerDay = total_story_points / duration_days
-    
-      const generatedData: BurndownDataPoint[] = []
-      for (let day = 0; day < totalDays; day++) {
-        const ideal = total_story_points - idealDropPerDay * day
-        generatedData.push({
-          day: `Day ${day}`,
-          Ideal: parseFloat(ideal.toFixed(2)),
-          Remaining: total_story_points, 
-        })
-      }
-    
-      setBurndownChartData(generatedData)
-      
-      // Calculate percentages
-      const initial = total_story_points
-      if (generatedData.length > 0) {
-        const last = generatedData[generatedData.length - 1]
-        setActualPercentage(Math.round(((initial - last.Remaining) / initial) * 100))
-        setIdealPercentage(Math.round(((initial - last.Ideal) / initial) * 100))
-      }
+  if (!burndownData) return
+  const { duration_days, total_story_points } = burndownData
 
-      // Calculate days left
-      const sprintStartDate = localStorage.getItem("sprint_start_date")
-      if (sprintStartDate) {
-        const startDate = new Date(sprintStartDate)
-        const currentDate = new Date()
-        const endDate = new Date(startDate)
-        
-        // Add duration_days to startDate to get endDate
-        endDate.setDate(startDate.getDate() + duration_days)
-        
-        // Calculate days remaining
-        const msPerDay = 1000 * 60 * 60 * 24
-        const daysRemaining = Math.max(0, Math.ceil((endDate.getTime() - currentDate.getTime()) / msPerDay))
-        
-        setDaysLeft(daysRemaining)
-      } else {
-        // Fallback if no start date is found
-        setDaysLeft(duration_days)
-      }
-    } catch (error) {
-      console.error("Error processing burndown data:", error)
-    }
-  }, [burndownData])
+  if (duration_days <= 0 || total_story_points <= 0) {
+    setBurndownChartData([])
+    setActualPercentage(0)
+    setIdealPercentage(0)
+    return
+  }
+
+  setChartData(duration_days, total_story_points)
+}, [burndownData])
 
   // Process velocity data
   useEffect(() => {
-    if (!velocityData || velocityData.length === 0) return
+    if (!Array.isArray(velocityData) || velocityData.length === 0) return
 
     try {
       // Calculate average velocity from last 3 sprints
@@ -181,20 +196,34 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
     calculateSprintDates()
   }, [burndownData])
 
-  // Refresh data when component mounts
+  // Refresh data when component mounts - IMPROVED VERSION TO AVOID CIRCULAR DEPENDENCY
   useEffect(() => {
+    let isActive = true
+    
     const loadData = async () => {
       try {
+        // Stagger the calls to avoid timing issues
         await refreshBurndownData()
-        await refreshVelocityData()
-        await refreshTasks()
+        
+        if (isActive) {
+          await new Promise(resolve => setTimeout(resolve, 100)) // Small delay
+          await refreshVelocityData()
+        }
+        
+        if (isActive) {
+          await new Promise(resolve => setTimeout(resolve, 100)) // Small delay
+          await refreshKanban()
+        }
       } catch (error) {
         console.error("Error refreshing data:", error)
       }
     }
     
     loadData()
-  }, [])
+    
+    // Cleanup function to prevent state updates if component unmounts
+    return () => { isActive = false }
+  }, []) // Remove all dependencies to avoid infinite loop
 
   return (
     <div className={s.container}>

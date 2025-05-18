@@ -10,8 +10,8 @@ export const useGenerateEpics = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [generatedOutput, setGeneratedOutput] = useState<EpicResponse | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const { sessionId, setSessionId} = useSessionContext();
-    const { language, setLanguage} = useLanguageContext();
+    const { sessionId} = useSessionContext();
+    const { language} = useLanguageContext();
 
     const apiUrl = process.env.NEXT_PUBLIC_EPIC_ROUTE!  
 
