@@ -1,38 +1,8 @@
 "use client";
 
-/*
- * TEAM DETAILS VIEW COMPONENT
- * 
- * This component renders the detailed view of a team based on the teamId prop.
- * 
- * API INTEGRATION NOTES:
- * - Replace hardcoded data with API calls to fetch team details
- * - Expected endpoints:
- *   1. GET /api/teams/:id - Basic team info and metrics
- *   2. GET /api/teams/:id/members - Team members data
- *   3. GET /api/teams/:id/metrics - Performance metrics
- * 
- * - All sections marked with "HARDCODED DATA" comments should be replaced with
- *   data from these API endpoints
- */
-
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
-
-type TeamMember = {
-  id: number;
-  name: string;
-};
-
-type TeamMetrics = {
-  velocity: number;
-  mood: number;
-  tasksCompleted: number;
-  tasksInProgress: number;
-  avgStoryTime: number;
-  sprintProgress: number;
-};
+import { useTeams } from "@/contexts/teamscontext";
 
 type TeamDetailsViewProps = {
   teamId: string;
@@ -40,41 +10,43 @@ type TeamDetailsViewProps = {
 
 const TeamDetailsView = ({ teamId }: TeamDetailsViewProps) => {
   const router = useRouter();
-  
-  // HARDCODED DATA: In a real implementation, this would be fetched from an API using the teamId
-  const teamName = "Wineyard";
-  const teamDescription = "Track your team's performance and collaboration";
+  const { currentTeam, fetchTeam, teamMetrics, getTeamMetrics } = useTeams();
 
-  // HARDCODED DATA: Metrics would be calculated from real project data
-  const teamMetrics: TeamMetrics = {
-    velocity: 35,
-    mood: 80,
-    tasksCompleted: 21,
-    tasksInProgress: 79,
-    avgStoryTime: 1.5,
-    sprintProgress: 51
-  };
+  useEffect(() => {
+    fetchTeam(teamId);
+    getTeamMetrics(teamId);
+  }, [teamId]);
 
   const handleGoBack = () => {
     router.push('/team');
   };
 
+  if (!currentTeam) {
+    return (
+      <main className="min-h-screen py-10 bg-[#EBE5EB]/30">
+        <div className="container mx-auto px-4">
+          <p>Loading team details...</p>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen py-10 bg-[#EBE5EB]/30">
       <div className="container mx-auto px-4">
-        <h1 className="text-4xl font-bold text[1e1e1e]">My Team - {teamName}</h1>
+        <h1 className="text-4xl font-bold text[1e1e1e]">My Team - {currentTeam.name}</h1>
         <p className="text-lg font-semibold text-[#694969] mt-2 mb-2">
-          {teamDescription}
+          {currentTeam.description}
         </p>
         <button
-  onClick={handleGoBack}
-  className="text-[#4A2B4A] text-sm font-medium hover:underline mt-1 mb-3"
->
-  {"<- Go back "}
-</button>
+          onClick={handleGoBack}
+          className="text-[#4A2B4A] text-sm font-medium hover:underline mt-1 mb-3"
+        >
+          {"<- Go back "}
+        </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-          {/* Team Members Section - Takes up 2/3 on large screens */}
+          {/* Team Members Section */}
           <div className="lg:col-span-2 bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center mb-6">
               <svg className="w-5 h-5 mr-2 text-[#4a2b4a]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -83,21 +55,41 @@ const TeamDetailsView = ({ teamId }: TeamDetailsViewProps) => {
               <h2 className="text-lg font-semibold">Team Members</h2>
             </div>
             
-            {/* Team Members Visualization */}
-            <div className="relative h-64 flex items-center justify-center">
-              {/* PLACEHOLDER: This area would contain team member visualization */}
-              <div className="text-center">
-                <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-[#ebe5eb] flex items-center justify-center">
-                  <svg className="w-12 h-12 text-[#4a2b4a]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                  </svg>
+            {/* Team Members List */}
+            <div className="space-y-4">
+              {currentTeam.members.map((member) => (
+                <div key={member.id} className="bg-gray-50 rounded-md p-4">
+                  <div className="flex items-center">
+                    <div className="relative w-10 h-10 mr-3">
+                      <div className="w-10 h-10 bg-[#ebe5eb] rounded-full flex items-center justify-center text-[#4a2b4a] font-bold">
+                        {member.name.charAt(0)}
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium">{member.name}</h4>
+                      <p className="text-sm text-gray-600">{member.role}</p>
+                      <div className="flex items-center mt-1 text-xs text-gray-500">
+                        <span>{member.tasksCompleted} tasks completed</span>
+                        <span className="mx-2">•</span>
+                        <span>{member.currentTasks} current tasks</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="inline-block px-2 py-1 rounded-full text-xs font-medium" 
+                        style={{ 
+                          backgroundColor: member.availability >= 80 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(234, 179, 8, 0.1)',
+                          color: member.availability >= 80 ? 'rgb(22, 163, 74)' : 'rgb(202, 138, 4)'
+                        }}>
+                        {member.availability}% available
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-gray-500">Team members visualization will be implemented here</p>
-              </div>
+              ))}
             </div>
           </div>
           
-          {/* Team Metrics Section - Takes up 1/3 on large screens */}
+          {/* Team Metrics Section */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-md p-6 mb-6">
               <div className="flex items-center mb-6">
@@ -111,12 +103,13 @@ const TeamDetailsView = ({ teamId }: TeamDetailsViewProps) => {
               <div className="mb-4">
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-sm text-gray-600">Team Velocity</span>
-                  {/* HARDCODED: Would be calculated from sprint data */}
-                  <span className="text-sm font-medium">{teamMetrics.velocity} SP/Sprint</span>
+                  <span className="text-sm font-medium">{teamMetrics?.velocity} SP/Sprint</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
-                  {/* HARDCODED: Width percentage would be based on actual velocity metrics */}
-                  <div className="bg-[#4a2b4a] h-2 rounded-full" style={{ width: '70%' }}></div>
+                  <div 
+                    className="bg-[#4a2b4a] h-2 rounded-full" 
+                    style={{ width: `${Math.min(100, (teamMetrics?.velocity || 0) * 2)}%` }}
+                  ></div>
                 </div>
               </div>
               
@@ -124,12 +117,15 @@ const TeamDetailsView = ({ teamId }: TeamDetailsViewProps) => {
               <div className="mb-6">
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-sm text-gray-600">Team Mood</span>
-                  {/* HARDCODED: Would be based on team surveys or feedback */}
-                  <span className="text-sm font-medium">😊</span>
+                  <span className="text-sm font-medium">
+                    {teamMetrics?.mood && teamMetrics.mood > 70 ? '😊' : teamMetrics?.mood && teamMetrics.mood > 40 ? '😐' : '😞'}
+                  </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
-                  {/* HARDCODED: Width percentage would reflect actual team mood metrics */}
-                  <div className="bg-[#4a2b4a] h-2 rounded-full" style={{ width: `${teamMetrics.mood}%` }}></div>
+                  <div 
+                    className="bg-[#4a2b4a] h-2 rounded-full" 
+                    style={{ width: `${teamMetrics?.mood || 0}%` }}
+                  ></div>
                 </div>
               </div>
               
@@ -139,13 +135,11 @@ const TeamDetailsView = ({ teamId }: TeamDetailsViewProps) => {
                 <div className="flex justify-between mb-2">
                   <div>
                     <div className="text-xs opacity-80">Completed</div>
-                    {/* HARDCODED: Would be calculated from actual task data */}
-                    <div className="text-lg font-bold">{teamMetrics.tasksCompleted}%</div>
+                    <div className="text-lg font-bold">{teamMetrics?.tasksCompleted}%</div>
                   </div>
                   <div className="text-right">
                     <div className="text-xs opacity-80">In Progress</div>
-                    {/* HARDCODED: Would be calculated from actual task data */}
-                    <div className="text-lg font-bold">{teamMetrics.tasksInProgress}%</div>
+                    <div className="text-lg font-bold">{teamMetrics?.tasksInProgress}%</div>
                   </div>
                 </div>
               </div>
@@ -160,8 +154,7 @@ const TeamDetailsView = ({ teamId }: TeamDetailsViewProps) => {
                   </div>
                   <span className="text-sm text-gray-600">Avg. Story Time</span>
                 </div>
-                {/* HARDCODED: Would be calculated from actual story completion times */}
-                <span className="text-sm font-medium">{teamMetrics.avgStoryTime} days</span>
+                <span className="text-sm font-medium">{teamMetrics?.avgStoryTime} days</span>
               </div>
               
               {/* Sprint Progress */}
@@ -174,8 +167,7 @@ const TeamDetailsView = ({ teamId }: TeamDetailsViewProps) => {
                   </div>
                   <span className="text-sm text-gray-600">Sprint Progress</span>
                 </div>
-                {/* HARDCODED: Would be calculated from actual sprint data */}
-                <span className="text-sm font-medium">{teamMetrics.sprintProgress}%</span>
+                <span className="text-sm font-medium">{teamMetrics?.sprintProgress}%</span>
               </div>
             </div>
             

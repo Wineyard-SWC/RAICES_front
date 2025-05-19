@@ -17,6 +17,7 @@ import { UserStoryProvider  as SavedUserStoryProvider} from "@/contexts/saveduse
 import { AssignmentProvider } from "@/contexts/userstoriesepicsrelationshipcontext"
 import { GeneratedTasksProvider } from "@/contexts/generatedtaskscontext"
 import { KanbanProvider } from "@/contexts/unifieddashboardcontext"
+import { TeamsProvider } from "@/contexts/teamscontext"
 
 interface ProvidersProps {
   children: ReactNode
@@ -41,8 +42,10 @@ export function AllProviders({ children }: { children: React.ReactNode }) {
                                   <AssignmentProvider>
                                     <GeneratedTasksProvider>
                                       <KanbanProvider>
-                                        {children}
-                                        <div id="modal-root" />
+                                        <TeamsProvider>
+                                          {children}
+                                          <div id="modal-root" />
+                                        </TeamsProvider>
                                       </KanbanProvider>
                                     </GeneratedTasksProvider>
                                   </AssignmentProvider>
