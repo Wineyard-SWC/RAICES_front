@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
+import { createContext, useContext, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 type TeamMember = {
   id: string;
@@ -37,271 +37,206 @@ type TeamsContextType = {
   teamMetrics: TeamMetrics | null;
   loading: boolean;
   error: string | null;
-  fetchTeams: (projectId?: string) => Promise<void>;
-  fetchTeam: (teamId: string) => Promise<void>;
-  createTeam: (team: Omit<Team, 'id' | 'createdAt' | 'updatedAt'>, members: string[]) => Promise<void>;
-  updateTeam: (teamId: string, teamData: Partial<Team>, members?: string[]) => Promise<void>;
-  deleteTeam: (teamId: string) => Promise<void>;
-  searchTeams: (query: string, projectId?: string) => Promise<Team[]>;
-  getTeamMetrics: (teamId: string) => Promise<TeamMetrics>;
+  fetchTeams: (projectId: string) => Promise<void>;
+  fetchTeam: (teamId: string, projectId: string) => Promise<void>;
+  getTeamMetrics: (teamId: string, projectId: string) => Promise<void>;
+  createTeam: (team: { name: string; description: string; projectId: string }, members: string[]) => Promise<void>;
+  updateTeam: (teamId: string, team: { name?: string; description?: string; members?: string[] }, projectId: string) => Promise<void>;
+  deleteTeam: (teamId: string, projectId: string) => Promise<void>;
 };
 
 const TeamsContext = createContext<TeamsContextType | undefined>(undefined);
 
-export const TeamsProvider = ({ children }: { children: ReactNode }) => {
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [currentTeam, setCurrentTeam] = useState<Team | null>(null);
-  const [teamMetrics, setTeamMetrics] = useState<TeamMetrics | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
-  const apiURL = process.env.NEXT_PUBLIC_API_URL || ""
+export const TeamsProvider = ({ children }: { children: React.ReactNode }) => {
+    const [teams, setTeams] = useState<Team[]>([]);
+    const [currentTeam, setCurrentTeam] = useState<Team | null>(null);
+    const [teamMetrics, setTeamMetrics] = useState<TeamMetrics | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const router = useRouter();
+    const apiURL = process.env.NEXT_PUBLIC_API_URL || ""
 
-  const fetchTeams = async (projectId?: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        router.push('/login');
-        return;
-      }
-
-      let url = `${apiURL}/teams/`;
-      if (projectId) {
-        url += `?project_id=${projectId}`;
-      }
-
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch teams');
-      }
-
-      const data = await response.json();
-      setTeams(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchTeam = async (teamId: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        router.push('/login');
-        return;
-      }
-
-      const response = await fetch(`${apiURL}/teams/${teamId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch team');
-      }
-
-      const data = await response.json();
-      setCurrentTeam(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createTeam = async (team: Omit<Team, 'id' | 'createdAt' | 'updatedAt'>, members: string[]) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        router.push('/login');
-        return;
-      }
-
-      console.log("Final payload being sent to API:", {
-        ...team,
-        members,
-      });
-
-      const response = await fetch(`${apiURL}/teams`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          ...team,
-          members,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create team');
-      }
-
-      const data = await response.json();
-      setTeams(prev => [...prev, data]);
-      return data;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateTeam = async (teamId: string, teamData: Partial<Team>, members?: string[]) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        router.push('/login');
-        return;
-      }
-
-      const response = await fetch(`${apiURL}/teams/${teamId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          ...teamData,
-          members,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update team');
-      }
-
-      const data = await response.json();
-      setTeams(prev => prev.map(t => t.id === teamId ? data : t));
-      if (currentTeam?.id === teamId) {
-        setCurrentTeam(data);
-      }
-      return data;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const deleteTeam = async (teamId: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        router.push('/login');
-        return;
-      }
-
-      const response = await fetch(`${apiURL}/teams/${teamId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete team');
-      }
-
-      setTeams(prev => prev.filter(t => t.id !== teamId));
-      if (currentTeam?.id === teamId) {
-        setCurrentTeam(null);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const searchTeams = async (query: string, projectId?: string) => {
-    try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        router.push('/login');
-        return [];
-      }
-
-      let url = `${apiURL}/teams/search?query=${encodeURIComponent(query)}`;
-      if (projectId) {
-        url += `&project_id=${projectId}`;
-      }
-
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to search teams');
-      }
-
-      return await response.json();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      return [];
-    }
-  };
-
-  const getTeamMetrics = async (teamId: string): Promise<TeamMetrics> => {
-    // In a real implementation, this would fetch metrics from your backend
-    // For now, we'll return mock data
-    return {
-      velocity: Math.floor(Math.random() * 50) + 10,
-      mood: Math.floor(Math.random() * 50) + 50,
-      tasksCompleted: Math.floor(Math.random() * 100),
-      tasksInProgress: Math.floor(Math.random() * 100),
-      avgStoryTime: Math.random() * 3 + 1,
-      sprintProgress: Math.floor(Math.random() * 100),
+    const fetchTeams = async (projectId: string) => {
+        setLoading(true);
+        setError(null);
+        try {
+        const response = await fetch(`${apiURL}/projects/${projectId}/teams`);
+        if (!response.ok) {
+            throw new Error("Failed to fetch teams");
+        }
+        const data = await response.json();
+        setTeams(data);
+        } catch (err) {
+        setError(err instanceof Error ? err.message : "An unknown error occurred");
+        } finally {
+        setLoading(false);
+        }
     };
-  };
 
-  return (
-    <TeamsContext.Provider value={{
-      teams,
-      currentTeam,
-      teamMetrics,
-      loading,
-      error,
-      fetchTeams,
-      fetchTeam,
-      createTeam,
-      updateTeam,
-      deleteTeam,
-      searchTeams,
-      getTeamMetrics,
-    }}>
-      {children}
-    </TeamsContext.Provider>
-  );
-};
+    const fetchTeam = async (teamId: string, projectId: string) => {
+        setLoading(true);
+        setError(null);
+        try {
+        const response = await fetch(`${apiURL}/projects/${projectId}/teams/${teamId}`);
+        if (!response.ok) {
+            throw new Error("Failed to fetch team");
+        }
+        const data = await response.json();
+        setCurrentTeam(data);
+        } catch (err) {
+        setError(err instanceof Error ? err.message : "An unknown error occurred");
+        } finally {
+        setLoading(false);
+        }
+    };
 
-export const useTeams = () => {
-  const context = useContext(TeamsContext);
-  if (context === undefined) {
-    throw new Error('useTeams must be used within a TeamsProvider');
-  }
-  return context;
+    const getTeamMetrics = async (teamId: string, projectId: string) => {
+        setLoading(true);
+        try {
+            const response = await fetch(`${apiURL}/projects/${projectId}/teams/${teamId}/metrics`);
+            if (!response.ok) {
+                throw new Error("Failed to fetch team metrics");
+            }
+            const metrics = await response.json();
+            console.log('Métricas recibidas:', {
+                rawResponse: metrics,
+                parsedMetrics: {
+                    velocity: metrics.velocity,
+                    mood: metrics.mood,
+                    tasksCompleted: metrics.tasks_completed, // Nota el snake_case
+                    tasksInProgress: metrics.tasks_in_progress,
+                    avgStoryTime: metrics.avg_story_time,
+                    sprintProgress: metrics.sprint_progress
+                }
+            });
+            
+            setTeamMetrics({
+                velocity: metrics.velocity,
+                mood: metrics.mood,
+                tasksCompleted: metrics.tasks_completed,
+                tasksInProgress: metrics.tasks_in_progress,
+                avgStoryTime: metrics.avg_story_time,
+                sprintProgress: metrics.sprint_progress
+            });
+        } catch (err) {
+          console.error("Error fetching team metrics:", err);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+    const createTeam = async (
+        team: { name: string; description: string; projectId: string },
+        members: string[]
+    ) => {
+        setLoading(true);
+        setError(null);
+
+        try {
+        const response = await fetch(`${apiURL}/projects/${team.projectId}/teams`, {
+            method: "POST",
+            headers: {
+            "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+            ...team,
+            members,
+            }),
+        });
+        if (!response.ok) {
+            throw new Error("Failed to create team");
+        }
+        const newTeam = await response.json();
+        setTeams((prev) => [...prev, newTeam]);
+        return newTeam;
+        } catch (err) {
+        setError(err instanceof Error ? err.message : "An unknown error occurred");
+        throw err;
+        } finally {
+        setLoading(false);
+        }
+    };
+
+    const updateTeam = async (
+        teamId: string,
+        team: { name?: string; description?: string; members?: string[] },
+        projectId: string
+    ) => {
+        setLoading(true);
+        setError(null);
+        try {
+        const response = await fetch(`${apiURL}/projects/${projectId}/teams/${teamId}`, {
+            method: "PUT",
+            headers: {
+            "Content-Type": "application/json",
+            },
+            body: JSON.stringify(team),
+        });
+        if (!response.ok) {
+            throw new Error("Failed to update team");
+        }
+        const updatedTeam = await response.json();
+        setTeams((prev) =>
+            prev.map((t) => (t.id === teamId ? updatedTeam : t))
+        );
+        if (currentTeam?.id === teamId) {
+            setCurrentTeam(updatedTeam);
+        }
+        } catch (err) {
+        setError(err instanceof Error ? err.message : "An unknown error occurred");
+        throw err;
+        } finally {
+        setLoading(false);
+        }
+    };
+
+    const deleteTeam = async (teamId: string, projectId: string) => {
+        setLoading(true);
+        setError(null);
+        try {
+        const response = await fetch(`${apiURL}/projects/${projectId}/teams/${teamId}`, {
+            method: "DELETE",
+        });
+        if (!response.ok) {
+            throw new Error("Failed to delete team");
+        }
+        setTeams((prev) => prev.filter((team) => team.id !== teamId));
+        if (currentTeam?.id === teamId) {
+            setCurrentTeam(null);
+        }
+        } catch (err) {
+        setError(err instanceof Error ? err.message : "An unknown error occurred");
+        throw err;
+        } finally {
+        setLoading(false);
+        }
+    };
+
+    return (
+        <TeamsContext.Provider
+        value={{
+            teams,
+            currentTeam,
+            teamMetrics,
+            loading,
+            error,
+            fetchTeams,
+            fetchTeam,
+            getTeamMetrics,
+            createTeam,
+            updateTeam,
+            deleteTeam,
+        }}
+        >
+        {children}
+        </TeamsContext.Provider>
+    );
+    };
+
+    export const useTeams = () => {
+    const context = useContext(TeamsContext);
+    if (context === undefined) {
+        throw new Error("useTeams must be used within a TeamsProvider");
+    }
+    return context;
 };

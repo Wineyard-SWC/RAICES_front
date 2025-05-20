@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useTeams } from "@/contexts/teamscontext";
 
 type TeamDetailsViewProps = {
@@ -11,14 +11,17 @@ type TeamDetailsViewProps = {
 const TeamDetailsView = ({ teamId }: TeamDetailsViewProps) => {
   const router = useRouter();
   const { currentTeam, fetchTeam, teamMetrics, getTeamMetrics } = useTeams();
+  const projectId = localStorage.getItem("currentProjectId")
 
   useEffect(() => {
-    fetchTeam(teamId);
-    getTeamMetrics(teamId);
-  }, [teamId]);
+    if (teamId && projectId) {
+      fetchTeam(teamId, projectId);
+      getTeamMetrics(teamId, projectId);  
+    }
+  }, [teamId, projectId]);
 
   const handleGoBack = () => {
-    router.push('/team');
+    router.push(`/team?projectId=${projectId}`);
   };
 
   if (!currentTeam) {
