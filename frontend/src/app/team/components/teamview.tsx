@@ -14,16 +14,14 @@ type TabState = {
 const TeamsView = () => {
   const router = useRouter();
   const { teams, loading, error, fetchTeams, deleteTeam } = useTeams();
-  const [activeTab, setActiveTab] = useState<TabState>({});
+  const [activeTab, setActiveTab] = useState<Record<string, string>>({});
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredTeams, setFilteredTeams] = useState(teams);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedTeam, setSelectedTeam] = useState<any>(null);
-  const { projectId } = useParams(); 
-
-  
+  const [selectedTeam, setSelectedTeam] = useState<any>(null); 
+  const projectId = localStorage.getItem("currentProjectId")
 
   // Initialize tabs
   useEffect(() => {
@@ -36,8 +34,10 @@ const TeamsView = () => {
 
   // Fetch teams on mount
   useEffect(() => {
-    fetchTeams();
-  }, []);
+    if (projectId) {
+      fetchTeams(projectId);
+    }
+  }, [projectId]);
 
   // Filter teams based on search term
   useEffect(() => {
@@ -73,8 +73,8 @@ const TeamsView = () => {
   };
 
   const confirmDelete = async () => {
-    if (selectedTeam) {
-      await deleteTeam(selectedTeam.id);
+    if (selectedTeam && projectId) {
+      await deleteTeam(selectedTeam.id, projectId);
       setIsDeleteModalOpen(false);
       setSelectedTeam(null);
     }
@@ -275,7 +275,7 @@ const TeamsView = () => {
       <CreateTeamModal 
         isOpen={isCreateModalOpen} 
         onClose={() => setIsCreateModalOpen(false)}
-        projectId={Array.isArray(projectId) ? projectId[0] : projectId || ""} 
+        projectId={projectId || ""} 
       />
       
       {selectedTeam && (
@@ -286,7 +286,10 @@ const TeamsView = () => {
               setIsEditModalOpen(false);
               setSelectedTeam(null);
             }}
-            team={selectedTeam}
+            team={{
+              ...selectedTeam,
+              projectId: projectId || ""
+            }}
           />
           
           <DeleteTeamModal
