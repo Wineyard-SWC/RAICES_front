@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, 
   useState, useCallback, useEffect, useRef } from "react"
-import { TaskColumns, TaskOrStory } from "@/types/taskkanban"
+import { TaskColumns, TaskOrStory, isBug,isTask,isUserStory } from "@/types/taskkanban"
 import { KanbanStatus, Task, TaskFormData } from "@/types/task"
 import { UserStory } from "@/types/userstory"
 import { useTasks } from "@/contexts/taskcontext"
@@ -10,6 +10,9 @@ import { useUserStories } from "@/contexts/saveduserstoriescontext"
 import { useUser } from "./usercontext"
 import { getProjectUserStories } from "@/utils/getProjectUserStories"
 import { getProjectTasks } from "@/utils/postTasks"
+import { getProjectBugs } from "@/utils/getProjectBugs" 
+import { useBugs } from "./bugscontext"
+import { Bug } from "@/types/bug"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
@@ -49,6 +52,7 @@ interface KanbanContextType {
   setCurrentProject: (projectId: string) => void
   updateTaskStatus: (taskId: string, newStatus: KanbanStatus) => Promise<void>
   updateStoryStatus: (storyId: string, newStatus: KanbanStatus) => Promise<void>
+  updateBugStatus: (bugId: string, newStatus: KanbanStatus) => Promise<void>
   deleteTask: (taskId: string) => Promise<void>
   deleteStory: (storyId: string) => Promise<void>
   refreshKanban: () => Promise<void>
@@ -57,6 +61,7 @@ interface KanbanContextType {
   updateTaskComments: (taskId: string, comments: any[]) => Promise<void>
   updateStoryComments: (storyId: string, comments: any[]) => Promise<void>
   updateStory: (story_id: string, storyData: Partial<UserStory>) => Promise<void>
+  updateBug: (bug_id: string, bugData: Partial<Bug>) => Promise<void>
   reset: () => void
 }
 
@@ -78,6 +83,7 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Usar los contextos existentes
   const tasksContext = useTasks()
   const storiesContext = useUserStories()
+  const bugsContext = useBugs();
   const { userId, userData, isLoading: isUserLoading, error: userError } = useUser()
   const [loadingProjectId, setLoadingProjectId] = useState<string | null>(null)
 
@@ -88,10 +94,10 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setIsLoading(false)
     tasksContext.clearAllCache()
     storiesContext.clearAllCache()
+    bugsContext.clearAllCache()
     localStorage.removeItem("currentProjectId")
    }
 
-  // Helper para obtener información del usuario sin dependencias circulares
   const getUserInfo = useCallback((): [string, string] => {
     if (!userId || isUserLoading || userError) {
       return ["", ""]
@@ -99,22 +105,14 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return [userId, userData?.name || ""]
   }, [userId, userData?.name, isUserLoading, userError])
 
-  // Helper para determinar si un item es una Task o Story
-  const isTask = (item: TaskOrStory): item is Task => {
-    return !('acceptanceCriteria' in item) && !('assigned_epic' in item) && 'user_story_id' in item
-  }
-
-  // Convertir assignee desde formato backend (Firestore) a formato TaskFormData
   const convertAssigneeFromBackend = (backendAssignee: any): Workinguser[] => {
     if (!backendAssignee) return []
     
     if (Array.isArray(backendAssignee)) {
       return backendAssignee.map(user => {
         if (typeof user === 'object' && 'id' in user && 'name' in user) {
-          // Formato Firestore: {id: string, name: string}
           return { users: [user.id, user.name] as [string, string] }
         } else if (Array.isArray(user) && user.length >= 2) {
-          // Ya es tupla, convertir a Workinguser
           return { users: [user[0], user[1]] as [string, string] }
         }
         console.warn('Unexpected assignee format:', user)
@@ -125,7 +123,6 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return []
   }
 
-  // Convertir assignee desde formato TaskFormData (Workinguser[]) a backend (Firestore)
   const convertAssigneeToBackend = (frontendAssignee: Workinguser[]): FirestoreAssignee[] => {
     if (!frontendAssignee || !Array.isArray(frontendAssignee)) return []
     
@@ -135,15 +132,6 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }))
   }
 
-  // Helper para convertir entre formatos internos (Task requiere [string, string][], TaskFormData requiere Workinguser[])
-  const convertWorkingusersToTuples = (users: Workinguser[]): [string, string][] => {
-    return users.map(u => u.users);
-  };
-
-  const convertTuplesToWorkingusers = (tuples: [string, string][]): Workinguser[] => {
-    return tuples.map(t => ({ users: t }));
-  };
-  // Convertir tasks array a TaskColumns
   const convertTasksToColumns = useCallback((tasks: Task[]): TaskColumns => {
     const columns: TaskColumns = {
       backlog: [],
@@ -164,21 +152,15 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     tasks.forEach(task => {
       const statusKey = statusMap[task.status_khanban?.toLowerCase().trim() ?? ''] || 'backlog'
       
-      // Asegurar que el formato de assignee sea consistente con el tipo Task
       let processedTask = { ...task }
       
-      // Si task.assignee está en formato Workinguser[], mantenerlo
-      // Si está en otro formato, convertirlo
       if (task.assignee && !Array.isArray(task.assignee)) {
         processedTask.assignee = convertAssigneeFromBackend(task.assignee)
       } else if (task.assignee && Array.isArray(task.assignee) && task.assignee.length > 0) {
-        // Verificar si es array de tuplas o array de Workinguser
         const firstItem = task.assignee[0]
         if (Array.isArray(firstItem)) {
-          // Es array de tuplas, convertir a Workinguser[]
           processedTask.assignee = task.assignee
         }
-        // Si ya es Workinguser[], mantenerlo tal como está
       }
       
       columns[statusKey].push(processedTask as Task)
@@ -188,7 +170,7 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, [])
 
   // Combinar tasks y stories en formato Kanban
-    const combineTasksAndStories = useCallback((tasks: Task[], stories: UserStory[]): TaskColumns => {
+    const combineTasksAndStories = useCallback((tasks: Task[], stories: UserStory[], bugs: Bug[]): TaskColumns => {
     const taskColumns = convertTasksToColumns(tasks)
     
     const statusMap: Record<string, keyof TaskColumns> = {
@@ -205,10 +187,14 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         taskColumns[statusKey].push(story)
     })
 
+    bugs.forEach(bug => {
+      const statusKey = statusMap[bug.status_khanban?.toLowerCase().trim() ?? ''] || 'backlog'
+      taskColumns[statusKey].push(bug)
+    })
+
     return taskColumns
     }, [convertTasksToColumns])
 
-  // Set current project
   const setCurrentProject = useCallback((projectId: string) => {
     setCurrentProjectId(projectId)
     
@@ -220,10 +206,8 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const prepareTaskDataForBackend = (taskData: Partial<TaskFormData>): Partial<BackendTaskFormData> => {
     const cleanData = { ...taskData }
     
-    // Remove properties that should not be sent to the backend
     delete cleanData.id
     
-    // Convert assignee format for backend
     if (cleanData.assignee && Array.isArray(cleanData.assignee)) {
       return {
         ...cleanData,
@@ -237,10 +221,8 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const prepareStoryDataForBackend = (storyData: Partial<UserStory>): Partial<BackendTaskFormData> => {
     const cleanData = { ...storyData }
     
-    // Remove properties that should not be sent to the backend
     delete cleanData.id
     
-    // Convert assignee format for backend
     if (cleanData.assignee && Array.isArray(cleanData.assignee)) {
       return {
         ...cleanData,
@@ -251,24 +233,37 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return cleanData as Partial<BackendTaskFormData>
   }
 
-  // Update task con información de usuario
-  const updateTask = useCallback(async (taskId: string, taskData: Partial<TaskFormData>) => {
+  const prepareBugDataForBackend = (storyData: Partial<Bug>): Partial<BackendTaskFormData> => {
+    const cleanData = { ...storyData }
+    
+    delete cleanData.id
+    
+    if (cleanData.assignee && Array.isArray(cleanData.assignee)) {
+      return {
+        ...cleanData,
+        assignee: convertAssigneeToBackend(cleanData.assignee)
+      }
+    }
+    
+    return cleanData as Partial<BackendTaskFormData>
+  }
+
+  const updateBug = useCallback(async (bug_id: string, bugData: Partial<Bug>) => {
     if (!currentProjectId) return
 
     setError(null)
 
     const updateData = {
-      ...taskData,
-      modified_by: getUserInfo(),
-      date_modified: new Date().toISOString()
+      ...bugData,
     }
-
+    console.log("UPDATE",updateData)
     try {
       // Prepare data for backend
-      const backendData = prepareTaskDataForBackend(updateData)
+      const backendData = prepareBugDataForBackend(updateData)
 
-      // Backend call - using PUT for full task update
-      const response = await fetch(`${API_URL}/projects/${currentProjectId}/tasks/${taskId}`, {
+      console.log(backendData)
+      // Backend call - using PUT for full bug update
+      const response = await fetch(`${API_URL}/bugs/${bug_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(backendData)
@@ -281,11 +276,100 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
 
       // Get the updated task from the response and convert format
-      const updatedTask = await response.json()
+      const updateBug = await response.json()
       // Convert assignee format for the context
-      updatedTask.assignee = convertAssigneeFromBackend(updatedTask.assignee)
+      updateBug.assignee = convertAssigneeFromBackend(updateBug.assignee)
       
       // Optimistic update with properly formatted data
+      const contextUpdate = {
+        ...updateBug,
+      }
+      
+      bugsContext.updateBugInProject(currentProjectId,bug_id, contextUpdate)
+
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to update bug'))
+      console.error('Error updating bug:', err)
+      
+      // Revert optimistic update by fetching fresh data
+      try {
+        const freshData = await getProjectBugs(currentProjectId)
+        bugsContext.setBugsForProject(currentProjectId, freshData)
+      } catch (refreshErr) {
+        console.error('Error refreshing after failed update:', refreshErr)
+      }
+    }
+  }, [currentProjectId, getUserInfo, storiesContext])
+
+  const updateBugStatus = useCallback(async (bugId: string, newStatus: KanbanStatus) => {
+    if (!currentProjectId) return
+
+    setError(null)
+
+    try {
+      const updateData = {
+        status_khanban: newStatus,
+        modifiedAt: new Date().toISOString(),
+        ...(newStatus === 'Done' && { 
+          finishedAt: new Date().toISOString()
+        })
+      }
+      
+      bugsContext.updateBugInProject(currentProjectId, bugId, updateData)
+
+      const response = await fetch(`${API_URL}/projects/${currentProjectId}/bugs/${bugId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          status_khanban: newStatus
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update task status')
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to update task status'))
+      console.error('Error updating task status:', err)
+      
+      try {
+        const freshData = await getProjectBugs(currentProjectId)
+        bugsContext.setBugsForProject(currentProjectId, freshData)
+      } catch (refreshErr) {
+        console.error('Error refreshing after failed update:', refreshErr)
+      }
+    }
+  }, [currentProjectId, bugsContext])
+
+  const updateTask = useCallback(async (taskId: string, taskData: Partial<TaskFormData>) => {
+    if (!currentProjectId) return
+
+    setError(null)
+
+    const updateData = {
+      ...taskData,
+      modified_by: getUserInfo(),
+      date_modified: new Date().toISOString()
+    }
+
+    try {
+      const backendData = prepareTaskDataForBackend(updateData)
+
+      const response = await fetch(`${API_URL}/projects/${currentProjectId}/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(backendData)
+      })
+
+      if (!response.ok) {
+        const errorData = await response.text()
+        console.error('Backend error:', errorData)
+        throw new Error(`Failed to update task: ${response.status} ${errorData}`)
+      }
+
+      const updatedTask = await response.json()
+      updatedTask.assignee = convertAssigneeFromBackend(updatedTask.assignee)
+      
       const contextUpdate = {
         ...updatedTask,
         modified_by: updateData.modified_by as [string, string],
@@ -298,7 +382,6 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setError(err instanceof Error ? err : new Error('Failed to update task'))
       console.error('Error updating task:', err)
       
-      // Revert optimistic update by fetching fresh data
       try {
         const freshData = await getProjectTasks(currentProjectId)
         tasksContext.setTasksForProject(currentProjectId, freshData)
@@ -308,27 +391,23 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [currentProjectId, getUserInfo, tasksContext])
 
-  // Update task comments - Fixed to send proper data structure
   const updateTaskComments = useCallback(async (taskId: string, comments: any[]) => {
     if (!currentProjectId) return
 
     setError(null)
 
     try {
-      // First, try the comments endpoint (POST for adding new comment)
       const response = await fetch(`${API_URL}/projects/${currentProjectId}/tasks/${taskId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(comments[comments.length - 1]) // Send the latest comment
+        body: JSON.stringify(comments[comments.length - 1]) 
       })
 
       if (response.ok) {
-        // If successful, update the context optimistically
         tasksContext.updateTaskInProject(currentProjectId, taskId, { comments })
         return
       }
 
-      // If comments endpoint doesn't work, get the full task data and update it completely
       const allTasks = tasksContext.getTasksForProject(currentProjectId)
       const task = allTasks.find(t => t.id === taskId)
       
@@ -336,7 +415,6 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         throw new Error('Task not found or is not a task')
       }
 
-      // Create full task data for update - ensuring all required fields are present
       const fullTaskData: TaskFormData = {
         id: task.id,
         title: task.title,
@@ -357,7 +435,6 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         date_completed: task.date_completed || ""
       }
 
-      // Use updateTask with complete data
       await updateTask(taskId, fullTaskData)
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to update comments'))
@@ -365,14 +442,12 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [currentProjectId, tasksContext, updateTask, getUserInfo, isTask])
 
-  // Update task status
   const updateTaskStatus = useCallback(async (taskId: string, newStatus: KanbanStatus) => {
     if (!currentProjectId) return
 
     setError(null)
 
     try {
-      // Optimistic update
       const updateData = {
         status_khanban: newStatus,
         modified_by: getUserInfo() as [string, string],
@@ -386,7 +461,6 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       
       tasksContext.updateTaskInProject(currentProjectId, taskId, updateData)
 
-      // Backend call - using PATCH for status update only
       const response = await fetch(`${API_URL}/projects/${currentProjectId}/tasks/${taskId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -402,7 +476,6 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setError(err instanceof Error ? err : new Error('Failed to update task status'))
       console.error('Error updating task status:', err)
       
-      // Revert optimistic update
       try {
         const freshData = await getProjectTasks(currentProjectId)
         tasksContext.setTasksForProject(currentProjectId, freshData)
@@ -579,10 +652,10 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setError(null)
 
     try {
-      // Find the item to determine if it's a task or story
       const allItems = [
         ...tasksContext.getTasksForProject(currentProjectId),
-        ...storiesContext.getUserStoriesForProject(currentProjectId)
+        ...storiesContext.getUserStoriesForProject(currentProjectId),
+        ...bugsContext.getBugsForProject(currentProjectId)
       ]
       
       const item = allItems.find(i => i.id === taskId)
@@ -591,25 +664,22 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
 
       if (isTask(item)) {
-        // It's a task
         tasksContext.removeTaskFromProject(currentProjectId, taskId)
-
-        const response = await fetch(`${API_URL}/projects/${currentProjectId}/tasks/${taskId}`, {
-          method: 'DELETE'
-        })
-
-        if (!response.ok) {
-          throw new Error('Failed to delete task')
-        }
-      } else {
-        // It's a story - use deleteStory instead
+        await fetch(`${API_URL}/projects/${currentProjectId}/tasks/${taskId}`, { method: 'DELETE' })
+      } 
+      else if (isUserStory(item)) {
         await deleteStory(taskId)
+      } 
+      else if (isBug(item)) {
+        bugsContext.removeBugFromProject(currentProjectId, taskId)
+        await fetch(`${API_URL}/bugs/${taskId}`, { method: 'DELETE' })
       }
+
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to delete item'))
       console.error('Error deleting item:', err)
     }
-  }, [currentProjectId, tasksContext, storiesContext])
+  }, [currentProjectId, tasksContext, storiesContext, bugsContext])
 
   // Delete story con optimistic updates
   const deleteStory = useCallback(async (storyId: string) => {
@@ -713,6 +783,16 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [storiesContext, loadingProjectId])
 
+   const refreshBugsForProject = useCallback(async (projectId: string) => {
+    if (loadingProjectId === projectId) return
+    try {
+      await bugsContext.loadBugsIfNeeded(projectId, getProjectBugs, 1000 * 60 * 5)
+    } catch (err) {
+      console.error('Error refreshing bugs:', err)
+      setError(err instanceof Error ? err : new Error('Failed to refresh bugs'))
+    }
+  }, [bugsContext, loadingProjectId])
+
   // Refresh kanban data
   const refreshKanban = useCallback(async () => {
     if (!currentProjectId) return
@@ -723,14 +803,16 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       await Promise.all([
         refreshTasksForProject(currentProjectId),
-        refreshStoriesForProject(currentProjectId)
+        refreshStoriesForProject(currentProjectId),
+        refreshBugsForProject(currentProjectId)
+
       ])
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to refresh kanban'))
     } finally {
       setIsLoading(false)
     }
-  }, [currentProjectId, refreshTasksForProject, refreshStoriesForProject])
+  }, [currentProjectId, refreshTasksForProject, refreshStoriesForProject,refreshBugsForProject])
 
 
 
@@ -738,7 +820,8 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const tasks = currentProjectId 
     ? combineTasksAndStories(
         tasksContext.getTasksForProject(currentProjectId),
-        storiesContext.getUserStoriesForProject(currentProjectId)
+        storiesContext.getUserStoriesForProject(currentProjectId),
+        bugsContext.getBugsForProject(currentProjectId)
       )
     : {
         backlog: [],
@@ -771,6 +854,8 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         updateTaskComments,
         updateStoryComments,
         updateStory,
+        updateBug,
+        updateBugStatus,
         reset,
       }}
     >
