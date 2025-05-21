@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Project } from "@/types/project";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-export const useProjects = (userId: string | null) => {
+export const useProjects = (userId: string | undefined) => {
     const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(false);
 

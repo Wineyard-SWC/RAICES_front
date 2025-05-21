@@ -16,19 +16,23 @@ import { useKanban } from "@/contexts/unifieddashboardcontext"
 export default function ProjectsPage() {
   // Obtén el userId desde el contexto de usuario
   const { userId, setUserId } = useUser()
+          
 
   // Si no se tiene el userId, como fallback lo recuperamos del localStorage
   useEffect(() => {
     if (!userId) {
       const storedUserId = localStorage.getItem("userId")
       if (storedUserId) {
-        setUserId(storedUserId)
+        setUserId(storedUserId)  
+
       }
     }
-  }, [userId, setUserId])
+  }, [userId, setUserId])  
+  
+  const { projects: fetchedProjects, loading } = useProjects(userId || undefined)
+
 
   // Utiliza el hook para traer los proyectos del usuario
-  const { projects: fetchedProjects, loading } = useProjects(userId)
   const { createProject, loading: creatingProject } = useCreateProject(userId)
   const {setCurrentProject} = useKanban();
   // Estados para búsqueda y filtro
