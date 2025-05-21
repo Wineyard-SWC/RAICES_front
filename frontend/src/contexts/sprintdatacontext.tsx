@@ -150,10 +150,8 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
 
     try {
       const url = `${apiURL}/api/sprints/comparison?projectId=${project_id}`
-      console.log("Fetching from:", url)
       const response = await fetch(url)
       const data = await response.json()
-      console.log("Received sprint comparison data:", data)
       setSprintComparison(data)
     } catch (error) {
       console.error("Error fetching sprint comparison:", error)
