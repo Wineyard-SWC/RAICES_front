@@ -17,6 +17,8 @@ import { useSelectedUserStoriesContext } from "@/contexts/selecteduserstories"
 import { useGeneratedTasks } from "@/contexts/generatedtaskscontext"
 import { registerAvatarUser } from '@/utils/Avatar/userConfig';
 import { useInitializeUserRoles } from '@/hooks/usePostDefaultRoles'; // Importar inicialización de roles
+import { useProjectUsers } from '@/contexts/ProjectusersContext';
+import { useUserPermissions } from '@/contexts/UserPermissions';
 
 export const useAuth = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -30,6 +32,8 @@ export const useAuth = () => {
   const { resetAvatar, fetchAvatar } = useAvatar(); // Para cargar datos de avatar
   const { fetchUserRoles, resetRoles } = useUserRoles(); // Para cargar roles
   const { initializeUserRoles } = useInitializeUserRoles(); // Para inicializar roles
+  const { clearAllCache } = useProjectUsers(); // Añadir el hook para ProjectUsers
+  const { clearPermissionsCache } = useUserPermissions(); // Añadir este hook para los permisos de usuario
   
   // Contextos para reset de datos
   const {setRequirements} = useRequirementContext()
@@ -287,8 +291,13 @@ export const useAuth = () => {
       // Limpiar datos de avatar y roles
       resetAvatar();
       resetRoles(); 
-
       
+      // Limpiar datos de usuarios de proyectos
+      clearAllCache();
+      
+      // Limpiar caché de permisos de usuario
+      clearPermissionsCache();
+
       router.push('/login');
     } catch (err: any) {
       setError('Error during logout: ' + err.message);

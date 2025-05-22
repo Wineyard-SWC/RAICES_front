@@ -57,7 +57,7 @@ export const useCreateProject = (userId: string | null) => {
         body: JSON.stringify({
           userRef: userId,          // instead of userId, use userRef
           projectRef: newProject.id, // instead of projectId, use projectRef
-          role: "owner",
+          role: "Owner",
           joinedAt: new Date().toISOString(), // include joinedAt
         }),
       });

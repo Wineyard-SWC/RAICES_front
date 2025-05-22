@@ -6,23 +6,61 @@ import { Button } from "@/components/ui/button"
 import Navbar from "@/components/NavBar"
 import MembersTab from "./components/MembersTab"
 import { useRouter } from "next/navigation"
+import { useUserRoles } from "@/contexts/userRolesContext"
+import { useProjectUsers } from "@/contexts/ProjectusersContext"
 
 export default function MemberSettingsPage() {
-  const router = useRouter()
+  const router = useRouter();
+  const { loadUsersIfNeeded, isLoading: usersLoading } = useProjectUsers();
+  const { fetchUserRoles, isLoading: rolesLoading } = useUserRoles();
+  const [isLoading, setIsLoading] = useState(true);
   
-  // Verificar si hay un proyecto seleccionado
+  // Verificar si hay un proyecto seleccionado y cargar datos necesarios
   useEffect(() => {
-    const currentProjectId = localStorage.getItem("currentProjectId")
+    console.log("Efecto principal ejecutándose");
+    const currentProjectId = localStorage.getItem("currentProjectId");
+    
     if (!currentProjectId) {
-      // Si no hay proyecto seleccionado, redirigir a la página de proyectos
-      router.push("/projects")
+      console.log("No hay proyecto seleccionado, redirigiendo...");
+      router.push("/projects");
+      return;
     }
-  }, [router])
+    
+    console.log("Proyecto ID encontrado:", currentProjectId);
+    
+    const loadData = async () => {
+      try {
+        console.log("Iniciando carga de datos");
+        
+        // Cargar roles de usuario
+        console.log("Cargando roles de usuario...");
+        await fetchUserRoles();
+        console.log("Roles cargados exitosamente");
+        
+        // Cargar usuarios del proyecto
+        console.log("Cargando usuarios del proyecto...");
+        await loadUsersIfNeeded(currentProjectId);
+        console.log("Usuarios cargados exitosamente");
+        
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error cargando datos:", error);
+        setIsLoading(false);
+      }
+    };
+    
+    loadData();
+    
+    // Limpieza al desmontar el componente
+    return () => {
+      console.log("Componente desmontado");
+    };
+  }, [router]); // No incluimos las funciones para evitar re-renderizados
   
   // Función para manejar el botón de regreso
   const handleGoBack = () => {
-    router.back() // Esto devuelve a la página anterior del historial
-  }
+    router.back();
+  };
   
   return (
     <div className="min-h-screen bg-[#ebe5eb]/30">
@@ -34,7 +72,6 @@ export default function MemberSettingsPage() {
             <h1 className="text-4xl font-bold text-[#1e1e1e]">Member Settings</h1>
             <p className="mt-2 text-[#694969]">Manage project members and their roles</p>
           </div>
-          {/* Reemplazar el Link con un Button que use router.back() */}
           <Button 
             variant="outline" 
             className="flex items-center gap-2"
@@ -50,9 +87,15 @@ export default function MemberSettingsPage() {
             <h2 className="text-2xl font-semibold text-[#4a2b4a]">Project Members</h2>
           </div>
           
-          <MembersTab />
+          {isLoading ? (
+            <div className="flex justify-center p-8">
+              <div className="w-8 h-8 border-4 border-[#4a2b4a] border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : (
+            <MembersTab />
+          )}
         </div>
       </div>
     </div>
-  )
+  );
 }

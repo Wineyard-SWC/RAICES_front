@@ -6,9 +6,17 @@ import { useTeams } from "@/contexts/teamscontext";
 import { CreateTeamModal } from "./CreateTeamModal";
 import { EditTeamModal } from "./EditTeamModal";
 import { DeleteTeamModal } from "./DeleteTeamModal";
+// Importar el hook de permisos
+import { useUserPermissions } from "@/contexts/UserPermissions";
+import { useUser } from "@/contexts/usercontext";
 
 type TabState = {
   [key: string]: string;
+};
+
+// Definir constantes de permisos
+const PERMISSIONS = {
+  TEAM_MANAGE: 1 << 8, // Bit 8 para Team Management
 };
 
 const TeamsView = () => {
@@ -21,7 +29,21 @@ const TeamsView = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<any>(null); 
-  const projectId = localStorage.getItem("currentProjectId")
+  const projectId = localStorage.getItem("currentProjectId");
+  
+  // Añadir contexto de usuario y permisos
+  const { userId } = useUser();
+  const { hasPermission, loadUserPermissionsIfNeeded } = useUserPermissions();
+  
+  // Verificar si el usuario tiene permiso para gestionar equipos
+  const canManageTeams = hasPermission(PERMISSIONS.TEAM_MANAGE);
+  
+  // Cargar permisos al iniciar
+  useEffect(() => {
+    if (userId) {
+      loadUserPermissionsIfNeeded(userId);
+    }
+  }, [userId, loadUserPermissionsIfNeeded]);
 
   // Initialize tabs
   useEffect(() => {
@@ -62,14 +84,29 @@ const TeamsView = () => {
     }));
   };
 
+  // Modificar la función para abrir el modal considerando permisos
+  const handleCreateTeam = () => {
+    if (canManageTeams) {
+      setIsCreateModalOpen(true);
+    } else {
+      // Opcional: mostrar un mensaje de que no tiene permiso
+      console.log("No tienes permiso para gestionar equipos");
+    }
+  };
+
+  // Modificar las funciones de editar y eliminar considerando permisos
   const handleEditTeam = (team: any) => {
-    setSelectedTeam(team);
-    setIsEditModalOpen(true);
+    if (canManageTeams) {
+      setSelectedTeam(team);
+      setIsEditModalOpen(true);
+    }
   };
 
   const handleDeleteTeam = (team: any) => {
-    setSelectedTeam(team);
-    setIsDeleteModalOpen(true);
+    if (canManageTeams) {
+      setSelectedTeam(team);
+      setIsDeleteModalOpen(true);
+    }
   };
 
   const confirmDelete = async () => {
@@ -160,10 +197,13 @@ const TeamsView = () => {
       <div className="container mx-auto px-4">
         <h1 className="text-4xl font-bold text[1e1e1e]">Teams</h1>
         <p className="text-lg font-semibold text-[#694969] mt-2 mb-2">
-          Manage your teams and track their current contribution
+          {canManageTeams 
+            ? "Manage your teams and track their current contribution"
+            : "View teams and track their current contribution"
+          }
         </p>
 
-        {/* Search and Create Team Section */}
+        {/* Search and Create Team Section - Botón condicional */}
         <div className="flex justify-between items-center mt-6">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -179,15 +219,19 @@ const TeamsView = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <button 
-            className="flex items-center px-4 py-2 bg-[#4a2b4a] text-white rounded-md"
-            onClick={() => setIsCreateModalOpen(true)}
-          >
-            <svg className="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            Create Team
-          </button>
+          
+          {/* Botón Create Team - Solo visible con permisos */}
+          {canManageTeams && (
+            <button 
+              className="flex items-center px-4 py-2 bg-[#4a2b4a] text-white rounded-md"
+              onClick={handleCreateTeam}
+            >
+              <svg className="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Create Team
+            </button>
+          )}
         </div>
 
         {/* Teams Grid */}
@@ -200,30 +244,34 @@ const TeamsView = () => {
             >
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-semibold">Team - {team.name}</h2>
-                <div className="flex space-x-2">
-                  <button 
-                    className="text-gray-500 hover:text-[#4a2b4a]"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEditTeam(team);
-                    }}
-                  >
-                    <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                    </svg>
-                  </button>
-                  <button 
-                    className="text-gray-500 hover:text-red-500"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteTeam(team);
-                    }}
-                  >
-                    <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                </div>
+                
+                {/* Botones de editar/borrar - Solo visibles con permisos */}
+                {canManageTeams && (
+                  <div className="flex space-x-2">
+                    <button 
+                      className="text-gray-500 hover:text-[#4a2b4a]"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditTeam(team);
+                      }}
+                    >
+                      <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
+                    <button 
+                      className="text-gray-500 hover:text-red-500"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteTeam(team);
+                      }}
+                    >
+                      <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
               </div>
               
               {/* Tabs */}
@@ -326,7 +374,7 @@ const TeamsView = () => {
         </div>
       </div>
 
-      {/* Modals */}
+      {/* Modals - No cambiar, solo ajustar su apertura condicional como ya hicimos */}
       <CreateTeamModal 
         isOpen={isCreateModalOpen} 
         onClose={() => setIsCreateModalOpen(false)}

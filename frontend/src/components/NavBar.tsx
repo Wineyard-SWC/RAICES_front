@@ -10,6 +10,7 @@ import { useUser } from "@/contexts/usercontext"
 import { useProjects } from "@/hooks/useProjects"
 import { useAvatar } from "@/contexts/AvatarContext"
 import AvatarProfileIcon from "./Avatar/AvatarDisplay"
+import { useUserPermissions } from "@/contexts/UserPermissions"
 
 type NavbarProps = {
   projectSelected: boolean
@@ -19,6 +20,11 @@ type NavbarProps = {
 // Definimos las pestañas como constantes para evitar errores de tipeo
 const TABS = ["Dashboard", "Sprints", "Roadmap", "Team", "Generate"] as const
 type TabType = (typeof TABS)[number]
+
+// Definir constantes de permisos
+const PERMISSIONS = {
+  REQ_MANAGE: 1 << 2, // Permiso para gestionar items (epics, stories, tasks)
+};
 
 // Mapa de rutas a pestañas para determinar la pestaña activa basada en la ruta
 const PATH_TO_TAB: Record<string, TabType> = {
@@ -51,17 +57,50 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
   const { projects, loading } = useProjects(userId)
   const recentProjects = projects.slice(0, 3)
   
+  // Añadir contexto de permisos
+  const { hasPermission } = useUserPermissions()
+  
+  // Determinar si el usuario puede ver la pestaña de Generate
+  const canManageItems = hasPermission(PERMISSIONS.REQ_MANAGE)
+  
+  // Filtrar las pestañas según permisos
+  const visibleTabs = TABS.filter(tab => {
+    // Ocultar Generate si no tiene permisos
+    if (tab === "Generate" && !canManageItems) {
+      return false;
+    }
+    return true;
+  });
+
   // Efecto para sincronizar el estado activo con la ruta actual
   useEffect(() => {
     // Primero intentamos obtener la pestaña del parámetro de consulta
     const tabFromQuery = searchParams.get("tab") as TabType | null
 
-    if (tabFromQuery && TABS.includes(tabFromQuery)) {
+    // Si la pestaña es Generate pero no tiene permiso, redirigir al Dashboard
+    if (tabFromQuery === "Generate" && !canManageItems) {
+      const currentProjectId = localStorage.getItem("currentProjectId");
+      if (currentProjectId) {
+        router.push(`/dashboard?projectId=${currentProjectId}`);
+        return;
+      }
+    }
+
+    if (tabFromQuery && TABS.includes(tabFromQuery) && (tabFromQuery !== "Generate" || canManageItems)) {
       setActiveTab(tabFromQuery)
     } else {
       // Si no hay parámetro de consulta, determinamos la pestaña basada en la ruta
       const tabFromPath = PATH_TO_TAB[pathname] || "Dashboard"
-      setActiveTab(tabFromPath)
+      
+      // Si la ruta es de generación pero no tiene permiso, no actualizar la pestaña activa
+      if ((tabFromPath === "Generate" && !canManageItems)) {
+        const currentProjectId = localStorage.getItem("currentProjectId");
+        if (currentProjectId) {
+          router.push(`/dashboard?projectId=${currentProjectId}`);
+        }
+      } else {
+        setActiveTab(tabFromPath)
+      }
     }
 
     // Verificamos si hay un proyecto seleccionado en localStorage
@@ -78,7 +117,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
     if (!hasSelectedProject && pathname !== "/projects" && pathname !== "/" && pathname !== "/settings") {
       router.push("/projects")
     }
-  }, [pathname, searchParams, router])
+  }, [pathname, searchParams, router, canManageItems])
 
   // Efecto para cerrar los menús desplegables al hacer clic fuera de ellos
   useEffect(() => {
@@ -117,6 +156,12 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
     if (!projectSelected) {
       return
     }
+    
+    // Verificar permisos para Generate
+    if (tab === "Generate" && !canManageItems) {
+      console.log("No tienes permiso para gestionar ítems");
+      return;
+    }
 
     // Para las pestañas, navegamos a la ruta correspondiente
     const currentProjectId = localStorage.getItem("currentProjectId")
@@ -146,7 +191,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
         if (currentProjectId) {
           router.push(`/generate?projectId=${currentProjectId}`)
         }
-        break
+        break;
     }
 
     // Actualizamos el estado activo
@@ -252,7 +297,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
       {/* Tabs */}
       <div className="absolute left-1/2 transform -translate-x-1/2">
         <div className="flex space-x-4">
-          {TABS.map((tab) => {
+          {visibleTabs.map((tab) => {
             const isGenerate = tab === "Generate"
 
             if (isGenerate) {

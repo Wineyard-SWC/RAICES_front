@@ -67,8 +67,8 @@ export default function AvatarPage() {
           const url = event.data.url;
           setAvatarUrl(url);
           
-          // Extraer el género de la respuesta del metadato en lugar del bodyType
-          let gender = "masculine"; // Valor por defecto
+          // Variable local para guardar el género detectado
+          let detectedGender = "masculine"; // Valor por defecto
           
           try {
             // Hacer una petición al endpoint de metadatos
@@ -78,29 +78,36 @@ export default function AvatarPage() {
 
             console.log("Metadata fetched:", metadata);
             
-            // El género está disponible en los metadatos
+            // Determinar el género basado en los metadatos
             if (metadata && metadata.outfitGender) {
-              gender = metadata.outfitGender === "male" ? "masculine" : "feminine";
+              // Normalizar el género para nuestro formato interno
+              detectedGender = metadata.outfitGender.toLowerCase() === "female" ? "feminine" : 
+                             metadata.outfitGender.toLowerCase() === "feminine" ? "feminine" : "masculine";
             }
+
+            detectedGender = metadata.outfitGender;
             
-            console.log("Detected gender from metadata:", gender);
-            // Actualizar el estado para pasarlo correctamente al componente WelcomeAnimation
-            setSelectedGender(gender);
+            console.log("Género detectado y normalizado:", detectedGender);
           } catch (e) {
             console.error("Error fetching avatar metadata, using default gender:", e);
           }
           
-          console.log("Avatar exported with gender:", gender);
+          // Actualizar el estado con el género detectado
+          setSelectedGender(detectedGender);
+          
+          console.log("Avatar exported with normalized gender:", detectedGender);
           
           try {
-            // Actualizar tanto el avatar como el género en la base de datos
-            await updateAvatarAndGender(storedUserId, url, gender);
+            // Actualizar base de datos (esto puede ser asíncrono y no bloqueante)
+            await updateAvatarAndGender(storedUserId, url, detectedGender);
             
-            // También actualizar en el contexto para usar en toda la app
-            updateAvatarUrl(url, gender);
+            // Actualizar contexto (esto también es asíncrono)
+            updateAvatarUrl(url, detectedGender);
           } catch (e) {
             console.error('Error updating profile:', e);
           }
+          
+          // Avanzar al siguiente paso con el género ya detectado y normalizado
           setStep('welcome');
         }}
       />
@@ -134,17 +141,19 @@ export default function AvatarPage() {
             />
           </motion.div>
         ) : (
-          <motion.div
-            key="welcome"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            <WelcomeAnimation 
-              avatarUrl={avatarUrl} 
-              gender={selectedGender} 
-            />
-          </motion.div>
+          !isLoading && (
+            <motion.div
+              key="welcome"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              <WelcomeAnimation 
+                avatarUrl={avatarUrl} 
+                gender={selectedGender} // El género se pasa directamente del estado local
+              />
+            </motion.div>
+          )
         )}
       </AnimatePresence>
     );

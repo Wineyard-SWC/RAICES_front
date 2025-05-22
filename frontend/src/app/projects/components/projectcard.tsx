@@ -14,6 +14,7 @@ import { useSelectedRequirementContext } from "@/contexts/selectedrequirements"
 import { useSelectedEpicsContext } from "@/contexts/selectedepics"
 import { useSelectedUserStoriesContext } from "@/contexts/selecteduserstories"
 import { useGeneratedTasks } from "@/contexts/generatedtaskscontext"
+import { useUserPermissions } from "@/contexts/UserPermissions"
 
 import type { Project } from "@/types/project"
 import { cardStyles, statusColor, priorityColor } from "../styles/project.module"
@@ -26,6 +27,7 @@ import InviteCodeModal from "./invite_code_modal"
 import EditProjectModal from "./edit_project_modal"
 import DeleteProjectModal from "./delete_project_modal"
 import LeaveProjectModal from "./leave_project_modal"
+import { useProjectUsers } from "@/contexts/ProjectusersContext"
 
 
 // Modales
@@ -64,6 +66,8 @@ export default function ProjectCard({
   const router = useRouter()
   const { userId } = useUser()
   const { isOwner, isMember } = useUserProjectRole(userId, id)
+  const { loadUsersIfNeeded } = useProjectUsers()
+  const { setCurrentProject, loadUserPermissionsIfNeeded } = useUserPermissions()
 
   const [menuOpen, setMenuOpen] = useState(false)
   const [showInviteModal, setShowInviteModal] = useState(false)
@@ -79,7 +83,7 @@ export default function ProjectCard({
   const {setUserStories} = useUserStoryContext();
   const {setSelectedUserStoriesIds} = useSelectedUserStoriesContext();
   const {clearTasks} = useGeneratedTasks()
-  const {setCurrentProject, refreshKanban} = useKanban();
+  const {refreshKanban} = useKanban();
 
   // Para formatear la fecha en tu card
   const formatDate = (dateStr: string) => {
@@ -96,10 +100,32 @@ export default function ProjectCard({
     if ((e.target as HTMLElement).closest(".project-menu")) {
       return
     }
+    
+    // Guardar el ID del proyecto actual en localStorage
     localStorage.setItem("currentProjectId", id)
 
-    console.log("id en project card",id)
+    console.log("id en project card", id)
+    
+    // Configurar el proyecto actual en el contexto de Kanban
     setCurrentProject(id)
+    
+    // Cargar los usuarios del proyecto seleccionado
+    loadUsersIfNeeded(id).then(users => {
+      console.log(`Cargados ${users.length} usuarios para el proyecto ${id}`);
+    }).catch(err => {
+      console.error("Error al cargar los usuarios del proyecto:", err);
+    });
+    
+    // Cargar los permisos del usuario para este proyecto
+    if (userId) {
+      loadUserPermissionsIfNeeded(userId).then(() => {
+        console.log(`Permisos cargados para el usuario en el proyecto ${id}`);
+        console.log("Permisos bitmask son ", localStorage.getItem("userPermissionsBitmask"));
+      }).catch(err => {
+        console.error("Error al cargar los permisos del usuario:", err);
+      });
+    }
+    
     refreshKanban()
     setRequirements([])
     setSelectedIds([])
