@@ -1,111 +1,104 @@
 "use client";
 
-/*
- * TEAMS OVERVIEW COMPONENT
- * 
- * This component displays a list of teams with basic information and allows navigation
- * to individual team detail pages.
- * 
- * API INTEGRATION NOTES:
- * - Replace hardcoded team data with API calls
- * - Expected endpoints:
- *   1. GET /api/teams - List all teams with basic info
- *   2. POST /api/teams - Create a new team (for the Create Team button)
- *   3. GET /api/teams/search?query={searchTerm} - Search teams by name
- * 
- * - All sections marked with "HARDCODED DATA" comments should be replaced with
- *   data from these API endpoints
- */
-
-import { useState } from "react";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-
-// Define types for team members and teams
-type TeamMember = {
-  id: number;
-  name: string;
-  role: string;
-  tasksCompleted: number;
-  currentTasks: number;
-  availability: number;
-};
-
-type FrontendTeam = {
-  id: number;
-  name: string;
-  description: string;
-  members: number;
-  completed: number;
-  upcoming: number;
-};
-
-type BackendTeam = {
-  id: number;
-  name: string;
-  members: TeamMember[];
-};
-
-type Team = FrontendTeam | BackendTeam;
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useTeams } from "@/contexts/teamscontext";
+import { CreateTeamModal } from "./CreateTeamModal";
+import { EditTeamModal } from "./EditTeamModal";
+import { DeleteTeamModal } from "./DeleteTeamModal";
 
 type TabState = {
-  [key: number]: string;
+  [key: string]: string;
 };
 
 const TeamsView = () => {
   const router = useRouter();
-  
-  // Function to navigate to team details page
-  const navigateToTeamDetails = (teamId: number) => {
+  const { teams, loading, error, fetchTeams, deleteTeam } = useTeams();
+  const [activeTab, setActiveTab] = useState<Record<string, string>>({});
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredTeams, setFilteredTeams] = useState(teams);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState<any>(null); 
+  const projectId = localStorage.getItem("currentProjectId")
+
+  // Initialize tabs
+  useEffect(() => {
+    const initialTabs: TabState = {};
+    teams.forEach(team => {
+      initialTabs[team.id] = "overview";
+    });
+    setActiveTab(initialTabs);
+  }, [teams]);
+
+  // Fetch teams on mount
+  useEffect(() => {
+    if (projectId) {
+      fetchTeams(projectId);
+    }
+  }, [projectId]);
+
+  // Filter teams based on search term
+  useEffect(() => {
+    if (searchTerm.trim() === "") {
+      setFilteredTeams(teams);
+    } else {
+      const filtered = teams.filter(team =>
+        team.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredTeams(filtered);
+    }
+  }, [searchTerm, teams]);
+
+  const navigateToTeamDetails = (teamId: string) => {
     router.push(`/team/${teamId}`);
   };
-  // HARDCODED: This would typically come from an API
-  const teams: Team[] = [
-    {
-      id: 1,
-      name: "Frontend Development",
-      description: "Responsible for user interface and experience",
-      members: 5,
-      completed: 105,
-      upcoming: 23
-    },
-    {
-      id: 2,
-      name: "Backend Development",
-      members: [
-        {
-          id: 1,
-          name: "Jorge Castro",
-          role: "Lead Backend Developer",
-          tasksCompleted: 52,
-          currentTasks: 3,
-          availability: 70
-        },
-        {
-          id: 2,
-          name: "Alicia Garza",
-          role: "Backend Developer",
-          tasksCompleted: 25,
-          currentTasks: 1,
-          availability: 90
-        }
-      ]
-    }
-  ];
 
-  // State for active tab (Overview/Members)
-  const [activeTab, setActiveTab] = useState<TabState>({
-    1: "overview", // Team 1 (Frontend) starts with overview tab
-    2: "overview"  // Team 2 (Backend) starts with overview tab
-  });
-
-  // Function to toggle between tabs
-  const toggleTab = (teamId: number, tab: string) => {
+  const toggleTab = (teamId: string, tab: string) => {
     setActiveTab(prev => ({
       ...prev,
       [teamId]: tab
     }));
   };
+
+  const handleEditTeam = (team: any) => {
+    setSelectedTeam(team);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDeleteTeam = (team: any) => {
+    setSelectedTeam(team);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (selectedTeam && projectId) {
+      await deleteTeam(selectedTeam.id, projectId);
+      setIsDeleteModalOpen(false);
+      setSelectedTeam(null);
+    }
+  };
+
+  if (loading && teams.length === 0) {
+    return (
+      <main className="min-h-screen py-10 bg-[#EBE5EB]/30">
+        <div className="container mx-auto px-4">
+          <p>Loading teams...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="min-h-screen py-10 bg-[#EBE5EB]/30">
+        <div className="container mx-auto px-4">
+          <p className="text-red-500">Error: {error}</p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen py-10 bg-[#EBE5EB]/30">
@@ -127,9 +120,14 @@ const TeamsView = () => {
               type="text"
               className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4a2b4a] focus:border-transparent"
               placeholder="Search team name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <button className="flex items-center px-4 py-2 bg-[#4a2b4a] text-white rounded-md">
+          <button 
+            className="flex items-center px-4 py-2 bg-[#4a2b4a] text-white rounded-md"
+            onClick={() => setIsCreateModalOpen(true)}
+          >
             <svg className="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
@@ -139,155 +137,172 @@ const TeamsView = () => {
 
         {/* Teams Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-          {/* Frontend Team Card */}
-          <div 
-            className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
-            onClick={() => navigateToTeamDetails(teams[0].id)}
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">Team - {teams[0].name}</h2>
-              <button className="text-gray-500">
-                <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                </svg>
-              </button>
-            </div>
-            
-            {/* Tabs */}
-            <div className="flex border-b mb-4">
-              <button 
-                className={`py-2 px-4 ${activeTab[1] === 'overview' ? 'border-b-2 border-[#4a2b4a] font-medium' : 'text-gray-500'}`}
-                onClick={() => toggleTab(1, 'overview')}
-              >
-                Overview
-              </button>
-              <button 
-                className={`py-2 px-4 ${activeTab[1] === 'members' ? 'border-b-2 border-[#4a2b4a] font-medium' : 'text-gray-500'}`}
-                onClick={() => toggleTab(1, 'members')}
-              >
-                Members
-              </button>
-            </div>
-
-            {/* Content based on active tab */}
-            {activeTab[1] === 'overview' && (
-              <>
-                <p className="text-sm text-gray-600 mb-6">{(teams[0] as FrontendTeam).description}</p>
-                <div className="flex justify-between items-center">
-                  <div className="flex flex-col items-center">
-                    <div className="p-3 bg-[#ebe5eb] rounded-full mb-2">
-                      <svg className="w-6 h-6 text-[#4a2b4a]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                      </svg>
-                    </div>
-                    <span className="text-2xl font-bold">{(teams[0] as FrontendTeam).members}</span>
-                    <span className="text-xs text-gray-500">Members</span>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <div className="p-3 bg-[#ebe5eb] rounded-full mb-2">
-                      <svg className="w-6 h-6 text-[#4a2b4a]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <span className="text-2xl font-bold">{(teams[0] as FrontendTeam).completed}</span>
-                    <span className="text-xs text-gray-500">Completed</span>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <div className="p-3 bg-[#ebe5eb] rounded-full mb-2">
-                      <svg className="w-6 h-6 text-[#4a2b4a]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <span className="text-2xl font-bold">{(teams[0] as FrontendTeam).upcoming}</span>
-                    <span className="text-xs text-gray-500">Upcoming</span>
-                  </div>
+          {filteredTeams.map((team) => (
+            <div 
+              key={team.id}
+              className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => navigateToTeamDetails(team.id)}
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">Team - {team.name}</h2>
+                <div className="flex space-x-2">
+                  <button 
+                    className="text-gray-500 hover:text-[#4a2b4a]"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditTeam(team);
+                    }}
+                  >
+                    <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </button>
+                  <button 
+                    className="text-gray-500 hover:text-red-500"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteTeam(team);
+                    }}
+                  >
+                    <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
                 </div>
-              </>
-            )}
-
-            {activeTab[1] === 'members' && (
-              <div className="text-center py-8">
-                {/* HARDCODED: This would be populated with actual team members */}
-                <p className="text-gray-500">Members list would appear here</p>
               </div>
-            )}
-          </div>
-
-          {/* Backend Team Card */}
-          <div 
-            className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
-            onClick={() => navigateToTeamDetails(teams[1].id)}
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">Team - {teams[1].name}</h2>
-              <button className="text-gray-500">
-                <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                </svg>
-              </button>
-            </div>
-            
-            {/* Tabs */}
-            <div className="flex border-b mb-4">
-              <button 
-                className={`py-2 px-4 ${activeTab[2] === 'overview' ? 'border-b-2 border-[#4a2b4a] font-medium' : 'text-gray-500'}`}
-                onClick={() => toggleTab(2, 'overview')}
-              >
-                Overview
-              </button>
-              <button 
-                className={`py-2 px-4 ${activeTab[2] === 'members' ? 'border-b-2 border-[#4a2b4a] font-medium' : 'text-gray-500'}`}
-                onClick={() => toggleTab(2, 'members')}
-              >
-                Members
-              </button>
-            </div>
-
-            {/* Content based on active tab */}
-            {activeTab[2] === 'overview' && (
-              <div className="text-center py-8">
-                <p className="text-gray-500">Overview would appear here</p>
+              
+              {/* Tabs */}
+              <div className="flex border-b mb-4">
+                <button 
+                  className={`py-2 px-4 ${activeTab[team.id] === 'overview' ? 'border-b-2 border-[#4a2b4a] font-medium' : 'text-gray-500'}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleTab(team.id, 'overview');
+                  }}
+                >
+                  Overview
+                </button>
+                <button 
+                  className={`py-2 px-4 ${activeTab[team.id] === 'members' ? 'border-b-2 border-[#4a2b4a] font-medium' : 'text-gray-500'}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleTab(team.id, 'members');
+                  }}
+                >
+                  Members
+                </button>
               </div>
-            )}
 
-            {activeTab[2] === 'members' && (
-              <div className="space-y-4">
-                {/* HARDCODED: Team members would come from API */}
-                {((teams[1] as BackendTeam).members).map((member: TeamMember) => (
-                  <div key={member.id} className="bg-gray-50 rounded-md p-4">
-                    <div className="flex items-center">
-                      <div className="relative w-10 h-10 mr-3">
-                        {/* HARDCODED: Using placeholder avatar */}
-                        <div className="w-10 h-10 bg-[#ebe5eb] rounded-full flex items-center justify-center text-[#4a2b4a] font-bold">
-                          {member.name.charAt(0)}
-                        </div>
+              {/* Content based on active tab */}
+              {activeTab[team.id] === 'overview' && (
+                <>
+                  <p className="text-sm text-gray-600 mb-6">{team.description}</p>
+                  <div className="flex justify-between items-center">
+                    <div className="flex flex-col items-center">
+                      <div className="p-3 bg-[#ebe5eb] rounded-full mb-2">
+                        <svg className="w-6 h-6 text-[#4a2b4a]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
                       </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium">{member.name}</h4>
-                        <p className="text-sm text-gray-600">{member.role}</p>
-                        <div className="flex items-center mt-1 text-xs text-gray-500">
-                          <span>{member.tasksCompleted} tasks completed</span>
-                          <span className="mx-2">•</span>
-                          <span>{member.currentTasks} current tasks</span>
-                        </div>
+                      <span className="text-2xl font-bold">{team.members.length}</span>
+                      <span className="text-xs text-gray-500">Members</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <div className="p-3 bg-[#ebe5eb] rounded-full mb-2">
+                        <svg className="w-6 h-6 text-[#4a2b4a]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                       </div>
-                      <div className="text-right">
-                        <div className="inline-block px-2 py-1 rounded-full text-xs font-medium" 
-                          style={{ 
-                            backgroundColor: member.availability >= 80 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(234, 179, 8, 0.1)',
-                            color: member.availability >= 80 ? 'rgb(22, 163, 74)' : 'rgb(202, 138, 4)'
-                          }}>
-                          {member.availability}% available
+                      <span className="text-2xl font-bold">
+                        {team.members.reduce((sum, member) => sum + member.tasksCompleted, 0)}
+                      </span>
+                      <span className="text-xs text-gray-500">Completed</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <div className="p-3 bg-[#ebe5eb] rounded-full mb-2">
+                        <svg className="w-6 h-6 text-[#4a2b4a]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <span className="text-2xl font-bold">
+                        {team.members.reduce((sum, member) => sum + member.currentTasks, 0)}
+                      </span>
+                      <span className="text-xs text-gray-500">Upcoming</span>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {activeTab[team.id] === 'members' && (
+                <div className="space-y-4">
+                  {team.members.map((member) => (
+                    <div key={member.id} className="bg-gray-50 rounded-md p-4">
+                      <div className="flex items-center">
+                        <div className="relative w-10 h-10 mr-3">
+                          <div className="w-10 h-10 bg-[#ebe5eb] rounded-full flex items-center justify-center text-[#4a2b4a] font-bold">
+                            {member.name.charAt(0)}
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium">{member.name}</h4>
+                          <p className="text-sm text-gray-600">{member.role}</p>
+                          <div className="flex items-center mt-1 text-xs text-gray-500">
+                            <span>{member.tasksCompleted} tasks completed</span>
+                            <span className="mx-2">•</span>
+                            <span>{member.currentTasks} current tasks</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="inline-block px-2 py-1 rounded-full text-xs font-medium" 
+                            style={{ 
+                              backgroundColor: member.availability >= 80 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(234, 179, 8, 0.1)',
+                              color: member.availability >= 80 ? 'rgb(22, 163, 74)' : 'rgb(202, 138, 4)'
+                            }}>
+                            {member.availability}% available
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
+
+      {/* Modals */}
+      <CreateTeamModal 
+        isOpen={isCreateModalOpen} 
+        onClose={() => setIsCreateModalOpen(false)}
+        projectId={projectId || ""} 
+      />
+      
+      {selectedTeam && (
+        <>
+          <EditTeamModal
+            isOpen={isEditModalOpen}
+            onClose={() => {
+              setIsEditModalOpen(false);
+              setSelectedTeam(null);
+            }}
+            team={{
+              ...selectedTeam,
+              projectId: projectId || ""
+            }}
+          />
+          
+          <DeleteTeamModal
+            isOpen={isDeleteModalOpen}
+            onClose={() => {
+              setIsDeleteModalOpen(false);
+              setSelectedTeam(null);
+            }}
+            onConfirm={confirmDelete}
+            teamName={selectedTeam.name}
+          />
+        </>
+      )}
     </main>
   );
 };

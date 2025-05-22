@@ -1,6 +1,5 @@
 import DashboardStats from "./dashboard.dashboardstats"
 import { TasksKanban } from "./dashboard.taskskanban"
-import { useBacklogContext } from "@/contexts/backlogcontext"
 
 type Props = {
     onNavigateSprintDetails: () => void;

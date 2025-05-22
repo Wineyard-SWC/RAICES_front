@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react"
 import Navbar from "@/components/NavBar"
-
-import SprintDetailsPage from "./components/sprintdetails/sprintdetails.view"
 import DashboardMainPage from "./components/dashboard/dashboard.view"
 import ProductBacklogPage from "./components/productbacklog/productbacklog.view"
 import CalendarPageView from "./components/sprintcalendar/sprintcalendar.view"
@@ -14,6 +12,7 @@ export default function DashboardPage() {
   const [activeView, setActiveView] = useState<"dashboard" | "details" | "planning" | "calendar">("dashboard")
   const [loading, setLoading] = useState(true)
   const router = useRouter()
+  const currentProjectId = localStorage.getItem("currentProjectId")
 
   useEffect(() => {
     const userId = localStorage.getItem("userId")
@@ -36,19 +35,13 @@ export default function DashboardPage() {
           {/*---------------------------------------DashboardView-----------------------------------------*/}
           {activeView === "dashboard" && (
             <DashboardMainPage 
-              onNavigateSprintDetails={() => setActiveView("details")}
+              onNavigateSprintDetails={() => router.push(`/sprint_details?projectId=${currentProjectId}`)}
               onNavigateCalendar={() => setActiveView("calendar")} 
               onNavigateProductBacklog={() => setActiveView("planning")}
             />
           )}
           {/*---------------------------------------DashboardView-----------------------------------------*/}
-
-          {/*---------------------------------------SprintDetailsView-------------------------------------*/}
-          {activeView === "details" && (
-            <SprintDetailsPage onBack={() => setActiveView("dashboard")} />
-          )}
-          {/*---------------------------------------SprintDetailsView-------------------------------------*/}
-          
+                    
           {/*---------------------------------------SprintCalendarView-------------------------------------*/}
           {activeView === "calendar" && (
             <CalendarPageView onBack={() => setActiveView("dashboard")}/>
@@ -56,10 +49,10 @@ export default function DashboardPage() {
           {/*---------------------------------------SprintCalendarView-------------------------------------*/}
           
         </div>
-        {/*---------------------------------------ProductBacklogView-------------------------------------*/}
-        {activeView === "planning" && (
-          <ProductBacklogPage onBack={() => setActiveView("dashboard")} />
-        )}
+          {/*---------------------------------------ProductBacklogView-------------------------------------*/}
+          {activeView === "planning" && (
+            <ProductBacklogPage onBack={() => setActiveView("dashboard")} />
+          )}
         {/*---------------------------------------ProductBacklogView-------------------------------------*/}
       </main>
     </>

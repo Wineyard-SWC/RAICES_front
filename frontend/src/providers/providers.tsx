@@ -13,12 +13,14 @@ import { LanguageProvider } from "@/contexts/languagecontext"
 import { TaskProvider } from "@/contexts/taskcontext"
 import { SprintProvider } from "@/contexts/sprintcontext"
 import { SprintDataProvider } from "@/contexts/sprintdatacontext"
-import { UserStoryProvider  as SavedUserStoryProvider} from "@/contexts/saveduserstoriescontext"
+import { UserStoryProvider as SavedUserStoryProvider } from "@/contexts/saveduserstoriescontext"
 import { AssignmentProvider } from "@/contexts/userstoriesepicsrelationshipcontext"
 import { GeneratedTasksProvider } from "@/contexts/generatedtaskscontext"
-import { KanbanProvider } from "@/contexts/unifieddashboardcontext"
+import { BugProvider } from "@/contexts/bugscontext"
+import { TeamsProvider } from "@/contexts/teamscontext"
 import { AvatarProvider } from "@/contexts/AvatarContext"
-import { UserRolesProvider } from "@/contexts/userRolesContext" // Nueva importación
+import { UserRolesProvider } from "@/contexts/userRolesContext"
+import { KanbanProvider } from "@/contexts/unifieddashboardcontext"
 
 interface ProvidersProps {
   children: ReactNode
@@ -29,34 +31,38 @@ export function AllProviders({ children }: { children: React.ReactNode }) {
     <SessionProvider>
       <UserProvider>
         <AvatarProvider>
-          <UserRolesProvider> {/* Añadir el nuevo provider */}
+          <UserRolesProvider>
             <ProjectProvider>
               <RequirementProvider>
                 <EpicProvider>
                   <UserStoryProvider>
                     <TaskProvider>
-                      <SprintProvider>        
+                      <SprintProvider>
                         <SelectedRequirementProvider>
                           <SelectedEpicProvider>
                             <SelectedUserStoriesProvider>
                               <LanguageProvider>
-                                  <SprintDataProvider>
-                                    <SavedUserStoryProvider>
-                                      <AssignmentProvider>
-                                        <GeneratedTasksProvider>
+                                <SprintDataProvider>
+                                  <SavedUserStoryProvider>
+                                    <AssignmentProvider>
+                                      <GeneratedTasksProvider>
+                                        <BugProvider>
                                           <KanbanProvider>
-                                            {children}
-                                            <div id="modal-root" />
+                                            <TeamsProvider>
+                                              {children}
+                                              <div id="modal-root" />
+                                            </TeamsProvider>
                                           </KanbanProvider>
-                                        </GeneratedTasksProvider>
-                                      </AssignmentProvider>
-                                    </SavedUserStoryProvider>
-                                  </SprintDataProvider>
+                                        </BugProvider>
+                                      </GeneratedTasksProvider>
+                                    </AssignmentProvider>
+                                  </SavedUserStoryProvider>
+                                </SprintDataProvider>
                               </LanguageProvider>
                             </SelectedUserStoriesProvider>
                           </SelectedEpicProvider>
                         </SelectedRequirementProvider>
-                      </SprintProvider>     
+                      </SprintProvider>
                     </TaskProvider>
                   </UserStoryProvider>
                 </EpicProvider>
