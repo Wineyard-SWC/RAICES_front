@@ -5,6 +5,7 @@ import type { Project } from "@/types/project"
 import SearchBar from "@/components/search_bar"
 import { useProjects } from "@/hooks/useProjects"
 import { useUser } from "@/contexts/usercontext"
+import { useAvatar } from "@/contexts/AvatarContext" // Importar el contexto del avatar
 import { useCreateProject } from "@/hooks/useCreateProject"
 import ProjectCard from "./components/projectcard"
 import CreateProjectModal from "./components/create_project_modal"
@@ -16,6 +17,10 @@ import { useKanban } from "@/contexts/unifieddashboardcontext"
 export default function ProjectsPage() {
   // Obtén el userId desde el contexto de usuario
   const { userId, setUserId } = useUser()
+  const router = useRouter()
+  
+  // Obtén el avatar desde el contexto
+  const { avatarUrl, fetchAvatar } = useAvatar()
 
   // Si no se tiene el userId, como fallback lo recuperamos del localStorage
   useEffect(() => {
@@ -26,11 +31,20 @@ export default function ProjectsPage() {
       }
     }
   }, [userId, setUserId])
+  
+  // Refrescar el contexto del avatar si no existe
+  useEffect(() => {
+    if (userId && !avatarUrl) {
+      console.log("No avatar URL found, refreshing avatar context")
+      fetchAvatar(userId)
+    }
+  }, [userId, avatarUrl, fetchAvatar])
 
   // Utiliza el hook para traer los proyectos del usuario
   const { projects: fetchedProjects, loading } = useProjects(userId)
   const { createProject, loading: creatingProject } = useCreateProject(userId)
-  const {setCurrentProject} = useKanban();
+  const {setCurrentProject} = useKanban()
+  
   // Estados para búsqueda y filtro
   const [projects, setProjects] = useState<Project[]>([])
   const [searchQuery, setSearchQuery] = useState("")
@@ -56,7 +70,6 @@ export default function ProjectsPage() {
   }
 
   const [load, setLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
@@ -84,15 +97,6 @@ export default function ProjectsPage() {
     }
 
     setProjects(filtered)
-  }
-
-  const handleProjectSelect = (projectId: string) => {
-    if (selectedProject && selectedProject !== projectId) {
-    }
-  
-    setSelectedProject(projectId)
-    localStorage.setItem("currentProjectId", projectId)
-    setCurrentProject(projectId)
   }
 
   const handleCreateProject = async (projectData: any) => {
@@ -138,12 +142,53 @@ export default function ProjectsPage() {
           onJoinProject={() => setIsJoinModalOpen(true)}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-          {projects.map((project) => (
-            <div key={project.id} className="cursor-pointer transition-transform hover:scale-[1.02]">
-              <ProjectCard {...project} />
+        <div className="mt-6">
+          {projects.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {projects.map((project) => (
+                <div key={project.id} className="cursor-pointer transition-transform hover:scale-[1.02]">
+                  <ProjectCard {...project} />
+                </div>
+              ))}
             </div>
-          ))}
+          ) : (
+            <div className="flex flex-col items-center justify-center py-16 px-6 bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="text-center max-w-md">
+                <svg 
+                  className="mx-auto h-20 w-20 text-[#C7A0B8] mb-4" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24" 
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={1.5} 
+                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" 
+                  />
+                </svg>
+                <h3 className="text-2xl font-bold text-[#4A2B4A] mb-2">No projects found</h3>
+                <p className="text-gray-600 mb-6">
+                  You don't have any projects yet. Create a new project or join an existing one to get started.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <button
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="bg-[#4A2B4A] text-white py-2 px-6 rounded-lg hover:bg-[#694969] transition-colors"
+                  >
+                    Create Project
+                  </button>
+                  <button
+                    onClick={() => setIsJoinModalOpen(true)}
+                    className="border border-[#4A2B4A] text-[#4A2B4A] py-2 px-6 rounded-lg hover:bg-[#F7F0F7] transition-colors"
+                  >
+                    Join Project
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Modal para crear proyecto */}

@@ -4,9 +4,18 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/progress"
 import { dashboardStatsStyles as s } from "../../styles/dashboardstyles"
 import { BurndownChart } from "@/components/burndownchart"
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState, useMemo, Suspense } from "react"
 import { useSprintDataContext } from "@/contexts/sprintdatacontext"
 import { useKanban } from "@/contexts/unifieddashboardcontext"
+import { useAvatar } from "@/contexts/AvatarContext"
+import dynamic from 'next/dynamic'
+import { Canvas } from '@react-three/fiber'
+
+// Importación dinámica del componente Three.js para evitar errores de SSR
+const DynamicAnimatedAvatar = dynamic(
+  () => import('./avatarConfig/avatarAnimationsDashboard').then((mod) => mod.AnimatedAvatar),
+  { ssr: false }
+)
 
 type Props = {
   onViewSprintDetails: () => void;
@@ -25,9 +34,6 @@ const todayString = today.toLocaleDateString('en-US', {
     month: 'long',    
     day: 'numeric',   
 })
-
-
-
 
 const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
   // State for burndown chart
@@ -97,7 +103,7 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
       const isDone = task.status_khanban?.toLowerCase() === "done"
       const completedBeforeOrOnDay = isDone && taskCompletedDate <= currentDate
 
-      // Si no se completó aún (o se completó después del día), aún cuenta
+      // Si no se completió aún (o se completió después del día), aún cuenta
       if (!completedBeforeOrOnDay) {
         return sum + (task.story_points || 0)
       }
@@ -225,6 +231,9 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
     return () => { isActive = false }
   }, []) // Remove all dependencies to avoid infinite loop
 
+  // Obtener avatar y género desde el contexto
+  const { avatarUrl, gender } = useAvatar()
+  
   return (
     <div className={s.container}>
       <ProgressCard
@@ -339,21 +348,46 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
       >
         <div className="flex justify-center mb-4">
           <div className={s.profileWrapper}>
-            <div className={s.profileCircle}>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-16 w-16 text-white"
-              >
-                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-            </div>
+            {avatarUrl ? (
+              <div className={s.profileCircle} style={{ 
+                backgroundColor: "#4891E0", 
+                border: "6px solid #C7A0B8" // Contorno añadido de color C7A0B8
+              }}>
+                {/* Usar Canvas para renderizar el avatar 3D con Three.js */}
+                <div style={{ width: "100%", height: "100%" }}>
+                  <Canvas camera={{ position: [0, 0.4, 3.5], fov: 25 }}>
+                    <ambientLight intensity={1} />
+                    <directionalLight position={[0, 0, 4]} intensity={1} />
+                    <Suspense fallback={null}>
+                      <DynamicAnimatedAvatar
+                        avatarUrl={avatarUrl}
+                        gender={gender === 'female' ? 'feminine' : 'masculine'}
+                        minDelay={3000}
+                        maxDelay={8000}
+                        idleTime={5000}
+                      />
+                    </Suspense>
+                  </Canvas>
+                </div>
+              </div>
+            ) : (
+              // Fallback a SVG si no hay avatar
+              <div className={s.profileCircle}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-16 w-16 text-white"
+                >
+                  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              </div>
+            )}
             <div className={s.emojiBadge}>😄</div>
           </div>
         </div>
