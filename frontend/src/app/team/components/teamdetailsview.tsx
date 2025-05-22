@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useTeams } from "@/contexts/teamscontext";
+import { useProjectUsers } from "@/contexts/ProjectusersContext";
+import TeamAvatarsDisplay from "./TeamAvatarDisplay";
 
 type TeamDetailsViewProps = {
   teamId: string;
@@ -11,14 +13,45 @@ type TeamDetailsViewProps = {
 const TeamDetailsView = ({ teamId }: TeamDetailsViewProps) => {
   const router = useRouter();
   const { currentTeam, fetchTeam, teamMetrics, getTeamMetrics } = useTeams();
-  const projectId = localStorage.getItem("currentProjectId")
+  const projectId = localStorage.getItem("currentProjectId");
+  const { loadUsersIfNeeded } = useProjectUsers();
+  
+  // Estados para controlar la carga de datos
+  const [dataLoaded, setDataLoaded] = useState({
+    team: false,
+    metrics: false,
+    users: false
+  });
 
-  useEffect(() => {
-    if (teamId && projectId) {
-      fetchTeam(teamId, projectId);
-      getTeamMetrics(teamId, projectId);  
+  // Memoizar la función de carga para evitar recreaciones
+  const loadData = useCallback(async () => {
+    if (!teamId || !projectId) return;
+    
+    try {
+      // Comprobamos si necesitamos cargar cada tipo de dato
+      if (!dataLoaded.team) {
+        await fetchTeam(teamId, projectId);
+        setDataLoaded(prev => ({ ...prev, team: true }));
+      }
+      
+      if (!dataLoaded.metrics) {
+        await getTeamMetrics(teamId, projectId);
+        setDataLoaded(prev => ({ ...prev, metrics: true }));
+      }
+      
+      if (!dataLoaded.users) {
+        await loadUsersIfNeeded(projectId);
+        setDataLoaded(prev => ({ ...prev, users: true }));
+      }
+    } catch (error) {
+      console.error("Error loading team data:", error);
     }
-  }, [teamId, projectId]);
+  }, [teamId, projectId, fetchTeam, getTeamMetrics, loadUsersIfNeeded, dataLoaded]);
+
+  // Un solo useEffect que controla toda la carga de datos
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleGoBack = () => {
     router.push(`/team?projectId=${projectId}`);
@@ -28,7 +61,10 @@ const TeamDetailsView = ({ teamId }: TeamDetailsViewProps) => {
     return (
       <main className="min-h-screen py-10 bg-[#EBE5EB]/30">
         <div className="container mx-auto px-4">
-          <p>Loading team details...</p>
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#4a2b4a]"></div>
+            <p className="ml-3 text-lg text-[#4a2b4a]">Loading team details...</p>
+          </div>
         </div>
       </main>
     );
@@ -37,67 +73,41 @@ const TeamDetailsView = ({ teamId }: TeamDetailsViewProps) => {
   return (
     <main className="min-h-screen py-10 bg-[#EBE5EB]/30">
       <div className="container mx-auto px-4">
-        <h1 className="text-4xl font-bold text[1e1e1e]">My Team - {currentTeam.name}</h1>
+        <h1 className="text-4xl font-bold text-[#1e1e1e]">Team - {currentTeam.name}</h1>
         <p className="text-lg font-semibold text-[#694969] mt-2 mb-2">
           {currentTeam.description}
         </p>
         <button
           onClick={handleGoBack}
-          className="text-[#4A2B4A] text-sm font-medium hover:underline mt-1 mb-3"
+          className="text-[#4A2B4A] text-sm font-medium hover:underline mt-1 mb-6 flex items-center"
         >
-          {"<- Go back "}
+          <svg className="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Go back to teams
         </button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-          {/* Team Members Section */}
-          <div className="lg:col-span-2 bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center mb-6">
-              <svg className="w-5 h-5 mr-2 text-[#4a2b4a]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-              <h2 className="text-lg font-semibold">Team Members</h2>
-            </div>
-            
-            {/* Team Members List */}
-            <div className="space-y-4">
-              {currentTeam.members.map((member) => (
-                <div key={member.id} className="bg-gray-50 rounded-md p-4">
-                  <div className="flex items-center">
-                    <div className="relative w-10 h-10 mr-3">
-                      <div className="w-10 h-10 bg-[#ebe5eb] rounded-full flex items-center justify-center text-[#4a2b4a] font-bold">
-                        {member.name.charAt(0)}
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-medium">{member.name}</h4>
-                      <p className="text-sm text-gray-600">{member.role}</p>
-                      <div className="flex items-center mt-1 text-xs text-gray-500">
-                        <span>{member.tasksCompleted} tasks completed</span>
-                        <span className="mx-2">•</span>
-                        <span>{member.currentTasks} current tasks</span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="inline-block px-2 py-1 rounded-full text-xs font-medium" 
-                        style={{ 
-                          backgroundColor: member.availability >= 80 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(234, 179, 8, 0.1)',
-                          color: member.availability >= 80 ? 'rgb(22, 163, 74)' : 'rgb(202, 138, 4)'
-                        }}>
-                        {member.availability}% available
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Avatar Display con el mismo estilo de contenedor que las métricas */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-lg shadow-md h-full"> {/* Mismo estilo de contenedor, altura completa */}
+              {dataLoaded.users && (
+                <TeamAvatarsDisplay
+                  teamId={teamId}
+                  teamMembers={currentTeam.members}
+                  projectId={projectId || ""}
+                  preloadedUsers={true}
+                />
+              )}
             </div>
           </div>
           
-          {/* Team Metrics Section */}
+          {/* Team Metrics Section - Se mantiene igual */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="bg-white rounded-lg shadow-md p-6 h-full"> {/* Agregado h-full */}
               <div className="flex items-center mb-6">
                 <svg className="w-5 h-5 mr-2 text-[#4a2b4a]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0H3v-6a6 6 0 0112 0v6zm0 0h6v-6a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
                 <h2 className="text-lg font-semibold">Team Metrics</h2>
               </div>
