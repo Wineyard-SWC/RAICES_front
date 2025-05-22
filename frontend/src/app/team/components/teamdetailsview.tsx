@@ -94,7 +94,7 @@ const TeamDetailsView = ({ teamId }: TeamDetailsViewProps) => {
           
           {/* Team Metrics Section */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div className="bg-white rounded-lg shadow-md p-6">
               <div className="flex items-center mb-6">
                 <svg className="w-5 h-5 mr-2 text-[#4a2b4a]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -173,11 +173,6 @@ const TeamDetailsView = ({ teamId }: TeamDetailsViewProps) => {
                 <span className="text-sm font-medium">{teamMetrics?.sprintProgress}%</span>
               </div>
             </div>
-            
-            {/* Manage Team Button */}
-            <button className="w-full py-3 bg-[#4a2b4a] text-white rounded-md hover:bg-[#3d243d] transition-colors">
-              Manage Team
-            </button>
           </div>
         </div>
       </div>

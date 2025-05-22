@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { User, Mail, Save, Lock, AlertCircle, Edit } from "lucide-react"
+import { User, Mail, Save, Lock, AlertCircle, Loader2 } from "lucide-react"
 import { useAvatar } from "@/contexts/AvatarContext"
 import { useUser } from "@/contexts/usercontext"
 import { Button } from "@/components/ui/button"
@@ -13,14 +13,24 @@ import { Label } from "./ui/label"
 
 export default function ProfileTab() {
   // Usar datos del contexto
-  const { avatarUrl, gender } = useAvatar()
-  const { userData, refreshUserData } = useUser()
+  const { avatarUrl, gender, fetchAvatar, isLoading: isAvatarLoading } = useAvatar()
+  const { userData, refreshUserData, userId } = useUser()
   
   // Estado local para edición
   const [profileForm, setProfileForm] = useState({
     name: "",
     email: ""
   })
+
+  // Cargar avatar si no está disponible cuando se monta el componente
+  useEffect(() => {
+    if (userId && (!avatarUrl || avatarUrl === '')) {
+      console.log("Avatar no encontrado en contexto, cargando para usuario:", userId);
+      fetchAvatar(userId).catch(err => {
+        console.error("Error cargando avatar:", err);
+      });
+    }
+  }, [userId, avatarUrl, fetchAvatar]);
 
   // Actualizar formulario cuando los datos del usuario cambian
   useEffect(() => {
@@ -57,7 +67,11 @@ export default function ProfileTab() {
         </CardHeader>
         <CardContent className="flex flex-col items-center">
           <div className="relative mb-4 h-[200px] w-[200px] rounded-full overflow-hidden bg-[#4891E0] border-[4px] border-[#C7A0B8]">
-            {avatarUrl ? (
+            {isAvatarLoading ? (
+              <div className="flex h-full items-center justify-center">
+                <Loader2 className="h-12 w-12 text-white animate-spin" />
+              </div>
+            ) : avatarUrl ? (
               <SettingsAvatar 
                 avatarUrl={avatarUrl} 
                 gender={gender === 'female' ? 'feminine' : 'masculine'}
@@ -65,6 +79,16 @@ export default function ProfileTab() {
             ) : (
               <div className="flex h-full items-center justify-center">
                 <User className="h-20 w-20 text-white opacity-50" />
+                {userId && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    className="absolute bottom-2 bg-white/20 text-white hover:bg-white/30"
+                    onClick={() => fetchAvatar(userId)}
+                  >
+                    Refresh
+                  </Button>
+                )}
               </div>
             )}
           </div>

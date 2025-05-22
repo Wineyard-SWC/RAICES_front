@@ -66,13 +66,16 @@ function AvatarSequence({
     Object.values(walkActions).forEach((a) => a && a.stop());
     Object.values(jogActions).forEach((a) => a && a.stop());
     Object.values(exprActions).forEach((a) => a && a.stop());
+    
+    console.log("el gender llega así: ", gender);
 
-    const safeGender = gender?.toLowerCase() === "feminine" ? "F" : "M";
-    const genderVersion = safeGender === "F" ? "001" : "002";
+    const genderVersion = ((gender === "F") ? "001" : "002");
+
+    console.log("-----------------Género detectado:", gender, "- Usando versión:", genderVersion);
 
     // Construir los nombres de las animaciones basados en el género
-    const walkAnimName = `${safeGender}_Walk_Strafe_Left_${genderVersion}`;
-    const jogAnimName = `${safeGender}_Walk_Strafe_Right_${genderVersion}`;
+    const walkAnimName = `${gender}_Walk_Strafe_Left_${genderVersion}`;
+    const jogAnimName = `${gender}_Walk_Strafe_Right_${genderVersion}`;
 
     // La animación de expresión siempre es la misma
     const exprAnimName = "M_Standing_Expressions_001";
@@ -215,7 +218,7 @@ const WelcomeText = ({ isVisible }: { isVisible: boolean }) => {
 
 export default function WelcomeAnimation({ 
   avatarUrl,
-  gender = "masculine" // Por defecto usamos masculine
+  gender = "masculine" 
 }: { 
   avatarUrl: string;
   gender?: string;
@@ -224,12 +227,18 @@ export default function WelcomeAnimation({
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   const router = useRouter();
 
-  const safeGender = gender?.toLowerCase() === "feminine" ? "F" : "M";
+  // Normalizar el género para asegurar consistencia
+  const normalizedGender = gender?.toLowerCase() === "feminine" ? "feminine" : "masculine";
+  
+  // Usar F o M para las rutas de archivos
+  const safeGender = normalizedGender === "feminine" ? "F" : "M";
   
   // Determinar qué versión de animación usar según el género
   const versionGender = safeGender === "F" ? "001" : "002";
 
-  console.log("Género detectado:", safeGender, "- Usando versión:", versionGender);
+  console.log("Género recibido:", gender);
+  console.log("Género normalizado:", normalizedGender);
+  console.log("Género para archivos:", safeGender, "- Usando versión:", versionGender);
 
   useEffect(() => {
     if (assetsLoaded) {

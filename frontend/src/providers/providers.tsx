@@ -21,6 +21,8 @@ import { TeamsProvider } from "@/contexts/teamscontext"
 import { AvatarProvider } from "@/contexts/AvatarContext"
 import { UserRolesProvider } from "@/contexts/userRolesContext"
 import { KanbanProvider } from "@/contexts/unifieddashboardcontext"
+import { ProjectUsersProvider } from "@/contexts/ProjectusersContext"
+import { UserPermissionsProvider } from "@/contexts/UserPermissions"
 
 interface ProvidersProps {
   children: ReactNode
@@ -49,8 +51,12 @@ export function AllProviders({ children }: { children: React.ReactNode }) {
                                         <BugProvider>
                                           <KanbanProvider>
                                             <TeamsProvider>
-                                              {children}
-                                              <div id="modal-root" />
+                                              <ProjectUsersProvider>
+                                                <UserPermissionsProvider>
+                                                  {children}
+                                                  <div id="modal-root" />
+                                                </UserPermissionsProvider>
+                                              </ProjectUsersProvider>
                                             </TeamsProvider>
                                           </KanbanProvider>
                                         </BugProvider>

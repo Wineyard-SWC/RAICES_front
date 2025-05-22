@@ -307,7 +307,7 @@ export default function RolesTab() {
                         />
                         <div className="grid gap-1.5 leading-none">
                           <Label htmlFor={`permission-${permission.id}`} className="text-sm font-medium">
-                            {permission.code}
+                            {permission.name}
                           </Label>
                           <p className="text-xs text-gray-500">{permission.description}</p>
                         </div>
@@ -410,7 +410,7 @@ export default function RolesTab() {
                         }`}
                       />
                       <div>
-                        <p className="text-xs font-medium">{permission.code}</p>
+                        <p className="text-xs font-medium">{permission.name}</p>
                         <p className="text-xs">{permission.description}</p>
                       </div>
                     </div>

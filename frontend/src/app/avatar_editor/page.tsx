@@ -15,7 +15,7 @@ export default function AvatarEditorPage() {
   const searchParams = useSearchParams();
   
   // Obtener la URL del avatar de los parámetros de consulta o del contexto
-  const { avatarUrl: contextAvatarUrl, gender } = useAvatar();
+  const { avatarUrl: contextAvatarUrl, gender, updateAvatarUrl } = useAvatar();
   const avatarUrlParam = searchParams.get('avatarUrl');
   
   // Usar el parámetro si existe, de lo contrario usar el del contexto
@@ -115,7 +115,7 @@ export default function AvatarEditorPage() {
   return (
     <div className="relative h-screen bg-gray-100">
       {/* Header con botón de regreso */}
-      <div className="absolute top-0 left-0 right-0 bg-purple-900 text-white z-10 p-4 flex items-center">
+      <div className="absolute top-0 left-0 right-0 bg-[#4A2B4A] text-white z-10 p-4 flex items-center">
         <button
           onClick={() => router.push('/settings?tab=profile')}
           className="flex items-center space-x-2 hover:text-purple-200 transition-colors"
