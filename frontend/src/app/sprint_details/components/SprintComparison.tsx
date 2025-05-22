@@ -36,7 +36,7 @@ export function SprintComparison() {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {sprint.completed_story_points}
+                    {sprint.completed_story_points}/{sprint.total_story_points}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {sprint.completion_percentage}%

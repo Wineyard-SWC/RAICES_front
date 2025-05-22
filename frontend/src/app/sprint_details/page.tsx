@@ -13,14 +13,17 @@ import { useState, useEffect } from "react"
 export default function SprintDetails() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
-  const currentProjectId = localStorage.getItem("currentProjectId")
+  const [currentProjectId, setCurrentProjectId] = useState<string | null>(null)
 
   useEffect(() => {
     const userId = localStorage.getItem("userId")
+    const projectId = localStorage.getItem("currentProjectId")
+
     if (!userId) {
       router.push("/login")
     } else {
-      setLoading(false) 
+      setCurrentProjectId(projectId)
+      setLoading(false)
     }
   }, [router])
 
