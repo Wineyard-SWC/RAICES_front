@@ -100,6 +100,61 @@ const TeamsView = () => {
     );
   }
 
+  if (!loading && filteredTeams.length === 0) {
+    return (
+      <main className="min-h-screen py-10 bg-[#EBE5EB]/30">
+        <div className="container mx-auto px-4">
+          <h1 className="text-4xl font-bold text[1e1e1e]">Teams</h1>
+          <p className="text-lg font-semibold text-[#694969] mt-2 mb-2">
+            Manage your teams and track their current contribution
+          </p>
+          
+          {/* Mensaje de no hay equipos */}
+          <div className="flex flex-col items-center justify-center py-16 px-6 bg-white rounded-lg shadow-md mt-8">
+            <div className="text-center max-w-md">
+              <svg 
+                className="mx-auto h-20 w-20 text-[#C7A0B8] mb-4" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24" 
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={1.5} 
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" 
+                />
+              </svg>
+              <h3 className="text-2xl font-bold text-[#4A2B4A] mb-2">No teams found</h3>
+              <p className="text-gray-600 mb-6">
+                You don't have any teams in this project yet. Create a new team to start collaborating with your colleagues.
+              </p>
+              <button 
+                className="px-6 py-3 bg-[#4a2b4a] text-white rounded-md hover:bg-[#694969] transition-colors"
+                onClick={() => setIsCreateModalOpen(true)}
+              >
+                <div className="flex items-center justify-center">
+                  <svg className="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Create First Team
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        {/* Mantenemos el modal de creación disponible */}
+        <CreateTeamModal 
+          isOpen={isCreateModalOpen} 
+          onClose={() => setIsCreateModalOpen(false)}
+          projectId={projectId || ""} 
+        />
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen py-10 bg-[#EBE5EB]/30">
       <div className="container mx-auto px-4">

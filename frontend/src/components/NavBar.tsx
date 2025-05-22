@@ -17,13 +17,13 @@ type NavbarProps = {
 }
 
 // Definimos las pestañas como constantes para evitar errores de tipeo
-const TABS = ["Dashboard", "My Sprints", "Roadmap", "Team", "Generate"] as const
+const TABS = ["Dashboard", "Sprints", "Roadmap", "Team", "Generate"] as const
 type TabType = (typeof TABS)[number]
 
 // Mapa de rutas a pestañas para determinar la pestaña activa basada en la ruta
 const PATH_TO_TAB: Record<string, TabType> = {
   "/dashboard": "Dashboard",
-  "/sprints": "My Sprints",
+  "/my-sprints": "Sprints",
   "/roadmap": "Roadmap",
   "/team": "Team",
   "/generate": "Generate",
@@ -41,7 +41,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
   const projectDropdownRef = useRef<HTMLDivElement>(null)
 
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<TabType>("My Sprints")
+  const [activeTab, setActiveTab] = useState<TabType>("Dashboard")
   const [generateOpen, setGenerateOpen] = useState(false)
   const [projectMenuOpen, setProjectMenuOpen] = useState(false)
   const [currentProject, setCurrentProject] = useState<string>("Seleccionar proyecto")
@@ -60,7 +60,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
       setActiveTab(tabFromQuery)
     } else {
       // Si no hay parámetro de consulta, determinamos la pestaña basada en la ruta
-      const tabFromPath = PATH_TO_TAB[pathname] || "My Sprints"
+      const tabFromPath = PATH_TO_TAB[pathname] || "Dashboard"
       setActiveTab(tabFromPath)
     }
 
@@ -122,9 +122,9 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
     const currentProjectId = localStorage.getItem("currentProjectId")
 
     switch (tab) {
-      case "My Sprints":
+      case "Sprints":
         if (currentProjectId) {
-          router.push(`/sprints?projectId=${currentProjectId}`)
+          router.push(`/my-sprints?projectId=${currentProjectId}`)
         }
         break
       case "Dashboard":
