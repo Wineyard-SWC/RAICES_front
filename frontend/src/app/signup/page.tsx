@@ -10,6 +10,9 @@ import Link from 'next/link';
 import { FaEye, FaEyeSlash } from 'react-icons/fa'
 import Image from "next/image"
 import { useAuth } from "@/hooks/useAuth"
+import { registerAvatarUser } from '@/utils/Avatar/userConfig';
+import { useAvatar } from '@/contexts/AvatarContext'; // Importar contexto de avatar
+import { useInitializeUserRoles } from '@/hooks/usePostDefaultRoles'; // Importar inicialización de roles
 
 export default function CreateAccountPage() {
   const [firstName, setFirstName] = useState('');
@@ -18,13 +21,14 @@ export default function CreateAccountPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [isClient, setIsClient] = useState(false);
   const [showPassword, setShowPassword] = useState(false); 
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { loginWithGoogle, loginWithGithub } = useAuth()
-
+  const { loginWithGoogle, loginWithGithub } = useAuth();
+  const { initializeUserRoles } = useInitializeUserRoles(); // Hook para inicializar roles
   const router = useRouter();
 
   useEffect(() => {
@@ -39,12 +43,22 @@ export default function CreateAccountPage() {
   const handleSignup = async () => {
     if (isSubmitting) return; // Evitar llamadas múltiples
 
-  
+    // Validaciones de entrada
+    if (!firstName || !lastName) {
+      setError('Please enter both first and last name');
+      return;
+    }
+
     if (!isValidEmail(email)) {
       setError('Invalid email format');
       return;
     }
   
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -52,25 +66,57 @@ export default function CreateAccountPage() {
   
     try {
       setIsSubmitting(true); // Deshabilitar el botón inmediatamente
-  
+      setError('');
+      
+      // 1. Crear usuario en Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-  
+      
+      console.log("User created with ID:", user.uid);
+      
+      // 2. Actualizar perfil con nombre y apellido
       await updateProfile(user, {
         displayName: `${firstName} ${lastName}`,
       });    
-
+      
+      // 3. Enviar correo de verificación
       await sendEmailVerification(user);
-      setError('Verification email sent. Please check your inbox.');
-  
+      
+      // 4. Obtener token para las operaciones de backend
+      const token = await user.getIdToken();
+      localStorage.setItem('authToken', token); // Necesario para las llamadas de API
+      
+      // 5. Registrar usuario en el backend de avatar
+      console.log("Registering avatar user in backend...");
+      await registerAvatarUser({
+        firebase_id: user.uid,
+        name: `${firstName} ${lastName}`,
+        avatar_url: null,
+        gender: null
+      });
+      
+      // 6. Inicializar roles predeterminados
+      console.log("Initializing default user roles...");
+      await new Promise(resolve => setTimeout(resolve, 500)); // Pequeño retraso para asegurar que el backend procesó el usuario
+      
+      const rolesResult = await initializeUserRoles(user.uid);
+      console.log("User roles initialization result:", rolesResult);
+      
+      // 7. Mostrar mensaje de éxito
+      setSuccessMessage('Account created successfully! Verification email sent. Please check your inbox.');
+      
+      // 8. Cerrar sesión y eliminar token (ya que requiere verificación de email)
+      await auth.signOut();
+      localStorage.removeItem('authToken');
+      
+      // 9. Redirigir al login después de 3 segundos
       setTimeout(() => {
-        router.push("/login"); // Redirigir al login después de 3 segundos
+        router.push("/login");
       }, 3000);
   
-      auth.signOut(); // Cerrar sesión hasta que verifique el correo
-  
     } catch (err) {
-      setError('Error creating account: ' + (err as Error).message); 
+      console.error("Signup error:", err);
+      setError('Error creating account: ' + (err as Error).message);
     } finally {
       setTimeout(() => setIsSubmitting(false), 3000); // Rehabilitar botón después de 3s
     }
@@ -179,6 +225,12 @@ export default function CreateAccountPage() {
 
 
           {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+          {/* Mostrar mensaje de éxito si existe */}
+          {successMessage && (
+            <div className="text-green-600 text-sm mb-4 w-full text-center">
+              {successMessage}
+            </div>
+          )}
 
           <div className="mb-4 flex items-center">
             <input type="checkbox" id="terms" className="mr-2" />

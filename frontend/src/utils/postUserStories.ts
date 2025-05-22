@@ -62,3 +62,13 @@ export async function postUserStories(
 
   return responseData;
 }
+
+
+
+export async function postSingleUserStory(
+  story: Omit<UserStory, 'id' | 'selected'>,
+  projectId: string,
+  updateCache: (userStories: UserStory[]) => void
+) {
+  return await postUserStories([story], projectId, updateCache);
+}

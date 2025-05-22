@@ -32,12 +32,11 @@ export const useJoinProject = (userId: string | null) => {
         body: JSON.stringify({
           userRef: userId,
           projectRef: projectId,
-          role: "member",
+          role: "Developer",
           joinedAt: new Date().toISOString(),
         }),
       })
       
-
       if (!relationResponse.ok) {
         throw new Error("Error joining project")
       }

@@ -3,19 +3,14 @@
 import type React from "react"
 import { useEffect, useState, useRef } from "react"
 import Link from "next/link"
-import { Bell, ChevronDown, Settings, LogOut, FolderOpen } from "lucide-react"
+import { Bell, ChevronDown, Settings, LogOut, FolderOpen, Users } from "lucide-react"
 import Image from "next/image"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useUser } from "@/contexts/usercontext"
 import { useProjects } from "@/hooks/useProjects"
-import { useKanban } from "@/contexts/unifieddashboardcontext"
-import { useRequirementContext } from "@/contexts/requirementcontext"
-import { useEpicContext } from "@/contexts/epiccontext"
-import { useUserStoryContext } from "@/contexts/userstorycontext"
-import { useSelectedRequirementContext } from "@/contexts/selectedrequirements"
-import { useSelectedEpicsContext } from "@/contexts/selectedepics"
-import { useSelectedUserStoriesContext } from "@/contexts/selecteduserstories"
-import { useGeneratedTasks } from "@/contexts/generatedtaskscontext"
+import { useAvatar } from "@/contexts/AvatarContext"
+import AvatarProfileIcon from "./Avatar/AvatarDisplay"
+import { useUserPermissions } from "@/contexts/UserPermissions"
 
 type NavbarProps = {
   projectSelected: boolean
@@ -23,13 +18,18 @@ type NavbarProps = {
 }
 
 // Definimos las pestañas como constantes para evitar errores de tipeo
-const TABS = ["Dashboard", "My Sprints", "Roadmap", "Team", "Generate"] as const
+const TABS = ["Dashboard", "Sprints", "Roadmap", "Team", "Generate"] as const
 type TabType = (typeof TABS)[number]
+
+// Definir constantes de permisos
+const PERMISSIONS = {
+  REQ_MANAGE: 1 << 2, // Permiso para gestionar items (epics, stories, tasks)
+};
 
 // Mapa de rutas a pestañas para determinar la pestaña activa basada en la ruta
 const PATH_TO_TAB: Record<string, TabType> = {
   "/dashboard": "Dashboard",
-  "/sprints": "My Sprints",
+  "/my-sprints": "Sprints",
   "/roadmap": "Roadmap",
   "/team": "Team",
   "/generate": "Generate",
@@ -47,34 +47,60 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
   const projectDropdownRef = useRef<HTMLDivElement>(null)
 
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<TabType>("My Sprints")
+  const [activeTab, setActiveTab] = useState<TabType>("Dashboard")
   const [generateOpen, setGenerateOpen] = useState(false)
   const [projectMenuOpen, setProjectMenuOpen] = useState(false)
   const [currentProject, setCurrentProject] = useState<string>("Seleccionar proyecto")
-  const { userId } = useUser();
-  const { projects, loading } = useProjects(userId); 
-  const recentProjects = projects.slice(0, 3);
 
-  const {setRequirements} = useRequirementContext()
-  const {setSelectedIds} = useSelectedRequirementContext()
-  const {setEpics} = useEpicContext()
-  const {setSelectedEpicIds} = useSelectedEpicsContext();
-  const {setUserStories} = useUserStoryContext();
-  const {setSelectedUserStoriesIds} = useSelectedUserStoriesContext();
-  const {clearTasks} = useGeneratedTasks()
-  const {setCurrentProject:NewActiveProject, refreshKanban} = useKanban();
+  const { userId } = useUser()
+  const { avatarUrl } = useAvatar() // Obtenemos la URL del avatar desde el contexto
+  const { projects, loading } = useProjects(userId)
+  const recentProjects = projects.slice(0, 3)
   
+  // Añadir contexto de permisos
+  const { hasPermission } = useUserPermissions()
+  
+  // Determinar si el usuario puede ver la pestaña de Generate
+  const canManageItems = hasPermission(PERMISSIONS.REQ_MANAGE)
+  
+  // Filtrar las pestañas según permisos
+  const visibleTabs = TABS.filter(tab => {
+    // Ocultar Generate si no tiene permisos
+    if (tab === "Generate" && !canManageItems) {
+      return false;
+    }
+    return true;
+  });
+
   // Efecto para sincronizar el estado activo con la ruta actual
   useEffect(() => {
     // Primero intentamos obtener la pestaña del parámetro de consulta
     const tabFromQuery = searchParams.get("tab") as TabType | null
 
-    if (tabFromQuery && TABS.includes(tabFromQuery)) {
+    // Si la pestaña es Generate pero no tiene permiso, redirigir al Dashboard
+    if (tabFromQuery === "Generate" && !canManageItems) {
+      const currentProjectId = localStorage.getItem("currentProjectId");
+      if (currentProjectId) {
+        router.push(`/dashboard?projectId=${currentProjectId}`);
+        return;
+      }
+    }
+
+    if (tabFromQuery && TABS.includes(tabFromQuery) && (tabFromQuery !== "Generate" || canManageItems)) {
       setActiveTab(tabFromQuery)
     } else {
       // Si no hay parámetro de consulta, determinamos la pestaña basada en la ruta
-      const tabFromPath = PATH_TO_TAB[pathname] || "My Sprints"
-      setActiveTab(tabFromPath)
+      const tabFromPath = PATH_TO_TAB[pathname] || "Dashboard"
+      
+      // Si la ruta es de generación pero no tiene permiso, no actualizar la pestaña activa
+      if ((tabFromPath === "Generate" && !canManageItems)) {
+        const currentProjectId = localStorage.getItem("currentProjectId");
+        if (currentProjectId) {
+          router.push(`/dashboard?projectId=${currentProjectId}`);
+        }
+      } else {
+        setActiveTab(tabFromPath)
+      }
     }
 
     // Verificamos si hay un proyecto seleccionado en localStorage
@@ -87,10 +113,11 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
 
     // Si estamos en una ruta que requiere un proyecto seleccionado pero no hay ninguno,
     // redirigimos a la página de proyectos
-    if (!hasSelectedProject && pathname !== "/projects" && pathname !== "/") {
+    // Reemplaza la línea 74 (aproximadamente)
+    if (!hasSelectedProject && pathname !== "/projects" && pathname !== "/" && pathname !== "/settings") {
       router.push("/projects")
     }
-  }, [pathname, searchParams, router])
+  }, [pathname, searchParams, router, canManageItems])
 
   // Efecto para cerrar los menús desplegables al hacer clic fuera de ellos
   useEffect(() => {
@@ -129,14 +156,20 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
     if (!projectSelected) {
       return
     }
+    
+    // Verificar permisos para Generate
+    if (tab === "Generate" && !canManageItems) {
+      console.log("No tienes permiso para gestionar ítems");
+      return;
+    }
 
     // Para las pestañas, navegamos a la ruta correspondiente
     const currentProjectId = localStorage.getItem("currentProjectId")
 
     switch (tab) {
-      case "My Sprints":
+      case "Sprints":
         if (currentProjectId) {
-          router.push(`/sprints?projectId=${currentProjectId}`)
+          router.push(`/my-sprints?projectId=${currentProjectId}`)
         }
         break
       case "Dashboard":
@@ -158,7 +191,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
         if (currentProjectId) {
           router.push(`/generate?projectId=${currentProjectId}`)
         }
-        break
+        break;
     }
 
     // Actualizamos el estado activo
@@ -198,15 +231,6 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
     localStorage.setItem("currentProjectName", projectName)
     setCurrentProject(projectName)
     setProjectMenuOpen(false)
-    NewActiveProject(projectId)
-    refreshKanban()
-    setRequirements([])
-    setSelectedIds([])
-    setEpics([])
-    setSelectedEpicIds([])
-    setUserStories([])
-    setSelectedUserStoriesIds([])
-    clearTasks()
     router.push(`/dashboard?projectId=${projectId}`)
   }
 
@@ -273,7 +297,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
       {/* Tabs */}
       <div className="absolute left-1/2 transform -translate-x-1/2">
         <div className="flex space-x-4">
-          {TABS.map((tab) => {
+          {visibleTabs.map((tab) => {
             const isGenerate = tab === "Generate"
 
             if (isGenerate) {
@@ -370,14 +394,16 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
         </button>
 
         <div className="relative avatar-menu">
-          <button className="flex items-center" onClick={() => setAvatarMenuOpen(!avatarMenuOpen)}>
-            <div className="h-8 w-8 rounded-full bg-[#ebe5eb] overflow-hidden">
-              <img
-                src="https://cdn-icons-png.flaticon.com/512/921/921071.png"
-                alt="User avatar"
-                className="h-full w-full object-cover"
-              />
-            </div>
+          <button 
+            className="flex items-center" 
+            onClick={() => setAvatarMenuOpen(!avatarMenuOpen)}
+          >
+            <AvatarProfileIcon 
+              avatarUrl={avatarUrl} 
+              size={40} 
+              borderWidth={2}
+              borderColor="#4a2b4a"
+            />
             <ChevronDown className="ml-1 h-4 w-4 text-[#4a2b4a]" />
           </button>
 
@@ -392,8 +418,22 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
                   className="flex w-full items-center gap-2 px-4 py-2 text-sm text-[#4a2b4a] hover:bg-[#ebe5eb]"
                 >
                   <Settings className="h-4 w-4" />
-                  <span>Settings</span>
+                  <span>General Settings</span>
                 </button>
+
+                {/* Nueva opción - Configuración de miembros */}
+                {projectSelected && (
+                  <button
+                    onClick={() => {
+                      setAvatarMenuOpen(false)
+                      router.push("/member_settings")
+                    }}
+                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-[#4a2b4a] hover:bg-[#ebe5eb]"
+                  >
+                    <Users className="h-4 w-4" />
+                    <span>Member Settings</span>
+                  </button>
+                )}
 
                 <button
                   onClick={() => {

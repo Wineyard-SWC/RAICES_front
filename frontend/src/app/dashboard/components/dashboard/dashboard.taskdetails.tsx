@@ -6,7 +6,7 @@ import { isBug, TaskOrStory } from "@/types/taskkanban"
 import { useUser } from "@/contexts/usercontext"
 import { useKanban } from "@/contexts/unifieddashboardcontext"
 import { useMemo } from "react"
-import { Task } from "@/types/task"
+import { Comment, Task } from "@/types/task"
 import { UserStory } from "@/types/userstory"
 
 
@@ -94,7 +94,7 @@ const TaskDetailModal = ({ open, onClose, task }: TaskDetailModalProps) => {
 
     try {
       const updatedComments = Array.isArray(currentTask.comments)
-        ? currentTask.comments.filter(c => c.id !== commentId)
+        ? currentTask.comments.filter((c: Comment) => c.id !== commentId)
         : []
       
       if (isUserStory(currentTask)) {
@@ -295,7 +295,7 @@ const TaskDetailModal = ({ open, onClose, task }: TaskDetailModalProps) => {
                 <p className="text-xl font-semibold text-[#4A2B4A] mb-4">Comments:</p>
                 {currentTask.comments.length > 0 ? (
                   <div className="space-y-4 max-h-60 overflow-y-auto pr-2">
-                    {currentTask.comments.map((c) => (
+                    {currentTask.comments.map((c:Comment) => (
                       <div key={c.id} className="bg-[#F5F0F1] border border-gray-200 p-4 rounded-md relative">
                         <div className="flex justify-between text-md text-gray-600">
                           <span>

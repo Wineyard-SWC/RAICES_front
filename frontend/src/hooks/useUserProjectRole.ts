@@ -42,7 +42,8 @@ export const useUserProjectRole = (userId: string | null, projectId: string) => 
   return {
     role,
     isOwner: role === "owner",
-    isMember: role === "member",
+    // cualquiero otro rol =>  admin, member, etc
+    isMember: role === "member" || role === "Admin" || role === "Developer",
     loading,
     error,
   }

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
 import { TaskCard } from "./dashboard.taskcard"
-import { isBug, TaskColumns } from "@/types/taskkanban"
+import { isBug,isTask,isUserStory, TaskColumns } from "@/types/taskkanban"
 import { useKanban } from "@/contexts/unifieddashboardcontext"
 import { TaskOrStory } from "@/types/taskkanban"
 import { Task } from "@/types/task"
@@ -16,9 +16,10 @@ import { UserStory } from "@/types/userstory"
 interface TasksKanbanProps {
   onNavigate?: () => void;
   view?: string;
+  onTaskSelect?: (task: TaskOrStory) => void;
 }
 
-export const TasksKanban = ({ onNavigate, view }: TasksKanbanProps) => {
+export const TasksKanban = ({ onNavigate, view, onTaskSelect }: TasksKanbanProps) => {
   const { 
     tasks,
     isLoading,
@@ -57,15 +58,6 @@ export const TasksKanban = ({ onNavigate, view }: TasksKanbanProps) => {
       ...prev,
       [columnId]: startIndex,
     }))
-  }
-
-  const isTask = (item: TaskOrStory): item is Task => {
-    return 'user_story_id' in item || 
-          (!('acceptanceCriteria' in item) && !('assigned_epic' in item))
-  }
-  
-  const isUserStory = (item: TaskOrStory): item is UserStory => {
-    return 'acceptanceCriteria' in item || 'assigned_epic' in item
   }
 
   useEffect(() => {
@@ -363,6 +355,7 @@ export const TasksKanban = ({ onNavigate, view }: TasksKanbanProps) => {
                                         view={view}
                                         onDelete={handleDelete}
                                         onChangeStatus={handleStatusUpdate}
+                                        onViewDetails={onTaskSelect}
                                       />
                                     </div>
                                   )}

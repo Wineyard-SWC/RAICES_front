@@ -20,33 +20,23 @@ interface VelocityPoint {
 }
 
 const SprintChartsSection = () => {
+  const { burndownData, velocityData } = useSprintDataContext()
   const [chartData, setChartData] = useState<BurndownDataPoint[]>([])
   const [loading, setLoading] = useState(true)
-  const { burndownData, velocityData } = useSprintDataContext()
-
-  
 
   useEffect(() => {
-    if (!burndownData) return
+    if (!burndownData?.chart_data) {
+      setLoading(false)
+      return
+    }
 
     try {
-      const { duration_days, total_story_points } = burndownData
+      // Ordenar los datos por día si no están ya ordenados
+      const sortedData = [...burndownData.chart_data].sort((a, b) => 
+        new Date(a.date).getTime() - new Date(b.date).getTime()
+      )
       
-      const totalDays = duration_days + 1
-      const idealDropPerDay = total_story_points / duration_days
-      
-      const generatedData: BurndownDataPoint[] = []
-      
-      for (let day = 0; day < totalDays; day++) {
-        const ideal = total_story_points - idealDropPerDay * day
-        generatedData.push({
-          day: `Day ${day}`,
-          Ideal: parseFloat(ideal.toFixed(2)),
-          Remaining: total_story_points, 
-        })
-      }
-      
-      setChartData(generatedData)
+      setChartData(sortedData)
     } catch (error) {
       console.error("Error processing burndown data:", error)
     } finally {
@@ -63,7 +53,11 @@ const SprintChartsSection = () => {
             <div className="text-center text-sm text-gray-500">Loading burndown chart...</div>
           </div>
         ) : chartData.length > 0 ? (
-          <BurndownChart data={chartData} height={300}/>
+          <BurndownChart 
+            data={chartData} 
+            height={300}
+            totalSP={burndownData?.sprint_info.total_story_points || 0}
+          />
         ) : (
           <div className="bg-gray-100 rounded-md p-2 h-[300px] flex items-center justify-center">
             <div className="text-center text-sm text-gray-500">No data available</div>
