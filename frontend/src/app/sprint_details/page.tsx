@@ -32,7 +32,7 @@ export default function SprintDetails() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f0ebf7]">
+    <div className="min-h-screen bg-[#EBE5EB]/30">
       <Navbar projectSelected={true} />
       <main className="container mx-auto p-6">
         <div className="mb-6">
