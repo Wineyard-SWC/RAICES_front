@@ -1,3 +1,5 @@
+import { SprintMember } from "./sprint"
+
 export interface Project {
   id: string
   title: string
@@ -12,4 +14,10 @@ export interface Project {
   totalTasks: number
   team: string
   teamSize: number
+  teamMembers:SprintMember[]
+  currentSprint?: string
+  sprints?:string[]
+  created_at?: string
+  updated_at?: string
+  createdBy?: string 
 }

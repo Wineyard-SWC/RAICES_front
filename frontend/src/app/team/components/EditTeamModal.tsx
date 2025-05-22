@@ -55,6 +55,22 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
     };
   }, [isOpen]);
 
+  // Reset form when team changes
+  useEffect(() => {
+    if (team) {
+      setName(team.name);
+      setDescription(team.description);
+      setSelectedUsers(
+        team.members.map(member => ({
+          id: member.id,
+          name: member.name,
+          email: "",
+          photoURL: ""
+        }))
+      );
+    }
+  }, [team]);
+
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
     searchUsers(value);
@@ -91,9 +107,10 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
         team.id, 
         { 
           name, 
-          description 
-        }, 
-        selectedUsers.map(user => user.id)
+          description,
+          members: selectedUsers.map(user => user.id)
+        },
+        team.projectId
       );
       onClose();
     } catch (err) {
@@ -109,8 +126,12 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
     <div className="fixed inset-0 bg-black/30 bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center p-4 border-b border-[#ebe5eb]">
-          <h2 className="text-xl font-semibold text-[#4a2b4a]">Edit Team</h2>
-          <button onClick={onClose} className="text-[#694969] hover:text-[#4a2b4a]">
+          <h2 className="text-xl font-semibold text-[#4a2b4a]">Edit Team: {team.name}</h2>
+          <button 
+            onClick={onClose} 
+            className="text-[#694969] hover:text-[#4a2b4a]"
+            disabled={isSubmitting}
+          >
             <X size={20} />
           </button>
         </div>
@@ -129,6 +150,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
                   errors.name ? "border-red-500" : "border-[#ebe5eb]"
                 } rounded-md focus:outline-none focus:ring-2 focus:ring-[#4a2b4a]`}
                 placeholder="Enter the team name"
+                disabled={isSubmitting}
               />
               {errors.name && (
                 <p className="text-red-500 text-xs mt-1">{errors.name}</p>
@@ -146,6 +168,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
                   errors.description ? "border-red-500" : "border-[#ebe5eb]"
                 } rounded-md focus:outline-none focus:ring-2 focus:ring-[#4a2b4a] min-h-[100px]`}
                 placeholder="Describe the team's purpose"
+                disabled={isSubmitting}
               />
               {errors.description && (
                 <p className="text-red-500 text-xs mt-1">{errors.description}</p>
@@ -161,7 +184,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
               {selectedUsers.length > 0 && (
                 <div className="mb-4">
                   <h3 className="text-sm font-medium text-[#4a2b4a] mb-2">
-                    Current Members
+                    Current Members ({selectedUsers.length})
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {selectedUsers.map((user) => (
@@ -172,9 +195,12 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
                         <div className="h-6 w-6 rounded-full bg-[#ebe5eb] overflow-hidden mr-2">
                           {user.photoURL ? (
                             <img
-                              src={user.photoURL || "/placeholder.svg"}
+                              src={user.photoURL}
                               alt={user.name}
                               className="h-full w-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = "/placeholder.svg";
+                              }}
                             />
                           ) : (
                             <div className="h-full w-full flex items-center justify-center bg-[#4a2b4a] text-white">
@@ -189,6 +215,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
                           type="button"
                           onClick={() => handleRemoveUser(user.id)}
                           className="ml-1 p-1 rounded-full hover:bg-[#d1c6d1]"
+                          disabled={isSubmitting}
                         >
                           <X size={14} className="text-[#694969]" />
                         </button>
@@ -206,6 +233,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
                   onChange={(e) => handleSearchChange(e.target.value)}
                   className="w-full p-2 pl-10 border border-[#ebe5eb] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4a2b4a]"
                   placeholder="Search users to add to team"
+                  disabled={isSubmitting}
                 />
                 <Search
                   className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#694969]"
@@ -233,9 +261,12 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
                             <div className="h-8 w-8 rounded-full bg-[#ebe5eb] overflow-hidden mr-3">
                               {user.photoURL ? (
                                 <img
-                                  src={user.photoURL || "/placeholder.svg"}
+                                  src={user.photoURL}
                                   alt={user.name}
                                   className="h-full w-full object-cover"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = "/placeholder.svg";
+                                  }}
                                 />
                               ) : (
                                 <div className="h-full w-full flex items-center justify-center bg-[#4a2b4a] text-white">
@@ -279,10 +310,18 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-[#4a2b4a] text-white rounded-md hover:bg-[#694969] disabled:opacity-50"
+              className="px-4 py-2 bg-[#4a2b4a] text-white rounded-md hover:bg-[#694969] disabled:opacity-50 flex items-center justify-center min-w-[120px]"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Updating..." : "Update Team"}
+              {isSubmitting ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Updating...
+                </>
+              ) : "Update Team"}
             </button>
           </div>
         </form>

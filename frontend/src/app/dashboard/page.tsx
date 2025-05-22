@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import Navbar from "@/components/NavBar"
-
 import DashboardMainPage from "./components/dashboard/dashboard.view"
 import ProductBacklogPage from "./components/productbacklog/productbacklog.view"
 import CalendarPageView from "./components/sprintcalendar/sprintcalendar.view"

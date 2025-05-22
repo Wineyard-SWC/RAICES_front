@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '../contexts/usercontext';
+import { useAvatar } from '@/contexts/AvatarContext'; // Importar contexto de avatar
+import { useUserRoles } from '@/contexts/userRolesContext'; // Importar contexto de roles
 import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider, githubProvider } from '../utils/firebaseConfig';
 import { useKanban } from '@/contexts/unifieddashboardcontext';
@@ -13,13 +15,23 @@ import { useSelectedRequirementContext } from "@/contexts/selectedrequirements"
 import { useSelectedEpicsContext } from "@/contexts/selectedepics"
 import { useSelectedUserStoriesContext } from "@/contexts/selecteduserstories"
 import { useGeneratedTasks } from "@/contexts/generatedtaskscontext"
+import { registerAvatarUser } from '@/utils/Avatar/userConfig';
+import { useInitializeUserRoles } from '@/hooks/usePostDefaultRoles'; // Importar inicialización de roles
 
 export const useAuth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const API_URL = process.env.NEXT_PUBLIC_API_URL!;
+  const AVATAR_API_URL = process.env.NEXT_PUBLIC_AVATAR_API!;
+  
+  // Contextos
   const { setUserId, userData, isLoading: userLoading } = useUser();
+  const { resetAvatar, fetchAvatar } = useAvatar(); // Para cargar datos de avatar
+  const { fetchUserRoles, resetRoles } = useUserRoles(); // Para cargar roles
+  const { initializeUserRoles } = useInitializeUserRoles(); // Para inicializar roles
+  
+  // Contextos para reset de datos
   const {setRequirements} = useRequirementContext()
   const {setSelectedIds} = useSelectedRequirementContext()
   const {setEpics} = useEpicContext()
@@ -27,6 +39,7 @@ export const useAuth = () => {
   const {setUserStories} = useUserStoryContext();
   const {setSelectedUserStoriesIds} = useSelectedUserStoriesContext();
   const {clearTasks} = useGeneratedTasks()
+  const {reset} = useKanban();
 
   const firebaseErrorMap: { [key: string]: string } = {
     'auth/user-not-found': 'No user found with this email address.',
@@ -38,8 +51,6 @@ export const useAuth = () => {
     'auth/account-exists-with-different-credential': 'Account already in use in other method'
   };
 
-  const {reset} = useKanban();
-
   const resetdata = () => {
     setRequirements([])
     setSelectedIds([])
@@ -50,119 +61,80 @@ export const useAuth = () => {
     clearTasks()
   }
 
-  const loginWithEmail = async (email: string, password: string) => {
-    if (!email || !password) {
-      setError('Please enter both email and password');
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
+  // Función para verificar si un usuario existe y tiene avatar
+  const checkUserAvatar = async (userId: string): Promise<{ exists: boolean, hasAvatar: boolean }> => {
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      if (!user.emailVerified) {
-        setError('Please verify your email before logging in.');
-        return;
+      console.log(`Verificando si el usuario ${userId} existe y tiene avatar...`);
+      const token = localStorage.getItem('authToken');
+      
+      // Verificar si el usuario existe en la API de avatar
+      const response = await fetch(`${AVATAR_API_URL}/users/${userId}`, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.log(`Usuario ${userId} no existe en la API de avatar`);
+          return { exists: false, hasAvatar: false };
+        }
+        
+        throw new Error(`Error al verificar usuario: ${response.status}`);
       }
-
-      const token = await user.getIdToken();
-      localStorage.setItem('authToken', token);
-      localStorage.setItem('userId', user.uid);
-
-      await validateTokenWithBackend(token);
       
-      setUserId(user.uid);
-
-      setTimeout(() => {
-        if (!userLoading) router.push('/projects');
-      }, 500);
-    } catch (err: any) {
-      const code = err?.code || ''
-      setError(firebaseErrorMap[code] || err.message || 'Something went wrong. Please try again.')
-    } finally {
-      reset();
-      resetdata();
-      setIsLoading(false);
+      const userData = await response.json();
+      const hasAvatar = !!userData.avatar_url; // Convierte a booleano
+      
+      console.log(`Usuario ${userId} existe. Tiene avatar: ${hasAvatar}`);
+      return { exists: true, hasAvatar };
+    } catch (error) {
+      console.error("Error al verificar usuario y avatar:", error);
+      return { exists: false, hasAvatar: false };
     }
   };
 
-  const loginWithGoogle = async () => {
-    setIsLoading(true);
-    setError(null);
-
+  // Función común para manejar la post-autenticación
+  const handlePostAuthentication = async (userId: string, isNewUser = false) => {
     try {
-      const userCredential = await signInWithPopup(auth, googleProvider);
-      const token = await userCredential.user.getIdToken();
-
-      localStorage.setItem('authToken', token);
-      localStorage.setItem('userId', userCredential.user.uid);
-
-      setUserId(userCredential.user.uid);
-
-      await validateTokenWithBackend(token);
-
-      setUserId(userCredential.user.uid);
-
-      setTimeout(() => {
-        if (!userLoading) router.push('/projects');
-      }, 500);
-
-    } 
-
-    catch (err: any) 
-    {
-      const code = err?.code || ''
-      setError(firebaseErrorMap[code] || err.message || 'Something went wrong. Please try again.')
-    } 
-
-    finally 
-    {
-      reset();
-      resetdata();
-      setIsLoading(false);
-    }
-  };
-
-  const loginWithGithub = async () => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const userCredential = await signInWithPopup(auth, githubProvider);
-      const token = await userCredential.user.getIdToken();
-      localStorage.setItem('authToken', token);
-      localStorage.setItem('userId', userCredential.user.uid);
-
-      setUserId(userCredential.user.uid);
-
-      await validateTokenWithBackend(token);
-
-      setUserId(userCredential.user.uid);
+      console.log(`Manejando post-autenticación para usuario ${userId}. ¿Es nuevo? ${isNewUser}`);
       
-      setTimeout(() => {
-        if (!userLoading) router.push('/projects');
-      }, 500);
+      // Siempre establecer ID de usuario en el contexto
+      setUserId(userId);
       
+      // Si es un usuario nuevo, inicializar roles
+      if (isNewUser) {
+        console.log("Inicializando roles para usuario nuevo...");
+        console.log("usuario a inicializar", userId);
+        await initializeUserRoles(userId);
+      }
       
-      reset();
-      resetdata();
+      // Verificar si el usuario tiene avatar - NO usar el contexto aquí
+      const { exists, hasAvatar } = await checkUserAvatar(userId);
+      
+      // Solo si tiene avatar, cargar datos en contextos
+      // De lo contrario, ir directamente a crear avatar
+      if (exists && hasAvatar) {
+        console.log("Usuario con avatar, cargando datos en contextos...");
+        try {
+          // Intentar cargar datos en contextos (si falla, no debe interrumpir el flujo)
+          await fetchAvatar(userId);
+          await fetchUserRoles();
+        } catch (err) {
+          console.warn("Error cargando datos en contextos:", err);
+        }
 
-
-      router.push('/projects');
-    } 
-
-    catch (err: any) 
-    {
-      const code = err?.code || ''
-      setError(firebaseErrorMap[code] || err.message || 'Something went wrong. Please try again.')
-    } 
-
-    finally 
-    {
-      setIsLoading(false);
+        console.log("avatar obtenido del avatar context: " + userData.avatar_url);
+        
+        console.log("Redirigiendo a proyectos...");
+        router.push('/projects');
+      } else {
+        console.log("Usuario sin avatar, redirigiendo a creador de avatar...");
+        router.push('/avatar_creator');
+      }
+    } catch (error) {
+      console.error("Error en post-autenticación:", error);
+      setError("Error preparing your account. Please try again.");
     }
   };
 
@@ -183,6 +155,123 @@ export const useAuth = () => {
     return response.json();
   };
 
+  const loginWithEmail = async (email: string, password: string) => {
+    if (!email || !password) {
+      setError('Please enter both email and password');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      if (!user.emailVerified) {
+        setError('Please verify your email before logging in.');
+        await auth.signOut();
+        return;
+      }
+
+      const token = await user.getIdToken();
+      localStorage.setItem('authToken', token);
+      localStorage.setItem('userId', user.uid);
+
+      await validateTokenWithBackend(token);
+      
+      // Procesar post-autenticación (usuario existente)
+      await handlePostAuthentication(user.uid, false);
+    } catch (err: any) {
+      const code = err?.code || ''
+      setError(firebaseErrorMap[code] || err.message || 'Something went wrong. Please try again.')
+    } finally {
+      reset();
+      resetdata();
+      setIsLoading(false);
+    }
+  };
+
+  const loginWithGoogle = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const userCredential = await signInWithPopup(auth, googleProvider);
+      const user = userCredential.user;
+      const token = await user.getIdToken();
+
+      localStorage.setItem('authToken', token);
+      localStorage.setItem('userId', user.uid);
+
+      await validateTokenWithBackend(token);
+      
+      // Verificar si el usuario ya existe en nuestra API de avatar
+      const { exists } = await checkUserAvatar(user.uid);
+      
+      if (!exists) {
+        // Es un usuario nuevo, registrarlo
+        console.log("Registrando nuevo usuario de Google en la API de avatar...");
+        await registerAvatarUser({
+          firebase_id: user.uid,
+          name: user.displayName || user.email?.split('@')[0] || 'Google User',
+          avatar_url: null,
+          gender: null
+        });
+      }
+      
+      // Manejar post-autenticación (indicando si es usuario nuevo)
+      await handlePostAuthentication(user.uid, !exists);
+    } catch (err: any) {
+      const code = err?.code || ''
+      setError(firebaseErrorMap[code] || err.message || 'Something went wrong. Please try again.')
+    } finally {
+      reset();
+      resetdata();
+      setIsLoading(false);
+    }
+  };
+
+  const loginWithGithub = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const userCredential = await signInWithPopup(auth, githubProvider);
+      const user = userCredential.user;
+      const token = await user.getIdToken();
+      
+      localStorage.setItem('authToken', token);
+      localStorage.setItem('userId', user.uid);
+
+      await validateTokenWithBackend(token);
+      
+      // Verificar si el usuario ya existe en nuestra API de avatar
+      const { exists } = await checkUserAvatar(user.uid);
+      
+      if (!exists) {
+        // Es un usuario nuevo, registrarlo
+        console.log("Registrando nuevo usuario de GitHub en la API de avatar...");
+        await registerAvatarUser({
+          firebase_id: user.uid,
+          name: user.displayName || user.email?.split('@')[0] || 'GitHub User',
+          avatar_url: null,
+          gender: null
+        });
+      }
+      
+      // Manejar post-autenticación (indicando si es usuario nuevo)
+      await handlePostAuthentication(user.uid, !exists);
+    } catch (err: any) {
+      const code = err?.code || ''
+      setError(firebaseErrorMap[code] || err.message || 'Something went wrong. Please try again.')
+    } finally {
+      reset();
+      resetdata();
+      setIsLoading(false);
+    }
+  };
+
   const logout = async () => {
     try {
       reset(); // Limpia KanbanContext
@@ -194,6 +283,11 @@ export const useAuth = () => {
       localStorage.removeItem('authToken');
       localStorage.removeItem('userId');
       localStorage.removeItem('currentProjectId');
+
+      // Limpiar datos de avatar y roles
+      resetAvatar();
+      resetRoles(); 
+
       
       router.push('/login');
     } catch (err: any) {
