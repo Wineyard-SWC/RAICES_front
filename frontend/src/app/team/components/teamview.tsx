@@ -1,14 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useTeams } from "@/contexts/teamscontext";
 import { CreateTeamModal } from "./CreateTeamModal";
 import { EditTeamModal } from "./EditTeamModal";
 import { DeleteTeamModal } from "./DeleteTeamModal";
-// Importar el hook de permisos
 import { useUserPermissions } from "@/contexts/UserPermissions";
 import { useUser } from "@/contexts/usercontext";
+// Importar el contexto de usuarios de proyecto y componente de avatar
+import { useProjectUsers, ProjectUser } from "@/contexts/ProjectusersContext";
+import AvatarProfileIcon from "@/components/Avatar/AvatarDisplay";
 
 type TabState = {
   [key: string]: string;
@@ -30,10 +32,16 @@ const TeamsView = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<any>(null); 
   const projectId = localStorage.getItem("currentProjectId");
-  
+
+  const isTabsInitialized = useRef(false);
+
   // Añadir contexto de usuario y permisos
   const { userId } = useUser();
   const { hasPermission, loadUserPermissionsIfNeeded } = useUserPermissions();
+  
+  // Añadir contexto de usuarios del proyecto
+  const { loadUsersIfNeeded, getUsersForProject, isLoading: isLoadingUsers } = useProjectUsers();
+  const [projectUsers, setProjectUsers] = useState<ProjectUser[]>([]);
   
   // Verificar si el usuario tiene permiso para gestionar equipos
   const canManageTeams = hasPermission(PERMISSIONS.TEAM_MANAGE);
@@ -44,22 +52,37 @@ const TeamsView = () => {
       loadUserPermissionsIfNeeded(userId);
     }
   }, [userId, loadUserPermissionsIfNeeded]);
+  
+  // Cargar usuarios del proyecto
+  useEffect(() => {
+    if (projectId) {
+      loadUsersIfNeeded(projectId)
+        .then(users => {
+          setProjectUsers(users);
+          console.log("Usuarios del proyecto cargados:", users);
+        })
+        .catch(err => console.error("Error cargando usuarios del proyecto:", err));
+    }
+  }, [projectId, loadUsersIfNeeded]);
 
   // Initialize tabs
   useEffect(() => {
-    const initialTabs: TabState = {};
-    teams.forEach(team => {
-      initialTabs[team.id] = "overview";
-    });
-    setActiveTab(initialTabs);
-  }, [teams]);
+    if (!isTabsInitialized.current && teams.length > 0) {
+      const initialTabs: TabState = {}
+      teams.forEach(team => {
+        initialTabs[team.id] = "overview"
+      })
+      setActiveTab(initialTabs)
+      isTabsInitialized.current = true
+    }
+  }, [teams])
 
   // Fetch teams on mount
   useEffect(() => {
     if (projectId) {
       fetchTeams(projectId);
     }
-  }, [projectId]);
+  }, [projectId, fetchTeams]);
 
   // Filter teams based on search term
   useEffect(() => {
@@ -72,6 +95,24 @@ const TeamsView = () => {
       setFilteredTeams(filtered);
     }
   }, [searchTerm, teams]);
+  
+  // Función para obtener la información completa de un usuario por su ID
+  const getEnrichedMemberData = (member) => {
+    const projectUser = projectUsers.find(u => 
+      // Intentar coincidir por ID o por nombre (ya que los IDs pueden ser diferentes)
+      u.userRef === member.id || u.name.toLowerCase() === member.name.toLowerCase()
+    );
+    
+    if (projectUser) {
+      return {
+        ...member,
+        avatarUrl: projectUser.avatarUrl,
+        gender: projectUser.gender
+      };
+    }
+    
+    return member;
+  };
 
   const navigateToTeamDetails = (teamId: string) => {
     router.push(`/team/${teamId}`);
@@ -338,35 +379,49 @@ const TeamsView = () => {
 
               {activeTab[team.id] === 'members' && (
                 <div className="space-y-4">
-                  {team.members.map((member) => (
-                    <div key={member.id} className="bg-gray-50 rounded-md p-4">
-                      <div className="flex items-center">
-                        <div className="relative w-10 h-10 mr-3">
-                          <div className="w-10 h-10 bg-[#ebe5eb] rounded-full flex items-center justify-center text-[#4a2b4a] font-bold">
-                            {member.name.charAt(0)}
+                  {team.members.map((member) => {
+                    // Obtener datos enriquecidos del miembro
+                    const enrichedMember = getEnrichedMemberData(member);
+                    return (
+                      <div key={member.id} className="bg-gray-50 rounded-md p-4">
+                        <div className="flex items-center">
+                          <div className="relative w-10 h-10 mr-3">
+                            {enrichedMember.avatarUrl ? (
+                              <AvatarProfileIcon
+                                avatarUrl={enrichedMember.avatarUrl}
+                                size={40}
+                                borderWidth={2}
+                                borderColor="#C7A0B8"
+                                backgroundColor="#ebe5eb"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 bg-[#ebe5eb] rounded-full flex items-center justify-center text-[#4a2b4a] font-bold">
+                                {member.name.charAt(0)}
+                              </div>
+                            )}
                           </div>
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-medium">{member.name}</h4>
-                          <p className="text-sm text-gray-600">{member.role}</p>
-                          <div className="flex items-center mt-1 text-xs text-gray-500">
-                            <span>{member.tasksCompleted} tasks completed</span>
-                            <span className="mx-2">•</span>
-                            <span>{member.currentTasks} current tasks</span>
+                          <div className="flex-1">
+                            <h4 className="font-medium">{member.name}</h4>
+                            <p className="text-sm text-gray-600">{member.role}</p>
+                            <div className="flex items-center mt-1 text-xs text-gray-500">
+                              <span>{member.tasksCompleted} tasks completed</span>
+                              <span className="mx-2">•</span>
+                              <span>{member.currentTasks} current tasks</span>
+                            </div>
                           </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="inline-block px-2 py-1 rounded-full text-xs font-medium" 
-                            style={{ 
-                              backgroundColor: member.availability >= 80 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(234, 179, 8, 0.1)',
-                              color: member.availability >= 80 ? 'rgb(22, 163, 74)' : 'rgb(202, 138, 4)'
-                            }}>
-                            {member.availability}% available
+                          <div className="text-right">
+                            <div className="inline-block px-2 py-1 rounded-full text-xs font-medium" 
+                              style={{ 
+                                backgroundColor: member.availability >= 80 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(234, 179, 8, 0.1)',
+                                color: member.availability >= 80 ? 'rgb(22, 163, 74)' : 'rgb(202, 138, 4)'
+                              }}>
+                              {member.availability}% available
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

@@ -35,7 +35,7 @@ interface UserPermissionsContextType {
   refreshUserPermissions: (userId: string) => Promise<void>;
   
   // Control del proyecto actual
-  setCurrentProject: (projectId: string) => void;
+  setCurrentProjectPermissions: (projectId: string) => void;
   getCurrentProject: () => string | null;
   
   // Limpieza de caché
@@ -245,7 +245,7 @@ export const UserPermissionsProvider = ({ children }: { children: ReactNode }) =
   }, [fetchUserProjectRelations, fetchRoleBitmask, findLocalBitmask]);
   
   // Establecer el proyecto actual
-  const setCurrentProject = useCallback((projectId: string) => {
+  const setCurrentProjectPermissions = useCallback((projectId: string) => {
     setCurrentProjectId(projectId);
     localStorage.setItem("currentProjectId", projectId);
   }, []);
@@ -324,7 +324,7 @@ export const UserPermissionsProvider = ({ children }: { children: ReactNode }) =
     loadUserPermissionsIfNeeded,
     refreshUserPermissions,
     
-    setCurrentProject,
+    setCurrentProjectPermissions,
     getCurrentProject,
     
     clearPermissionsCache

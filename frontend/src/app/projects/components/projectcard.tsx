@@ -67,7 +67,7 @@ export default function ProjectCard({
   const { userId } = useUser()
   const { isOwner, isMember } = useUserProjectRole(userId, id)
   const { loadUsersIfNeeded } = useProjectUsers()
-  const { setCurrentProject, loadUserPermissionsIfNeeded } = useUserPermissions()
+  const { setCurrentProjectPermissions, loadUserPermissionsIfNeeded } = useUserPermissions()
 
   const [menuOpen, setMenuOpen] = useState(false)
   const [showInviteModal, setShowInviteModal] = useState(false)
@@ -83,7 +83,7 @@ export default function ProjectCard({
   const {setUserStories} = useUserStoryContext();
   const {setSelectedUserStoriesIds} = useSelectedUserStoriesContext();
   const {clearTasks} = useGeneratedTasks()
-  const {refreshKanban} = useKanban();
+  const {setCurrentProject, refreshKanban} = useKanban();
 
   // Para formatear la fecha en tu card
   const formatDate = (dateStr: string) => {
@@ -108,6 +108,7 @@ export default function ProjectCard({
     
     // Configurar el proyecto actual en el contexto de Kanban
     setCurrentProject(id)
+    setCurrentProjectPermissions(id)
     
     // Cargar los usuarios del proyecto seleccionado
     loadUsersIfNeeded(id).then(users => {
