@@ -32,7 +32,12 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
   const { userId, userData } = useUser();
   const taskcontext = useTasks()
   const storiescontext = useUserStories()
-  const {addBugToProject} = useBugs()    
+  const {addBugToProject} = useBugs() 
+  const {getUserStoriesForProject} = useUserStories()
+  const {getTasksForProject} = useTasks()
+
+  const onlystories = getUserStoriesForProject(projectId!)
+  const onlytasks = getTasksForProject(projectId!)   
   
   const getUserInfo = (): [string, string] => {
         return [userId, userData?.name!];
@@ -189,6 +194,9 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
           <CreateTaskForm 
             onSave={(data:Task) => handleCreate(data, "task")}
             onCancel={() => setSelectedType(null)}
+            availableSprints={[]}
+            availableUsers={[]}
+            userstories={onlystories}
           />
         );
       case "userstory":
@@ -196,6 +204,9 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
           <CreateUserStoryForm 
             onSave={(data:UserStory) => handleCreate(data, "userstory")}
             onCancel={() => setSelectedType(null)}
+            availableEpics={[]}
+            availableSprints={[]}
+            availableUsers={[]}
           />
         );
       case "bug":
@@ -203,6 +214,10 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
           <CreateBugForm 
             onSave={(data:BugType) => handleCreate(data, "bug")}
             onCancel={() => setSelectedType(null)}
+            availableSprints={[]}
+            availableTasks={onlytasks}
+            availableUserStories={onlystories}
+            availableUsers={[]}
           />
         );
       default:

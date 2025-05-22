@@ -14,6 +14,8 @@ import UserStoryEditForm from "../detailedcardviews/usersotoryvieweditform";
 import BugViewForm from "../detailedcardviews/bugviewform";
 import BugEditForm from "../detailedcardviews/bugvieweditform";
 import CommentsSection from "../detailedcardviews/commentssection";
+import { useUserStories } from "@/contexts/saveduserstoriescontext";
+import { useTasks } from "@/contexts/taskcontext";
 
 interface TaskSidebarProps {
   isOpen: boolean;
@@ -24,7 +26,12 @@ interface TaskSidebarProps {
 const TaskSidebar = ({ isOpen, onClose, task }: TaskSidebarProps) => {
   const [isEditMode, setIsEditMode] = useState(false);
   const { userId, userData } = useUser();
-  const { tasks, updateTask, updateStory, updateBug } = useKanban();
+  const { currentProjectId,tasks, updateTask, updateStory, updateBug } = useKanban();
+  const {getUserStoriesForProject} = useUserStories()
+  const {getTasksForProject} = useTasks()
+
+  const onlystories = getUserStoriesForProject(currentProjectId!)
+  const onlytasks = getTasksForProject(currentProjectId!)
   
   // Get latest task data from tasks state
   const currentTask = useMemo(() => {
@@ -67,11 +74,34 @@ const TaskSidebar = ({ isOpen, onClose, task }: TaskSidebarProps) => {
   const renderForm = () => {
     if (isEditMode) {
       if (isUserStory(currentTask)) {
-        return <UserStoryEditForm task={currentTask} onSave={handleSave} />;
+        return <UserStoryEditForm 
+          task={currentTask} 
+          onSave={handleSave}
+          onCancel={()=>{}} 
+          availableEpics={[]}
+          availableSprints={[]}
+          availableUsers={[]}
+          
+        />;
       } else if (isBug(currentTask)) {
-        return <BugEditForm task={currentTask} onSave={handleSave} />;
+        return <BugEditForm 
+          task={currentTask} 
+          onSave={handleSave}
+          onCancel={()=>{}}
+          availableSprints={[]}
+          availableTasks={onlytasks}
+          availableUserStories={onlystories}
+          availableUsers={[]}
+         />;
       } else {
-        return <TaskEditForm task={currentTask} onSave={handleSave} />;
+        return <TaskEditForm 
+          task={currentTask} 
+          onSave={handleSave}  
+          onCancel={()=>{}}
+          availableSprints={[]}
+          availableUsers={[]}
+          userstories={onlystories}
+        />;
       }
     } else {
       if (isUserStory(currentTask)) {

@@ -668,6 +668,7 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         await fetch(`${API_URL}/projects/${currentProjectId}/tasks/${taskId}`, { method: 'DELETE' })
       } 
       else if (isUserStory(item)) {
+        storiesContext.removeUserStoryFromProject(currentProjectId, item.uuid)
         await deleteStory(taskId)
       } 
       else if (isBug(item)) {
@@ -688,8 +689,6 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setError(null)
 
     try {
-      storiesContext.removeUserStoryFromProject(currentProjectId, storyId)
-
       const response = await fetch(`${API_URL}/projects/${currentProjectId}/userstories/${storyId}`, {
         method: 'DELETE'
       })

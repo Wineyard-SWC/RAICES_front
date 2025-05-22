@@ -64,7 +64,7 @@ const CommentsSection = ({ task, userId, userData, onUpdateComments }: CommentsS
         {Array.isArray(task.comments) && task.comments.length > 0 ? (
           task.comments.map((comment: Comments) => (
             <div key={comment.id} className="bg-[#F5F0F1] border border-gray-200 p-2 rounded-md relative">
-              <div className="flex justify-between text-xs text-gray-600">
+              <div className="flex justify-between text-lg text-gray-600">
                 <span>
                   <strong>{comment.user_name}</strong> · {new Date(comment.timestamp).toLocaleString()}
                 </span>
@@ -74,15 +74,15 @@ const CommentsSection = ({ task, userId, userData, onUpdateComments }: CommentsS
                     onClick={() => handleDeleteComment(comment.id)}
                     className="text-red-500 hover:text-red-700"
                   >
-                    <Trash className="h-3 w-3" />
+                    <Trash className="h-4 w-4" />
                   </button>
                 )}
               </div>
-              <p className="text-black mt-1 text-xs">{comment.text}</p>
+              <p className="text-black mt-1 text-lg">{comment.text}</p>
             </div>
           ))
         ) : (
-          <p className="text-gray-500 italic text-xs">No comments yet</p>
+          <p className="text-gray-500 italic text-lg">No comments yet</p>
         )}
       </div>
       
@@ -92,7 +92,7 @@ const CommentsSection = ({ task, userId, userData, onUpdateComments }: CommentsS
           rows={2}
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
-          className="w-full p-2 border border-gray-300 rounded-md text-xs resize-none"
+          className="w-full p-2 border border-gray-300 rounded-md text-lg resize-none"
           placeholder="Write your comment here..."
         />
         <div className="flex justify-end mt-2">
@@ -101,7 +101,7 @@ const CommentsSection = ({ task, userId, userData, onUpdateComments }: CommentsS
             size="sm"
             onClick={handleSubmitComment}
             disabled={!newComment.trim() || !userId}
-            className="bg-[#4A2B4A] hover:bg-[#3a2248] text-xs py-1 px-2"
+            className="bg-[#4A2B4A] hover:bg-[#3a2248] text-lg py-1 px-2"
           >
             Add Comment
           </Button>

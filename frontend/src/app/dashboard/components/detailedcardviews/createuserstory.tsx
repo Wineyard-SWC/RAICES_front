@@ -7,6 +7,9 @@ import { v4 as uuidv4 } from "uuid"
 interface CreateUserStoryFormProps {
   onSave: (data: any) => void;
   onCancel: () => void;
+  availableUsers?: Array<{ id: string; name: string }>;
+  availableSprints?: Array<{ id: string; name: string }>;
+  availableEpics?: Array<{ id: string; name: string }>;
 }
 
 interface AcceptanceCriteria {
@@ -23,21 +26,50 @@ interface AcceptanceCriteria {
 const getNow = () => new Date().toISOString();
 
 
-const CreateUserStoryForm = ({ onSave, onCancel }: CreateUserStoryFormProps) => {
+const CreateUserStoryForm = ({ onSave, 
+  onCancel, 
+  availableUsers = [], 
+  availableSprints = [], 
+  availableEpics = [] 
+}: CreateUserStoryFormProps) => {
   const { userId, userData } = useUser();
 
   const [formData, setFormData] = useState({
+    idTitle: "",
     title: "",
     description: "",
     priority: "Medium" as "High" | "Medium" | "Low",
     deadline: "",
     points: 0,
     acceptanceCriteria: [] as AcceptanceCriteria[],
-    assigned_epic: "",
-    status_khanban: "Backlog" as "Backlog" | "To Do" | "In Progress" | "In Review" | "Done"
+    epicRef: "",
+    assigned_sprint: "",
+    status_khanban: "Backlog" as "Backlog" | "To Do" | "In Progress" | "In Review" | "Done",
+    assignee: [] as Array<{ users: [string, string] }>,
   });
 
+  const [newAssignee, setNewAssignee] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const handleAddAssignee = () => {
+    if (newAssignee && !formData.assignee.some(a => a.users[0] === newAssignee)) {
+      const user = availableUsers.find(u => u.id === newAssignee);
+      if (user) {
+        setFormData({
+          ...formData,
+          assignee: [...formData.assignee, { users: [user.id, user.name] }],
+        });
+        setNewAssignee("");
+      }
+    }
+  };
+
+  const handleRemoveAssignee = (userId: string) => {
+    setFormData({
+      ...formData,
+      assignee: formData.assignee.filter(a => a.users[0] !== userId),
+    });
+  };
 
   const handleAddAcceptanceCriteria = () => {
     const now = getNow();
@@ -86,9 +118,11 @@ const CreateUserStoryForm = ({ onSave, onCancel }: CreateUserStoryFormProps) => 
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+   const handleSubmit = () => {
     if (!validateForm()) return;
+    
     const userStoryData = {
+      idTitle: formData.idTitle.trim() || undefined,
       title: formData.title.trim(),
       description: formData.description.trim(),
       priority: formData.priority,
@@ -97,14 +131,31 @@ const CreateUserStoryForm = ({ onSave, onCancel }: CreateUserStoryFormProps) => 
       acceptanceCriteria: formData.acceptanceCriteria.filter(
         criteria => criteria.description.trim() !== ""
       ),
-      assigned_epic: formData.assigned_epic.trim() || undefined,
+      epicRef: formData.epicRef.trim() || undefined,
+      assigned_sprint: formData.assigned_sprint || undefined,
       status_khanban: formData.status_khanban,
+      assignee: formData.assignee,
     };
     onSave(userStoryData);
   };
 
-  return (
+
+   return (
     <div className="space-y-4">
+      {/* ID Title */}
+      <div className="bg-white p-4 rounded-lg shadow-sm">
+        <label className="block text-lg font-semibold text-[#4A2B4A] mb-2">
+          ID Title (Optional)
+        </label>
+        <input
+          type="text"
+          value={formData.idTitle}
+          onChange={(e) => setFormData({ ...formData, idTitle: e.target.value })}
+          className="w-full p-3 border border-gray-300 rounded-md text-lg"
+          placeholder="e.g., US-001"
+        />
+      </div>
+
       {/* Title */}
       <div className="bg-white p-4 rounded-lg shadow-sm">
         <label className="block text-lg font-semibold text-[#4A2B4A] mb-2">
@@ -144,7 +195,7 @@ const CreateUserStoryForm = ({ onSave, onCancel }: CreateUserStoryFormProps) => 
         <div className="bg-white p-4 rounded-lg shadow-sm">
           <label className="block text-lg font-semibold text-[#4A2B4A] mb-2">Priority</label>
           <select
-            aria-label ="priority"
+            aria-label="priority"
             value={formData.priority}
             onChange={(e) => setFormData({ ...formData, priority: e.target.value as "High" | "Medium" | "Low" })}
             className="w-full p-3 border border-gray-300 rounded-md text-lg"
@@ -169,34 +220,10 @@ const CreateUserStoryForm = ({ onSave, onCancel }: CreateUserStoryFormProps) => 
         </div>
       </div>
 
-      {/* Deadline */}
-      <div className="bg-white p-4 rounded-lg shadow-sm">
-        <label className="block text-lg font-semibold text-[#4A2B4A] mb-2">Deadline (Optional)</label>
-        <input
-          aria-label ="date"
-          type="date"
-          value={formData.deadline}
-          onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-          className="w-full p-3 border border-gray-300 rounded-md text-lg"
-        />
-      </div>
-
-      {/* Epic Assignment */}
-      <div className="bg-white p-4 rounded-lg shadow-sm">
-        <label className="block text-lg font-semibold text-[#4A2B4A] mb-2">Assigned Epic (Optional)</label>
-        <input
-          type="text"
-          value={formData.assigned_epic}
-          onChange={(e) => setFormData({ ...formData, assigned_epic: e.target.value })}
-          className="w-full p-3 border border-gray-300 rounded-md text-lg"
-          placeholder="Enter epic name"
-        />
-      </div>
-
       {/* Board Status */}
       <div className="bg-white p-4 rounded-lg shadow-sm">
         <label className="block text-lg font-semibold text-[#4A2B4A] mb-2">
-          Backlog Status
+          Status
         </label>
         <select
           aria-label="status_khanban"
@@ -210,6 +237,107 @@ const CreateUserStoryForm = ({ onSave, onCancel }: CreateUserStoryFormProps) => 
           <option value="In Review">In Review</option>
           <option value="Done">Done</option>
         </select>
+      </div>
+
+      {/* Epic Assignment */}
+      <div className="bg-white p-4 rounded-lg shadow-sm">
+        <label className="block text-lg font-semibold text-[#4A2B4A] mb-2">Epic (Optional)</label>
+        <select
+          aria-label="epic"
+          value={formData.epicRef}
+          onChange={(e) => setFormData({ ...formData, epicRef: e.target.value })}
+          className="w-full p-3 border border-gray-300 rounded-md text-lg"
+        >
+          <option value="">-- No Epic --</option>
+          {availableEpics.map(epic => (
+            <option key={epic.id} value={epic.id}>
+              {epic.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Sprint Assignment */}
+      <div className="bg-white p-4 rounded-lg shadow-sm">
+        <label className="block text-lg font-semibold text-[#4A2B4A] mb-2">Sprint (Optional)</label>
+        <select
+          aria-label="sprint"
+          value={formData.assigned_sprint}
+          onChange={(e) => setFormData({ ...formData, assigned_sprint: e.target.value })}
+          className="w-full p-3 border border-gray-300 rounded-md text-lg"
+        >
+          <option value="">-- No Sprint --</option>
+          {availableSprints.map(sprint => (
+            <option key={sprint.id} value={sprint.id}>
+              {sprint.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Assignees */}
+      <div className="bg-white p-4 rounded-lg shadow-sm">
+        <label className="block text-lg font-semibold text-[#4A2B4A] mb-2">Assignees</label>
+        
+        {/* Current assignees */}
+        {formData.assignee.length > 0 && (
+          <div className="mb-3 space-y-2">
+            {formData.assignee.map((assignee, index) => (
+              <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded-md">
+                <span className="text-lg">{assignee.users[1]}</span>
+                <Button
+                  type="button"
+                  onClick={() => handleRemoveAssignee(assignee.users[0])}
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <Trash className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Add new assignee */}
+        <div className="flex gap-2">
+          <select
+            aria-label="assignee"
+            value={newAssignee}
+            onChange={(e) => setNewAssignee(e.target.value)}
+            className="flex-1 p-2 border border-gray-300 rounded-md text-lg"
+          >
+            <option value="">Select user to assign</option>
+            {availableUsers
+              .filter(u => !formData.assignee.some(a => a.users[0] === u.id))
+              .map(user => (
+                <option key={user.id} value={user.id}>
+                  {user.name}
+                </option>
+              ))}
+          </select>
+          <Button
+            type="button"
+            onClick={handleAddAssignee}
+            variant="outline"
+            size="sm"
+            className="bg-[#4A2B4A] text-white hover:bg-[#3a2248]"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Deadline */}
+      <div className="bg-white p-4 rounded-lg shadow-sm">
+        <label className="block text-lg font-semibold text-[#4A2B4A] mb-2">Deadline (Optional)</label>
+        <input
+          aria-label="date"
+          type="date"
+          value={formData.deadline}
+          onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+          className="w-full p-3 border border-gray-300 rounded-md text-lg"
+        />
       </div>
 
       {/* Acceptance Criteria */}
@@ -277,5 +405,4 @@ const CreateUserStoryForm = ({ onSave, onCancel }: CreateUserStoryFormProps) => 
     </div>
   );
 };
-
 export default CreateUserStoryForm;
