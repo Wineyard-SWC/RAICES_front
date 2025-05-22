@@ -3,19 +3,13 @@
 import type React from "react"
 import { useEffect, useState, useRef } from "react"
 import Link from "next/link"
-import { Bell, ChevronDown, Settings, LogOut, FolderOpen } from "lucide-react"
+import { Bell, ChevronDown, Settings, LogOut, FolderOpen, Users } from "lucide-react"
 import Image from "next/image"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useUser } from "@/contexts/usercontext"
 import { useProjects } from "@/hooks/useProjects"
-import { useKanban } from "@/contexts/unifieddashboardcontext"
-import { useRequirementContext } from "@/contexts/requirementcontext"
-import { useEpicContext } from "@/contexts/epiccontext"
-import { useUserStoryContext } from "@/contexts/userstorycontext"
-import { useSelectedRequirementContext } from "@/contexts/selectedrequirements"
-import { useSelectedEpicsContext } from "@/contexts/selectedepics"
-import { useSelectedUserStoriesContext } from "@/contexts/selecteduserstories"
-import { useGeneratedTasks } from "@/contexts/generatedtaskscontext"
+import { useAvatar } from "@/contexts/AvatarContext"
+import AvatarProfileIcon from "./Avatar/AvatarDisplay"
 
 type NavbarProps = {
   projectSelected: boolean
@@ -51,18 +45,11 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
   const [generateOpen, setGenerateOpen] = useState(false)
   const [projectMenuOpen, setProjectMenuOpen] = useState(false)
   const [currentProject, setCurrentProject] = useState<string>("Seleccionar proyecto")
-  const { userId } = useUser();
-  const { projects, loading } = useProjects(userId); 
-  const recentProjects = projects.slice(0, 3);
 
-  const {setRequirements} = useRequirementContext()
-  const {setSelectedIds} = useSelectedRequirementContext()
-  const {setEpics} = useEpicContext()
-  const {setSelectedEpicIds} = useSelectedEpicsContext();
-  const {setUserStories} = useUserStoryContext();
-  const {setSelectedUserStoriesIds} = useSelectedUserStoriesContext();
-  const {clearTasks} = useGeneratedTasks()
-  const {setCurrentProject:NewActiveProject, refreshKanban} = useKanban();
+  const { userId } = useUser()
+  const { avatarUrl } = useAvatar() // Obtenemos la URL del avatar desde el contexto
+  const { projects, loading } = useProjects(userId)
+  const recentProjects = projects.slice(0, 3)
   
   // Efecto para sincronizar el estado activo con la ruta actual
   useEffect(() => {
@@ -87,7 +74,8 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
 
     // Si estamos en una ruta que requiere un proyecto seleccionado pero no hay ninguno,
     // redirigimos a la página de proyectos
-    if (!hasSelectedProject && pathname !== "/projects" && pathname !== "/") {
+    // Reemplaza la línea 74 (aproximadamente)
+    if (!hasSelectedProject && pathname !== "/projects" && pathname !== "/" && pathname !== "/settings") {
       router.push("/projects")
     }
   }, [pathname, searchParams, router])
@@ -198,15 +186,6 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
     localStorage.setItem("currentProjectName", projectName)
     setCurrentProject(projectName)
     setProjectMenuOpen(false)
-    NewActiveProject(projectId)
-    refreshKanban()
-    setRequirements([])
-    setSelectedIds([])
-    setEpics([])
-    setSelectedEpicIds([])
-    setUserStories([])
-    setSelectedUserStoriesIds([])
-    clearTasks()
     router.push(`/dashboard?projectId=${projectId}`)
   }
 
@@ -370,14 +349,16 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
         </button>
 
         <div className="relative avatar-menu">
-          <button className="flex items-center" onClick={() => setAvatarMenuOpen(!avatarMenuOpen)}>
-            <div className="h-8 w-8 rounded-full bg-[#ebe5eb] overflow-hidden">
-              <img
-                src="https://cdn-icons-png.flaticon.com/512/921/921071.png"
-                alt="User avatar"
-                className="h-full w-full object-cover"
-              />
-            </div>
+          <button 
+            className="flex items-center" 
+            onClick={() => setAvatarMenuOpen(!avatarMenuOpen)}
+          >
+            <AvatarProfileIcon 
+              avatarUrl={avatarUrl} 
+              size={40} 
+              borderWidth={2}
+              borderColor="#4a2b4a"
+            />
             <ChevronDown className="ml-1 h-4 w-4 text-[#4a2b4a]" />
           </button>
 
@@ -392,8 +373,22 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
                   className="flex w-full items-center gap-2 px-4 py-2 text-sm text-[#4a2b4a] hover:bg-[#ebe5eb]"
                 >
                   <Settings className="h-4 w-4" />
-                  <span>Settings</span>
+                  <span>General Settings</span>
                 </button>
+
+                {/* Nueva opción - Configuración de miembros */}
+                {projectSelected && (
+                  <button
+                    onClick={() => {
+                      setAvatarMenuOpen(false)
+                      router.push("/member_settings")
+                    }}
+                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-[#4a2b4a] hover:bg-[#ebe5eb]"
+                  >
+                    <Users className="h-4 w-4" />
+                    <span>Member Settings</span>
+                  </button>
+                )}
 
                 <button
                   onClick={() => {
