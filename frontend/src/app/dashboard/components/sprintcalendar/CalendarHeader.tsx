@@ -46,7 +46,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
         </select>
         <button
           onClick={onAddEvent}
-          className="inline-flex items-center px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800"
+          className="inline-flex items-center px-4 py-2 bg-[#4a2b4a] text-white rounded-md hover:bg-gray-800"
         >
           <Plus className="mr-2 h-4 w-4" />
           Add Event
