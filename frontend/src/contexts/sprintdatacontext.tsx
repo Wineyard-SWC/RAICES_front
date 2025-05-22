@@ -3,12 +3,26 @@
 import { createContext, useContext, useEffect, useState } from "react"
 import { useTasks } from "@/contexts/taskcontext"
 
+interface BurndownDataPoint {
+  day: string
+  date: string
+  Remaining: number
+  Ideal: number
+  Completed: number
+  CompletedCumulative: number
+}
 
+interface SprintInfo {
+  name: string
+  start_date: string
+  end_date: string
+  total_story_points: number
+  duration_days: number
+}
 
 interface BurndownData {
-  duration_days: number
-  total_story_points: number
-  remaining_story_points: number
+  sprint_info: SprintInfo
+  chart_data: BurndownDataPoint[]
 }
 
 interface TeamMember {
@@ -26,6 +40,14 @@ interface VelocityPoint {
   Actual: number
 }
 
+interface BugSeverityDistribution {
+  Blocker: number
+  Critical: number
+  Major: number
+  Minor: number
+  Trivial: number
+}
+
 interface SprintComparisonData {
   sprint_id: string
   sprint_name: string
@@ -35,13 +57,14 @@ interface SprintComparisonData {
   completion_percentage: number
   scope_changes: number
   bugs_found: number
+  bug_severity_distribution: BugSeverityDistribution
   risk_assessment: string
-  tasks_per_day: number
-  estimated_days_remaining?: number
-  quality_metrics: {
-    bugs_found: number
-    priority_distribution: string
-  }
+  velocity: number
+  average_velocity: number
+  days_elapsed: number
+  sprint_duration: number
+  start_date: string
+  end_date: string
 }
 
 interface SprintDataContextType {
@@ -71,7 +94,7 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
   const [project_id, setProjectId] = useState<string | null>(null)
   const apiURL = process.env.NEXT_PUBLIC_API_URL || ""
   
-  const {getTasksForProject} = useTasks();
+  const { getTasksForProject } = useTasks();
 
   useEffect(() => {
     setIsClient(true)
@@ -79,19 +102,16 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
     setProjectId(storedProjectId)
   }, [])
 
-
-  const getTaskDataForGraphs = async() => {
+  const getTaskDataForGraphs = async () => {
     if (!project_id || !apiURL) return
     
     const currentprojecttasks = getTasksForProject(project_id)
     
-    const requiredData = currentprojecttasks.map(t => ({
+    return currentprojecttasks.map(t => ({
       status_khanban: t.status_khanban,
       story_points: t.story_points
-    }), []);
-    return requiredData
+    }))
   }
-
 
   const fetchBurndownData = async () => {
     if (!project_id || !apiURL) return
@@ -100,21 +120,21 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
 
     try {
       const response = await fetch(`${apiURL}/api/burndown`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              projectId: project_id,
-              tasks: tasksData
-            })
-          })
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: project_id,
+          tasks: tasksData
+        })
+      })
       const data = await response.json()
       
-      const { duration_days, total_story_points, remaining_story_points, team_members } = data
-
-      const burndown: BurndownData = { duration_days, total_story_points, remaining_story_points }
-
-      setBurndownData(burndown)
-      setTeamMembers(team_members || [])
+      if (data.error) {
+        console.error(data.error)
+        return
+      }
+      console.log('BURNDOWN CHART DATA:', JSON.parse(JSON.stringify(data)))
+      setBurndownData(data)
     } catch (error) {
       console.error("Error fetching burndown data:", error)
     }
@@ -127,15 +147,16 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
 
     try {
       const response = await fetch(`${apiURL}/api/velocitytrend`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              projectId: project_id,
-              tasks: tasksData
-            })
-          })
-          
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: project_id,
+          tasks: tasksData
+        })
+      })
+
       const data = await response.json()
+      console.log(data)
       setVelocityData(data)
     } catch (error) {
       console.error("Error fetching velocity data:", error)

@@ -13,14 +13,17 @@ import { useState, useEffect } from "react"
 export default function SprintDetails() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
-  const currentProjectId = localStorage.getItem("currentProjectId")
+  const [currentProjectId, setCurrentProjectId] = useState<string | null>(null)
 
   useEffect(() => {
     const userId = localStorage.getItem("userId")
+    const projectId = localStorage.getItem("currentProjectId")
+
     if (!userId) {
       router.push("/login")
     } else {
-      setLoading(false) 
+      setCurrentProjectId(projectId)
+      setLoading(false)
     }
   }, [router])
 
@@ -29,7 +32,7 @@ export default function SprintDetails() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f0ebf7]">
+    <div className="min-h-screen bg-[#EBE5EB]/30">
       <Navbar projectSelected={true} />
       <main className="container mx-auto p-6">
         <div className="mb-6">
