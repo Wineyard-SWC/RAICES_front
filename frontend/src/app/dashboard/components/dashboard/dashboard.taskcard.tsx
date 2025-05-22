@@ -30,9 +30,11 @@ interface TaskCardProps {
   usertype?: string;
   onDelete?: (id: string, columid:string) => void;
   onChangeStatus?: (task:TaskOrStory, newStatus:"Backlog" | "To Do" | "In Progress" | "In Review" | "Done") => void;
+  onViewDetails?: (task: TaskOrStory) => void; 
+
 }
 
-export const TaskCard = ({ task, columnId, view, usertype, onDelete,onChangeStatus}: TaskCardProps) => {
+export const TaskCard = ({ task, columnId, view, usertype, onDelete,onChangeStatus, onViewDetails}: TaskCardProps) => {
   const [menuOpen, setMenuOpen] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -134,11 +136,43 @@ export const TaskCard = ({ task, columnId, view, usertype, onDelete,onChangeStat
     Done: "bg-orange-100 text-orange-800"
   }
 
-  return (
+  const handleViewDetails = () => {
+    setMenuOpen(false);
+    if (onViewDetails) {
+      onViewDetails(task);
+    }
+  };
+
+  const handleViewDetailsFromMenu = () => {
+    setMenuOpen(false);
+    
+    if (view === "backlog" && onViewDetails) {
+      onViewDetails(task);
+    }
+    else {
+      setShowModal(true);
+    }
+  };
+
+  const handleCardClick = () => {
+    if (view === "dashboard") {
+      setShowModal(true);
+    }
+    else if (view === "backlog" && onViewDetails) {
+      onViewDetails(task);
+    }
+    else {
+      setShowModal(true);
+    }
+  };
+
+   return (
     <div
       className={`hover:bg-[#EBE5EB] cursor-pointer bg-white rounded-md p-5 shadow-sm 
                     ${cardTypeColors[cardType]} border-t border-r border-b border-[#D3C7D3] 
                     mb-4 relative transition-all duration-200 hover:shadow-md w-full h-full`}
+    
+      onClick={handleCardClick}
     >
       {/* Card Type Indicator */}
       <div
@@ -156,16 +190,19 @@ export const TaskCard = ({ task, columnId, view, usertype, onDelete,onChangeStat
       </div>
 
       <div className="absolute right-2 top-8 mt-1" ref={menuRef}>
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setMenuOpen((prev) => !prev)}>
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => {
+          e.stopPropagation();
+          setMenuOpen((prev) => !prev);
+        }}>
           <MoreVertical className="h-5 w-5" />
         </Button>
         {menuOpen && (
           <div className="absolute right-0 mt-2 w-40 bg-white border rounded-md shadow-lg z-20">
             <button
               className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-[#4A2B4A] hover:bg-gray-100"
-              onClick={() => {
-                setMenuOpen(false)
-                setTimeout(() => setShowModal(true), 0)
+              onClick={(e) => {
+                e.stopPropagation();
+                handleViewDetailsFromMenu();
               }}
             >
               <Eye className="h-4 w-4" /> View Details
@@ -173,7 +210,8 @@ export const TaskCard = ({ task, columnId, view, usertype, onDelete,onChangeStat
 
             <button
               className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-[#4A2B4A] hover:bg-gray-100"
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 setMenuOpen(false)
                 setShowChangeStatusModal(true)
               }}
@@ -184,7 +222,8 @@ export const TaskCard = ({ task, columnId, view, usertype, onDelete,onChangeStat
             {view !== "dashboard" && (
               <button
                 className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-gray-100"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   setMenuOpen(false)
                   setTimeout(() => {
                     setItemToDelete({ id: task.id, columnId })

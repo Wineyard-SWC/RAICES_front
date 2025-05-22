@@ -74,7 +74,7 @@ export const createTask = async (
   tasksContext?: TaskContextType
 ): Promise<Task> => {
   // Make API request
-  const res = await fetch(`${apiURL}/${projectId}/tasks`, {
+  const res = await fetch(`${apiURL}/projects/${projectId}/tasks`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(taskData),
