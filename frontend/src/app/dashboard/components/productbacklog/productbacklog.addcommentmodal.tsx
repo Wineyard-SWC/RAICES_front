@@ -86,33 +86,55 @@ export default function AddCommentModal({ onClose, comments,taskId, taskTitle,on
                     <h4 className="text-xl font-semibold text-black mb-3">Comments:</h4>
                     <div className="max-h-52 overflow-y-auto w-full">
                       {comments.map((comment) => (
-                        <div key={comment.id} className="w-full border border-gray-300 rounded-lg p-3 bg-white relative">
-                          <div className="text-base text-gray-600 mb-2 flex justify-between items-center">
-                            <span>
-                              <strong>{comment.user_name}</strong> · {new Date(comment.timestamp).toLocaleString()}
-                            </span>
+                        <div
+                          key={comment.id}
+                          className="w-full bg-white border border-gray-200 shadow-sm rounded-xl p-4 mb-4 hover:shadow-md transition-shadow duration-300 relative group"
+                          >
+                          <div className="flex items-start gap-4">
+                          {/* Avatar inicial */}
+                          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-purple-200 flex items-center justify-center text-purple-700 font-bold text-xl">
+                            {comment.user_name.charAt(0).toUpperCase()}
+                          </div>
+
+                          <div className="flex-1">
+                            {/* Encabezado: nombre y fecha */}
+                            <div className="flex justify-between items-center">
+                              <div className="text-sm text-gray-700">
+                              <strong className="text-base">{comment.user_name}</strong>
+                              <span className="text-xs text-gray-500 ml-2">
+                                {new Date(comment.timestamp).toLocaleString()}
+                              </span>
+                            </div>
+
+                            {/* Botón eliminar solo si el usuario es el autor */}
                             {comment.user_id === userId && (
                               <button
-                                onClick={() => handleDelete(comment.id)}
-                                className="text-red-500 hover:text-red-700"
-                                title="Delete comment"
+                              onClick={() => handleDelete(comment.id)}
+                              className="text-gray-400 hover:text-red-500 transition-opacity opacity-0 group-hover:opacity-100"
+                              title="Delete comment"
                               >
-                                <Trash className="h-5 w-5" />
+                              <Trash className="h-5 w-5" />
                               </button>
-                            )}
-                          </div>
-                          <div className="text-lg text-gray-800">{comment.text}</div>
-                        </div>
+                              )}
+                            </div>
+
+                            {/* Texto del comentario */}
+                            <p className="mt-2 text-gray-800 text-[15px] leading-relaxed whitespace-pre-wrap">
+                             {comment.text}
+                            </p>
+                           </div>
+                         </div>
+                       </div>
                       ))}
                     </div>
                   </div>
                 )}
-    
+
                 <textarea
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   placeholder="Write your comment here..."
-                  className="bg-white text-lg w-full border border-gray-400 rounded-lg p-4 mb-6 resize-none h-40 leading-relaxed"
+                  className="bg-white text-base w-full border border-gray-300 rounded-xl p-4 mb-6 resize-none h-36 shadow-sm focus:ring-2 focus:ring-purple-300 focus:outline-none transition-all"
                 />
     
                 <div className="flex justify-end gap-2">
