@@ -6,6 +6,7 @@ import { useUser } from "@/contexts/usercontext";
 import { useKanban } from "@/contexts/unifieddashboardcontext";
 import { useMemo } from "react";
 import { Dialog,DialogPanel } from "@headlessui/react";
+import { useUserPermissions } from "@/contexts/UserPermissions"; // Importar el hook de permisos
 
 import TaskViewForm from "../detailedcardviews/taskviewform";
 import TaskEditForm from "../detailedcardviews/taskvieweditform";
@@ -16,6 +17,9 @@ import BugEditForm from "../detailedcardviews/bugvieweditform";
 import CommentsSection from "../detailedcardviews/commentssection";
 import { useUserStories } from "@/contexts/saveduserstoriescontext";
 import { useTasks } from "@/contexts/taskcontext";
+
+// Definir constante para el permiso REQ_MANAGE
+const PERMISSION_REQ_MANAGE = 1 << 2;
 
 interface TaskSidebarProps {
   isOpen: boolean;
@@ -29,6 +33,12 @@ const TaskSidebar = ({ isOpen, onClose, task }: TaskSidebarProps) => {
   const { currentProjectId,tasks, updateTask, updateStory, updateBug } = useKanban();
   const {getUserStoriesForProject} = useUserStories()
   const {getTasksForProject} = useTasks()
+  
+  // Obtener la función hasPermission del contexto
+  const { hasPermission } = useUserPermissions();
+  
+  // Verificar si el usuario tiene el permiso para editar items
+  const canManageItems = hasPermission(PERMISSION_REQ_MANAGE);
 
   const onlystories = getUserStoriesForProject(currentProjectId!)
   const onlytasks = getTasksForProject(currentProjectId!)
@@ -47,6 +57,13 @@ const TaskSidebar = ({ isOpen, onClose, task }: TaskSidebarProps) => {
   useEffect(() => {
     setIsEditMode(false);
   }, [task]);
+
+  useEffect(() => {
+    // Si el usuario no tiene permiso para editar, asegurar que siempre esté en modo vista
+    if (!canManageItems) {
+      setIsEditMode(false);
+    }
+  }, [canManageItems, task]);
 
   if (!isOpen || !currentTask) return null;
 
@@ -135,22 +152,26 @@ const TaskSidebar = ({ isOpen, onClose, task }: TaskSidebarProps) => {
               </h2>
 
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={() => setIsEditMode(!isEditMode)}
-                  className="bg-[#4A2B4A] text-white border-none hover:bg-white hover:text-[#4A2B4A] hover:border-[#4A2B4A] transition-all duration-200"
-                >
-                  {isEditMode ? (
-                    <>
-                      <Eye className="h-4 w-4 mr-1" /> View
-                    </>
-                  ) : (
-                    <>
-                      <Edit className="h-4 w-4 mr-1" /> Edit
-                    </>
-                  )}
-                </Button>
+                {/* Mostrar botón de edición SOLO si tiene el permiso REQ_MANAGE */}
+                {canManageItems && (
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={() => setIsEditMode(!isEditMode)}
+                    className="bg-[#4A2B4A] text-white border-none hover:bg-white hover:text-[#4A2B4A] hover:border-[#4A2B4A] transition-all duration-200"
+                  >
+                    {isEditMode ? (
+                      <>
+                        <Eye className="h-4 w-4 mr-1" /> View
+                      </>
+                    ) : (
+                      <>
+                        <Edit className="h-4 w-4 mr-1" /> Edit
+                      </>
+                    )}
+                  </Button>
+                )}
+                
                 <Button variant="ghost" size="sm" onClick={onClose}>
                   <X className="h-4 w-4 text-gray-600" />
                 </Button>
@@ -161,6 +182,7 @@ const TaskSidebar = ({ isOpen, onClose, task }: TaskSidebarProps) => {
           {/* Content */}
           <div className="flex-grow overflow-y-auto px-6 py-4">
             <div className="space-y-4 pr-2">
+              {/* Siempre renderizar el formulario correcto según el modo */}
               {renderForm()}
 
               {/* Comments Section */}
@@ -185,4 +207,5 @@ const TaskSidebar = ({ isOpen, onClose, task }: TaskSidebarProps) => {
     </Dialog>
   )
 }
+
 export default TaskSidebar;
