@@ -26,24 +26,8 @@ type Props = {
 
 interface BurndownDataPoint {
   day: string
-  date: string
   Remaining: number
   Ideal: number
-  Completed: number
-  CompletedCumulative: number
-}
-
-interface SprintInfo {
-  name: string
-  start_date: string
-  end_date: string
-  total_story_points: number
-  duration_days: number
-}
-
-interface BurndownData {
-  sprint_info: SprintInfo
-  chart_data: BurndownDataPoint[]
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
@@ -82,24 +66,21 @@ const todayString = today.toLocaleDateString('en-US', {
 })
 
 const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
+  // State for burndown chart
   const [burndownChartData, setBurndownChartData] = useState<BurndownDataPoint[]>([])
   const [actualPercentage, setActualPercentage] = useState(0)
   const [idealPercentage, setIdealPercentage] = useState(0)
+  
+  // State for sprint progress
   const [sprintVelocity, setSprintVelocity] = useState(0)
   const [taskCompletion, setTaskCompletion] = useState(0)
   const [daysLeft, setDaysLeft] = useState(0)
-  const [taskStadistics, setTaskStadistics] = useState({
-    completedTasks: 0,
-    inProgressTasks: 0,
-    totalTasks: 0,
-    completionPercentage: 0
-  })
 
-
+  // New state for today's meetings/events
   const [todayEvents, setTodayEvents] = useState<EventData[]>([])
   const [loadingEvents, setLoadingEvents] = useState(true)
 
-
+  // Use the sprint data context to get the data
   const { 
     burndownData, 
     teamMembers, 
@@ -108,10 +89,8 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
     refreshVelocityData 
   } = useSprintDataContext()
   
+  // Use the unified Kanban context instead of backlog context
   const { tasks, refreshKanban } = useKanban()
-
-  const safeNumber = (n: any, fallback = 0) =>
-    typeof n === "number" && !isNaN(n) && isFinite(n) ? n : fallback;
 
   // Add this to use the UserPermissions context
   const { getCurrentProject } = useUserPermissions()
@@ -168,56 +147,52 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
       return sum
     }, 0)
 
+    return remainingPoints
+  }
+  // Process burndown data for chart
   useEffect(() => {
-  if (!burndownData || !burndownData.chart_data || !burndownData.sprint_info) {
+  if (!burndownData) return
+  const { duration_days, total_story_points } = burndownData
+
+  if (duration_days <= 0 || total_story_points <= 0) {
     setBurndownChartData([])
     setActualPercentage(0)
     setIdealPercentage(0)
     return
   }
 
-  setBurndownChartData(burndownData.chart_data)
-
-  const initial = burndownData.sprint_info.total_story_points
-  const last = burndownData.chart_data[burndownData.chart_data.length - 1]
-
-  if (initial > 0 && last) {
-    setActualPercentage(Math.round(((initial - last.Remaining) / initial) * 100))
-    setIdealPercentage(Math.round(((initial - last.Ideal) / initial) * 100))
-  } else {
-    setActualPercentage(0)
-    setIdealPercentage(0)
-  }
+  setChartData(duration_days, total_story_points)
 }, [burndownData])
 
+  // Process velocity data
   useEffect(() => {
-  if (!Array.isArray(velocityData) || velocityData.length === 0) {
-    setSprintVelocity(0)
-    setTaskCompletion(0)
-    return
-  }
+    if (!Array.isArray(velocityData) || velocityData.length === 0) return
 
-  try {
-    const recentVelocity = velocityData.slice(-3)
-    const avgVelocity = recentVelocity.reduce((sum, sprint) => sum + sprint.Actual, 0) / recentVelocity.length
-    setSprintVelocity(Math.round(avgVelocity))
+    try {
+      // Calculate average velocity from last 3 sprints
+      const recentVelocity = velocityData.slice(-3)
+      const avgVelocity = recentVelocity.reduce((sum, sprint) => sum + sprint.Actual, 0) / recentVelocity.length
+      setSprintVelocity(Math.round(avgVelocity))
+      
+      // Get task completion from localStorage or calculate from recent sprint
+      const storedCompletion = parseInt(localStorage.getItem("sprint_task_completion") || "0")
+      if (storedCompletion) {
+        setTaskCompletion(storedCompletion)
+      } else if (velocityData.length > 0) {
+        const latestSprint = velocityData[velocityData.length - 1]
+        const completion = latestSprint.Actual / latestSprint.Planned * 100
+        setTaskCompletion(Math.round(completion))
+      }
+    } catch (error) {
+      console.error("Error processing velocity data:", error)
+    }
+  }, [velocityData])
 
-    const latestSprint = velocityData[velocityData.length - 1]
-    const completion = latestSprint.Planned > 0
-      ? (latestSprint.Actual / latestSprint.Planned) * 100
-      : 0
-
-    setTaskCompletion(Math.round(completion))
-  } catch (error) {
-    console.error("Error processing velocity data:", error)
-    setSprintVelocity(0)
-    setTaskCompletion(0)
-  }
-}, [velocityData])
-
+  // Calculate task statistics from the TaskColumns
   const taskStats = useMemo(() => {
     if (!tasks) return { completedTasks: 0, inProgressTasks: 0, totalTasks: 0, completionPercentage: 0 }
     
+    // Count tasks in each column
     const done = tasks.done?.length || 0
     const inProgress = tasks.inprogress?.length || 0
     const review = tasks.inreview?.length || 0
@@ -228,7 +203,7 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
     
     return {
       completedTasks: done,
-      inProgressTasks: inProgress, 
+      inProgressTasks: inProgress, // Counting both in progress and review as active tasks
       totalTasks,
       completionPercentage
     }
@@ -239,7 +214,7 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
   // Function to fetch or calculate sprint dates
   const calculateSprintDates = () => {
     // Try to get dates from context first
-    if (burndownData?.sprint_info.duration_days) {
+    if (burndownData?.sprint_info?.duration_days || 0) {
       const sprintStartDate = localStorage.getItem("sprint_start_date")
       
       if (sprintStartDate) {
@@ -247,8 +222,10 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
         const currentDate = new Date()
         const endDate = new Date(startDate)
         
-        endDate.setDate(startDate.getDate() + burndownData.sprint_info.duration_days)
-        
+        // Add duration_days to startDate to get endDate
+        endDate.setDate(startDate.getDate() + (burndownData.sprint_info.duration_days || 0))
+
+        // Calculate days remaining
         const msPerDay = 1000 * 60 * 60 * 24
         const daysRemaining = Math.max(0, Math.ceil((endDate.getTime() - currentDate.getTime()) / msPerDay))
         
@@ -256,25 +233,28 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
       }
     }
   }
-
+  
+  // Call this function initially and whenever burndownData changes
   useEffect(() => {
     calculateSprintDates()
   }, [burndownData])
 
+  // Refresh data when component mounts - IMPROVED VERSION TO AVOID CIRCULAR DEPENDENCY
   useEffect(() => {
     let isActive = true
     
     const loadData = async () => {
       try {
+        // Stagger the calls to avoid timing issues
         await refreshBurndownData()
         
         if (isActive) {
-          await new Promise(resolve => setTimeout(resolve, 100)) 
+          await new Promise(resolve => setTimeout(resolve, 100)) // Small delay
           await refreshVelocityData()
         }
         
         if (isActive) {
-          await new Promise(resolve => setTimeout(resolve, 100)) 
+          await new Promise(resolve => setTimeout(resolve, 100)) // Small delay
           await refreshKanban()
         }
 
@@ -289,9 +269,11 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
     
     loadData()
     
+    // Cleanup function to prevent state updates if component unmounts
     return () => { isActive = false }
-  }, []) 
+  }, []) // Remove all dependencies to avoid infinite loop
 
+  // Obtener avatar y género desde el contexto
   const { avatarUrl, gender } = useAvatar()
 
   // Function to fetch today's events
@@ -397,11 +379,11 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
           <div className="mb-4">
             <div className="flex justify-between">
               <div className={s.sprintLabel}>Task Completion</div>
-              <div className={s.sprintStats}>{safeNumber(taskStats.completionPercentage)}%</div>
+              <div className={s.sprintStats}>{taskStats.completionPercentage}%</div>
             </div>
             <div className="mt-2">
               <Progress 
-                value={safeNumber(taskStats.completionPercentage)} 
+                value={taskStats.completionPercentage} 
                 className={`${s.progressBar} mt-2 mb-2`} 
                 indicatorClassName={s.progressBarIndicator} 
               />
@@ -413,13 +395,13 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
             
               <div className={s.statCard}>
                 <Clock className={s.statIcon} />
-                <div className={s.statValue}>{safeNumber(daysLeft)}</div>
+                <div className={s.statValue}>{daysLeft}</div>
                 <div className={s.statLabel}>Days Left</div>
               </div>
   
               <div className={s.statCard}>
                 <BarChart2 className={s.statIcon} />
-                <div className={s.statValue}>{safeNumber(taskStats.completionPercentage)}%</div>
+                <div className={s.statValue}>{taskStats.completionPercentage}%</div>
                 <div className={s.statLabel}>Completion</div>
               </div>
             </div>
@@ -496,12 +478,12 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
         <div className={`${s.progressCard} flex flex-col space-y-4`}>
           <div className={s.taskGrid}>
             <div className={s.statCard}>
-              <div className={s.statValue}>{safeNumber(taskStats.completedTasks)}</div>
+              <div className={s.statValue}>{taskStats.completedTasks}</div>
               <div className={s.statLabel}>Completed Tasks</div>
             </div>
-
+  
             <div className={s.statCard}>
-              <div className={s.statValue}>{safeNumber(taskStats.inProgressTasks)}</div>
+              <div className={s.statValue}>{taskStats.inProgressTasks}</div>
               <div className={s.statLabel}>In Progress</div>
             </div>
           </div>
