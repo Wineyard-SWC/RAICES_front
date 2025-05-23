@@ -2,20 +2,17 @@
 
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-import { SprintItem } from './types';
 
 interface AddEventDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (eventData: any) => void;
-  sprintItems: SprintItem[];
 }
 
 export const AddEventDialog: React.FC<AddEventDialogProps> = ({
   isOpen,
   onClose,
   onSubmit,
-  sprintItems
 }) => {
   const [formData, setFormData] = useState({
     eventType: 'meeting',
