@@ -11,12 +11,18 @@ import { UpcomingDeadlines } from './UpcomingDeadlines';
 import { RecurringMeetings } from './RecurringMeetings';
 import { EventCard } from './EventCard';
 import { useCalendar } from "@/contexts/CalendarContext"
+import { MeetingDetailsModal } from './testCalendar/MeetingDetailsModal';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function SprintCalendarView({ onBack }: { onBack?: () => void }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'day' | 'week' | 'month'>('week');
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
   const [currentPeriod, setCurrentPeriod] = useState('');
+  
+  const [selectedMeeting, setSelectedMeeting] = useState<Event | null>(null);
+  const [isMeetingDetailsOpen, setIsMeetingDetailsOpen] = useState(false);
   
   const {
     events,
@@ -127,13 +133,41 @@ export default function SprintCalendarView({ onBack }: { onBack?: () => void }) 
       }));
   };
 
+  const handleDeleteEvent = async (eventId: string) => {
+    try {
+      const response = await fetch(`${API_URL}/events/${eventId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to delete event: ${response.statusText}`);
+      }
+      
+      await deleteEvent(eventId);
+      
+      // Close modal if we're deleting the currently viewed meeting
+      if (selectedMeeting && selectedMeeting.id === eventId) {
+        setIsMeetingDetailsOpen(false);
+      }
+    } catch (error) {
+      console.error('Error deleting event:', error);
+    }
+  };
+
+  const handleViewMeetingDetails = (eventId: string) => {
+    const meeting = events.find(e => e.id === eventId);
+    if (meeting) {
+      setSelectedMeeting(meeting);
+      setIsMeetingDetailsOpen(true);
+    }
+  };
+
   if (!projectId) {
     return <div className="min-h-screen py-10 bg-[#EBE5EB]/40">Loading project...</div>;
   }
 
   return (
-    <div className="min-h-screen py-10 bg-[#EBE5EB]/40">
-      <main className="flex-1 p-6">
+    <div className="min-h-screen py-10 bg-[#EBE5EB]/0">
         <CalendarHeader
           currentPeriod={currentPeriod}
           onPrevious={handlePrevious}
@@ -168,6 +202,8 @@ export default function SprintCalendarView({ onBack }: { onBack?: () => void }) 
           <RecurringMeetings 
             meetings={getRecurringMeetings()} 
             onAddMeeting={handleAddRecurringMeeting}
+            onDeleteMeeting={handleDeleteEvent}
+            onViewMeetingDetails={handleViewMeetingDetails}
           />
         </div>
 
@@ -176,7 +212,17 @@ export default function SprintCalendarView({ onBack }: { onBack?: () => void }) 
           onClose={() => setIsAddEventOpen(false)}
           onSubmit={handleAddEvent}
         />
-      </main>
+
+        <MeetingDetailsModal
+          isOpen={isMeetingDetailsOpen}
+          onClose={() => setIsMeetingDetailsOpen(false)}
+          meeting={selectedMeeting}
+          onDelete={() => {
+            if (selectedMeeting) {
+              handleDeleteEvent(selectedMeeting.id);
+            }
+          }}
+        />
     </div>
   );
 }

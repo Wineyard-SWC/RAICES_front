@@ -29,6 +29,9 @@ export interface Event {
   };
   created_at: string;
   updated_at: string;
+  // Add these new properties for recurring instances
+  isRecurringInstance?: boolean;
+  originalEventId?: string;
 }
 
 export interface Sprint {
@@ -183,6 +186,92 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Function to expand recurring events into multiple instances
+  const expandRecurringEvents = (events: Event[]): Event[] => {
+    const expandedEvents: Event[] = [];
+
+    events.forEach(event => {
+      // Add the original event
+      expandedEvents.push(event);
+      
+      // If not recurring, skip to next event
+      if (!event.is_recurring || !event.recurrence) return;
+      
+      const frequency = event.recurrence.frequency;
+      const startDate = new Date(event.start_date);
+      const endDate = new Date(event.end_date);
+      const eventDuration = endDate.getTime() - startDate.getTime();
+      
+      // Calculate end date for recurrence
+      let recurrenceEndDate: Date;
+      if (event.recurrence.end_date) {
+        recurrenceEndDate = new Date(event.recurrence.end_date);
+      } else {
+        // If no end date specified, default to 3 months from start
+        recurrenceEndDate = new Date(startDate);
+        recurrenceEndDate.setMonth(recurrenceEndDate.getMonth() + 3);
+      }
+      
+      // Check if excluded dates exist
+      const excludedDates = event.recurrence.excluded_dates?.map(date => new Date(date).getTime()) || [];
+      
+      // Generate recurring instances based on frequency
+      let currentDate = new Date(startDate);
+      currentDate.setDate(currentDate.getDate() + 1); // Start from next day
+      
+      while (currentDate < recurrenceEndDate) {
+        const isExcluded = excludedDates.includes(currentDate.getTime());
+        
+        if (!isExcluded) {
+          // Determine if this date should have an event based on the frequency
+          let shouldAddEvent = false;
+          
+          switch (frequency) {
+            case 'daily':
+              shouldAddEvent = true;
+              break;
+              
+            case 'weekly':
+              shouldAddEvent = currentDate.getDay() === startDate.getDay();
+              break;
+              
+            case 'biweekly':
+              const dayDiff = Math.round((currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+              shouldAddEvent = currentDate.getDay() === startDate.getDay() && dayDiff % 14 === 0;
+              break;
+              
+            case 'monthly':
+              shouldAddEvent = currentDate.getDate() === startDate.getDate();
+              break;
+          }
+          
+          if (shouldAddEvent) {
+            // Create a new instance of the event
+            const newEventStart = new Date(currentDate);
+            newEventStart.setHours(startDate.getHours(), startDate.getMinutes(), startDate.getSeconds());
+            
+            const newEventEnd = new Date(newEventStart.getTime() + eventDuration);
+            
+            expandedEvents.push({
+              ...event,
+              id: `${event.id}-instance-${currentDate.getTime()}`,
+              start_date: newEventStart.toISOString(),
+              end_date: newEventEnd.toISOString(),
+              // Mark as an instance of a recurring event
+              isRecurringInstance: true,
+              originalEventId: event.id
+            });
+          }
+        }
+        
+        // Move to next day
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+    });
+    
+    return expandedEvents;
   };
 
   useEffect(() => {

@@ -6,7 +6,7 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
-import { Event } from './CalendarContext';
+import { Event } from './types'; 
 
 interface FullCalendarWrapperProps {
   events: Event[];
@@ -37,7 +37,9 @@ export const FullCalendarWrapper: React.FC<FullCalendarWrapperProps> = ({
     extendedProps: {
       priority: event.priority,
       type: event.type,
-      is_recurring: event.is_recurring
+      is_recurring: event.is_recurring,
+      isRecurringInstance: event.isRecurringInstance,  // Add this property
+      originalEventId: event.originalEventId          // Add this property
     }
   }));
 
@@ -74,7 +76,13 @@ export const FullCalendarWrapper: React.FC<FullCalendarWrapperProps> = ({
         selectMirror={true}
         dayMaxEvents={true}
         weekends={true}
-        eventClick={(info) => onEventClick(info.event.id)}
+        eventClick={(info) => {
+          // If this is a recurring instance, use the original event ID
+          const eventId = info.event.extendedProps.isRecurringInstance 
+            ? info.event.extendedProps.originalEventId 
+            : info.event.id;
+          onEventClick(eventId);
+        }}
         select={(info) => onDateSelect(info.start)}
         height="auto"
         eventDisplay="block"
