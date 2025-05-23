@@ -1,3 +1,4 @@
+// FullCalendarWrapper.tsx
 "use client";
 
 import React, { useRef, useEffect } from 'react';
@@ -5,7 +6,7 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
-import { Event } from './types';
+import { Event } from './types'; 
 
 interface FullCalendarWrapperProps {
   events: Event[];
@@ -26,7 +27,8 @@ export const FullCalendarWrapper: React.FC<FullCalendarWrapperProps> = ({
   const fullCalendarEvents = events.map(event => ({
     id: event.id,
     title: event.title,
-    start: `${event.date} ${event.time}`, // TODO: Convert to proper date format
+    start: event.start_date,
+    end: event.end_date,
     backgroundColor: event.type === 'meeting' ? '#8b5cf6' : 
                     event.priority === 'high' ? '#ef4444' :
                     event.priority === 'medium' ? '#3b82f6' : '#10b981',
@@ -34,9 +36,10 @@ export const FullCalendarWrapper: React.FC<FullCalendarWrapperProps> = ({
     textColor: 'white',
     extendedProps: {
       priority: event.priority,
-      assignee: event.assignee,
       type: event.type,
-      recurring: event.recurring
+      is_recurring: event.is_recurring,
+      isRecurringInstance: event.isRecurringInstance,  // Add this property
+      originalEventId: event.originalEventId          // Add this property
     }
   }));
 
@@ -67,13 +70,19 @@ export const FullCalendarWrapper: React.FC<FullCalendarWrapperProps> = ({
         ref={calendarRef}
         plugins={[dayGridPlugin, timeGridPlugin, listPlugin]}
         initialView={getCalendarView()}
-        headerToolbar={false} // We handle navigation in CalendarTabs
+        headerToolbar={false}
         events={fullCalendarEvents}
         selectable={true}
         selectMirror={true}
         dayMaxEvents={true}
         weekends={true}
-        eventClick={(info) => onEventClick(info.event.id)}
+        eventClick={(info) => {
+          // If this is a recurring instance, use the original event ID
+          const eventId = info.event.extendedProps.isRecurringInstance 
+            ? info.event.extendedProps.originalEventId 
+            : info.event.id;
+          onEventClick(eventId);
+        }}
         select={(info) => onDateSelect(info.start)}
         height="auto"
         eventDisplay="block"
@@ -81,12 +90,12 @@ export const FullCalendarWrapper: React.FC<FullCalendarWrapperProps> = ({
           <div className="p-1">
             <div className="font-medium text-xs flex items-center justify-between">
               {eventInfo.event.title}
-              {eventInfo.event.extendedProps.recurring && (
+              {eventInfo.event.extendedProps.is_recurring && (
                 <span className="text-xs">🔄</span>
               )}
             </div>
             <div className="text-xs opacity-75 mt-1">
-              {eventInfo.timeText} • {eventInfo.event.extendedProps.assignee}
+              {eventInfo.timeText}
             </div>
           </div>
         )}

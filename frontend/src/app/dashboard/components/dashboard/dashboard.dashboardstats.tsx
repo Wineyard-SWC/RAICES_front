@@ -1,5 +1,5 @@
 import { ProgressCard } from "./dashboard.progresscard"
-import { Calendar, Clock, BarChart2 } from "lucide-react"
+import { Calendar, Clock, BarChart2, MapPin, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/progress"
 import { dashboardStatsStyles as s } from "../../styles/dashboardstyles"
@@ -8,8 +8,10 @@ import { useEffect, useState, useMemo, Suspense } from "react"
 import { useSprintDataContext } from "@/contexts/sprintdatacontext"
 import { useKanban } from "@/contexts/unifieddashboardcontext"
 import { useAvatar } from "@/contexts/AvatarContext"
+import { useUserPermissions } from "@/contexts/UserPermissions"
 import dynamic from 'next/dynamic'
 import { Canvas } from '@react-three/fiber'
+import { EventCard } from "../sprintcalendar/EventCard"
 
 // Importación dinámica del componente Three.js para evitar errores de SSR
 const DynamicAnimatedAvatar = dynamic(
@@ -44,6 +46,34 @@ interface BurndownData {
   chart_data: BurndownDataPoint[]
 }
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
+
+// Interface for event data
+interface EventData {
+  id: string
+  project_id: string
+  sprint_id: string
+  created_by: string
+  title: string
+  description: string
+  type: string
+  priority: string
+  start_date: string
+  end_date: string
+  is_all_day: boolean
+  location: string | null
+  participants: string[]
+  related_tasks: string[]
+  is_recurring: boolean
+  recurrence: {
+    frequency: string
+    end_date: string
+    excluded_dates: string[]
+  } | null
+  created_at: string
+  updated_at: string
+}
+
 const today = new Date()
 const todayString = today.toLocaleDateString('en-US', {
     weekday: 'long',  
@@ -65,6 +95,11 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
     completionPercentage: 0
   })
 
+
+  const [todayEvents, setTodayEvents] = useState<EventData[]>([])
+  const [loadingEvents, setLoadingEvents] = useState(true)
+
+
   const { 
     burndownData, 
     teamMembers, 
@@ -77,6 +112,61 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
 
   const safeNumber = (n: any, fallback = 0) =>
     typeof n === "number" && !isNaN(n) && isFinite(n) ? n : fallback;
+
+  // Add this to use the UserPermissions context
+  const { getCurrentProject } = useUserPermissions()
+  
+  const setChartData = (duration_days: number, total_story_points: number) => {
+    const totalDays = duration_days + 1
+    const idealDropPerDay = total_story_points / duration_days
+    const generatedData: BurndownDataPoint[] = []
+
+    for (let day = 0; day < totalDays; day++) {
+      const ideal = total_story_points - idealDropPerDay * day
+      const remaining = getRemainingPointsForDay(day, duration_days, total_story_points)
+
+      generatedData.push({
+        day: `Day ${day}`,
+        Ideal: parseFloat(ideal.toFixed(2)),
+        Remaining: parseFloat(remaining.toFixed(2))
+      })
+    }
+
+    // Actualizar estado
+    setBurndownChartData(generatedData)
+
+    if (generatedData.length > 0) {
+      const last = generatedData[generatedData.length - 1]
+      const initial = total_story_points
+
+      setActualPercentage(Math.round(((initial - last.Remaining) / initial) * 100))
+      setIdealPercentage(Math.round(((initial - last.Ideal) / initial) * 100))
+    }
+  }
+
+  const getRemainingPointsForDay = (day: number, duration: number, totalPoints: number): number => {
+    // Calcular la fecha correspondiente al día del sprint
+    const sprintStart = localStorage.getItem("sprint_start_date")
+    if (!sprintStart) return totalPoints
+
+    const startDate = new Date(sprintStart)
+    const currentDate = new Date(startDate)
+    currentDate.setDate(startDate.getDate() + day)
+
+    // Filtrar tareas que no estén completadas antes de esta fecha
+    const allTasks = Object.values(tasks).flat() // combinar todas las columnas
+
+    const remainingPoints = allTasks.reduce((sum, task) => {
+      const taskCompletedDate = new Date(task.date_completed || "")
+      const isDone = task.status_khanban?.toLowerCase() === "done"
+      const completedBeforeOrOnDay = isDone && taskCompletedDate <= currentDate
+
+      // Si no se completió aún (o se completió después del día), aún cuenta
+      if (!completedBeforeOrOnDay) {
+        return sum + (task.story_points || 0)
+      }
+      return sum
+    }, 0)
 
   useEffect(() => {
   if (!burndownData || !burndownData.chart_data || !burndownData.sprint_info) {
@@ -187,8 +277,13 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
           await new Promise(resolve => setTimeout(resolve, 100)) 
           await refreshKanban()
         }
+
+        // Fetch today's events
+        if (isActive) {
+          await fetchTodayEvents()
+        }
       } catch (error) {
-        console.error("Error refreshing data:", error)
+        console.error("Error loading data:", error)
       }
     }
     
@@ -198,11 +293,47 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
   }, []) 
 
   const { avatarUrl, gender } = useAvatar()
+
+  // Function to fetch today's events
+  const fetchTodayEvents = async () => {
+    try {
+      setLoadingEvents(true)      
+      
+      // Get current project ID from the context instead of localStorage
+      const projectId = getCurrentProject()
+      
+      if (!projectId) {
+        console.error("No project ID found in current context")
+        setLoadingEvents(false)
+        return
+      }
+      console.log("Fetching today's events for project ID:", projectId)
+      const response = await fetch(`${API_URL}/projects/${projectId}/events/today`)
+
+      if (!response.ok) {
+        throw new Error(`Error fetching events: ${response.statusText}`)
+      }
+      
+      const data = await response.json()
+      console.log("Today's events data:", data)
+
+      setTodayEvents(data)
+    } catch (error) {
+      console.error("Error fetching today's events:", error)
+    } finally {
+      setLoadingEvents(false)
+    }
+  }
   
+  // Fetch today's events on component mount
+  useEffect(() => {
+    fetchTodayEvents()
+  }, [])
+
   return (
     <div className={s.container}>
       <ProgressCard
-        title="Calendar & Burndown"
+        title="Calendar & Meetings"
         icon={<Calendar className={s.icon} />}
         footer={
           <Button variant="default" 
@@ -218,17 +349,22 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
             <h3 className="text-gray-700">{todayString}</h3>
           </div>
           
-          <div>
-            <h4 className="font-medium mb-2">Burndown Chart</h4>
-            <BurndownChart data={burndownChartData} height={150}/>
-          </div>
-
-          <div className="space-y-2">
-            <div className={s.progressText}>
-              <span>Actual: {actualPercentage}%</span>
-              <span>Ideal: {idealPercentage}%</span>
+          {loadingEvents ? (
+            <div className="flex justify-center py-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-800"></div>
             </div>
-          </div>
+          ) : todayEvents.length > 0 ? (
+            <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+              {todayEvents.map((event) => (
+                <EventCard key={event.id} event={event} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-6 text-gray-500">
+              <Calendar className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+              <p>No meetings scheduled for today</p>
+            </div>
+          )}
         </div>
       </ProgressCard>
 
