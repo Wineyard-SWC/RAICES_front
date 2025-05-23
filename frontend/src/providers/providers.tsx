@@ -23,6 +23,7 @@ import { UserRolesProvider } from "@/contexts/userRolesContext"
 import { KanbanProvider } from "@/contexts/unifieddashboardcontext"
 import { ProjectUsersProvider } from "@/contexts/ProjectusersContext"
 import { UserPermissionsProvider } from "@/contexts/UserPermissions"
+import { CalendarProvider } from "@/contexts/CalendarContext"
 
 interface ProvidersProps {
   children: ReactNode
@@ -53,8 +54,10 @@ export function AllProviders({ children }: { children: React.ReactNode }) {
                                             <TeamsProvider>
                                               <ProjectUsersProvider>
                                                 <UserPermissionsProvider>
-                                                  {children}
-                                                  <div id="modal-root" />
+                                                  <CalendarProvider>
+                                                    {children}
+                                                    <div id="modal-root" />
+                                                  </CalendarProvider>
                                                 </UserPermissionsProvider>
                                               </ProjectUsersProvider>
                                             </TeamsProvider>
