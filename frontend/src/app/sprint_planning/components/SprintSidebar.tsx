@@ -1,19 +1,21 @@
 "use client"
 
 import Link from "next/link"
+import { useMemo } from "react"
 import { ChevronLeft, ChevronRight, X, Users, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/progress"
 import type { Sprint } from "@/types/sprint"
-import SelectedCard from "./SelectedCard"           /* ← nuevo componente */
+import type { Task } from "@/types/task"
+import SelectedCard from "./SelectedCard"          
 
 interface Props {
   sprint:   Sprint
   isOpen:   boolean
   onToggle: () => void
   onSave:   () => Promise<Sprint | null>
-  /* si necesitas poder quitar historias desde el sidebar   */
   onToggleUserStory?: (userStoryId: string) => void
+  tasks: Task[]  
 }
 
 export default function SprintSidebar({
@@ -22,35 +24,47 @@ export default function SprintSidebar({
   onToggle,
   onSave,
   onToggleUserStory,
+  tasks = []
 }: Props) {
-  /* -------- métricas generales -------- */
-  const selectedStories = sprint.user_stories
-    .filter(s => s.selected)          // solo los marcados
-    .filter(s => !!s.userStory)       // y que sí traigan userStory
 
-  const totalPoints = selectedStories.reduce(
-    (sum, s) =>
-      sum + s.tasks.reduce((acc, t) => acc + (t?.story_points ?? 0), 0),
+  const tasksMap = useMemo(() => {
+    const map = new Map<string, Task>();
+    tasks.forEach(task => {
+      map.set(task.id, task);
+    });
+    return map;
+  }, [tasks]);
+
+
+  const selectedStories = sprint.user_stories
+    .filter(s => s.selected)          
+    .filter(s => !!s.userStory)       
+  
+  const totalPoints = selectedStories.reduce((sum, story) => {
+    const storyTasks = (story.tasks || [])
+      .map(taskId => tasksMap.get(taskId))
+      .filter(Boolean) as Task[];
+    
+    return sum + storyTasks.reduce((acc, task) => acc + (task.story_points || 0), 0);
+  }, 0);
+
+  const teamCapacity = (sprint.team_members || []).reduce(
+    (sum, member) => sum + (member?.capacity ?? 0), 
     0
   )
-
-  /* capacidad fija de ejemplo (cámbiala si tu backend la envía) */
-  const maxPoints = sprint.max_points ?? 0
-  const pointsPercentage = maxPoints > 0 ? Math.round((totalPoints / maxPoints) * 100) : 0
-// display cap at 100%, extra if over
+  const pointsPercentage = teamCapacity > 0 ? Math.round((totalPoints / teamCapacity) * 100) : 0
   const displayPercentage = Math.min(pointsPercentage, 100)
   const overPercentage = pointsPercentage > 100 ? pointsPercentage - 100 : 0
 
-  const storyCount        = selectedStories.length
-  const bugCount          = 0 // pondrías tu lógica real aquí
+  const storyCount = selectedStories.length
+  const bugCount = 0
 
-  return (
+   return (
     <div
       className={`transition-all duration-300 ${
         isOpen ? "w-80" : "w-12"
       } bg-white border-l border-gray-200 sticky top-0 h-screen`}
     >
-      {/* ───── flecha para abrir / cerrar ───── */}
       <button
         onClick={onToggle}
         className="absolute top-1/2 -left-3 z-10 h-12 w-6 -translate-y-1/2 transform rounded-l-md border border-gray-200 bg-white text-[#4a2b4a] hover:bg-[#f5f0f1]"
@@ -58,7 +72,6 @@ export default function SprintSidebar({
         {isOpen ? <ChevronRight className="mx-auto h-5 w-5" /> : <ChevronLeft className="mx-auto h-5 w-5" />}
       </button>
 
-      {/* ───── contenido interno ───── */}
       {isOpen && (
         <div className="flex h-[calc(100vh-41px)] flex-col overflow-y-auto p-4">
           <div className="mb-4 flex items-center justify-between">
@@ -68,49 +81,55 @@ export default function SprintSidebar({
             </Button>
           </div>
 
-          {/* -------- detalles básicos -------- */}
           <div className="space-y-6">
             <section>
               <h3 className="mb-3 font-medium">Sprint Details</h3>
               <div className="space-y-2">
-                <Detail label="Name"         value={sprint.name} />
-                <Detail label="Duration"     value={`${sprint.duration_weeks} weeks`} />
+                <Detail label="Name" value={sprint.name || "Untitled Sprint"} />
+                <Detail label="Duration" value={`${sprint.duration_weeks || 0} weeks`} />
                 <Detail
                   label="Dates"
-                  value={`${new Date(sprint.start_date).toLocaleDateString()} – ${new Date(
-                    sprint.end_date
+                  value={`${new Date(sprint.start_date || new Date()).toLocaleDateString()} – ${new Date(
+                    sprint.end_date || new Date()
                   ).toLocaleDateString()}`}
                 />
-                <Detail label="Team Size"    value={`${sprint.team_members.length} members`} />
+                <Detail label="Team Size" value={`${(sprint.team_members || []).length} members`} />
               </div>
             </section>
 
-            {/* -------- historias / bugs seleccionados -------- */}
             <section>
               <h3 className="mb-3 font-medium">Selected Items</h3>
               <div className="space-y-2">
-                {selectedStories.map(story => (
-                  <SelectedCard
-                    key={story.id}
-                    id={story.id}
-                    type="story"
-                    title={story.userStory?.title ?? "Untitled"}
-                    points={story.tasks.reduce((s, t) => s + (t?.story_points ?? 0), 0)}
-                    tasksCount={story.tasks.length}
-                    onRemove={
-                      onToggleUserStory ? () => onToggleUserStory(story.id) : undefined
-                    }
-                  />
-                ))}
+                {selectedStories.map(story => {
+                  // FIX: Obtener tasks reales para cada historia
+                  const storyTasks = (story.tasks || [])
+                    .map(taskId => tasksMap.get(taskId))
+                    .filter(Boolean) as Task[];
+                  
+                  const storyPoints = storyTasks.reduce((sum, task) => sum + (task.story_points || 0), 0);
+                  
+                  return (
+                    <SelectedCard
+                      key={story.id}
+                      id={story.id}
+                      type="story"
+                      title={story.userStory?.title ?? "Untitled"}
+                      points={storyPoints}
+                      tasksCount={storyTasks.length}
+                      onRemove={
+                        onToggleUserStory ? () => onToggleUserStory(story.id) : undefined
+                      }
+                    />
+                  );
+                })}
               </div>
             </section>
 
-            {/* -------- puntos -------- */}
             <section>
               <div className="mb-1 flex justify-between">
                 <span className="text-sm text-gray-500">Sprint Points</span>
                 <span className="text-sm font-medium">
-                {totalPoints}/{maxPoints} - {displayPercentage}%{overPercentage > 0 ? ` (+ ${overPercentage}%)` : ""}
+                {totalPoints}/{teamCapacity} - {displayPercentage}%{overPercentage > 0 ? ` (+ ${overPercentage}%)` : ""}
                 </span>
               </div>
               <Progress
@@ -120,7 +139,6 @@ export default function SprintSidebar({
               />
             </section>
 
-            {/* -------- contadores -------- */}
             <section>
               <h3 className="mb-3 font-medium">Item Types</h3>
               <div className="grid grid-cols-2 gap-2">
@@ -129,7 +147,6 @@ export default function SprintSidebar({
               </div>
             </section>
 
-            {/* -------- acciones -------- */}
             <section className="mt-auto space-y-2">
               <Link
                 href={`/task_assignment?projectId=${sprint.project_id}&sprintId=${sprint.id}`}
@@ -155,8 +172,6 @@ export default function SprintSidebar({
     </div>
   )
 }
-
-/* ───── Helpers internos ───────────────────────── */
 
 function Detail({ label, value }: { label: string; value: string }) {
   return (

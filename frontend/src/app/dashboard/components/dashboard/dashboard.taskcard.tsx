@@ -166,6 +166,21 @@ export const TaskCard = ({ task, columnId, view, usertype, onDelete,onChangeStat
     }
   };
 
+  type RawAssignee = { users: [string,string] } | [string,string]
+
+  function normalizeAssignees(raw?: RawAssignee[]): { users: [string,string] }[] {
+    if (!raw) return []
+    return raw.map(item => {
+      if (Array.isArray(item)) {
+        return { users: item }
+      }
+      return item
+    })
+  } 
+
+  const assignees = normalizeAssignees(task.assignee)
+
+
    return (
     <div
       className={`hover:bg-[#EBE5EB] cursor-pointer bg-white rounded-md p-5 shadow-sm 
@@ -249,10 +264,10 @@ export const TaskCard = ({ task, columnId, view, usertype, onDelete,onChangeStat
       {/* Info adicional */}
       <div className="text-sm text-gray-600 mt-3 space-y-2.5">
         {/* Asignado */}
-        {Array.isArray(task.assignee) && task.assignee.length > 0 && (
+        {Array.isArray(assignees) && assignees.length > 0 && (
           <div className="flex items-center gap-1.5">
             <Users className="h-4 w-4 text-gray-500" />
-            <span className="font-medium">Assigned to:</span> {task.assignee[0].users[1]}
+            <span className="font-medium">Assigned to:</span> {assignees[0].users[1]}
           </div>
         )}
 

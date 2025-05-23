@@ -13,11 +13,22 @@ interface SprintConfigurationProps {
 }
 
 export default function SprintConfiguration({ sprint, onUpdate }: SprintConfigurationProps) {
-  const [name, setName] = useState(sprint.name)
-  const [duration, setDuration] = useState(sprint.duration_weeks.toString())
-  const [startDate, setStartDate] = useState(new Date(sprint.start_date).toISOString().split("T")[0])
-  const [endDate, setEndDate] = useState(new Date(sprint.end_date).toISOString().split("T")[0])
-  const [capacity, setCapacity] = useState((sprint.max_points ?? 0).toString())
+  const [name, setName] = useState(sprint.name || "New Sprint");
+  const [duration, setDuration] = useState(() => String(sprint.duration_weeks ?? 2));
+  const [startDate, setStartDate] = useState(() => {
+    const d = sprint.start_date ? new Date(sprint.start_date) : new Date();
+    return d.toISOString().split("T")[0];
+  });  
+  const [endDate, setEndDate] = useState(() => {
+    const d = sprint.end_date ? new Date(sprint.end_date) : new Date(Date.now() + (parseInt(duration) || 2) * 7 * 24*60*60*1000);
+    return d.toISOString().split("T")[0];
+  });  
+  
+  const totalCapacity = (sprint.team_members || []).reduce(
+    (sum, m) => sum + (m?.capacity ?? 0),
+    0
+  );
+  const [capacity, setCapacity] = useState(totalCapacity.toString());
 
   const handleSubmit = () => {
     onUpdate({
@@ -25,7 +36,6 @@ export default function SprintConfiguration({ sprint, onUpdate }: SprintConfigur
       duration_weeks: parseInt(duration) || 2,
       start_date: new Date(startDate).toISOString(),
       end_date: new Date(endDate).toISOString(),
-      max_points: parseInt(capacity) || 0,
     })
   }
 
@@ -54,10 +64,23 @@ export default function SprintConfiguration({ sprint, onUpdate }: SprintConfigur
   }
 
   const handleCapacityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCapacity(e.target.value)
-    onUpdate({ max_points: parseInt(e.target.value) || 0 })
-  }
+    const total = parseInt(e.target.value, 10) || 0;
+    setCapacity(e.target.value);
 
+    const members = sprint.team_members || [];
+    const count = members.length;
+    if (count > 0) {
+      const base      = Math.floor(total / count);
+      const remainder = total % count;
+
+      const updatedMembers = members.map((m, i) => ({
+        ...m,
+        capacity: base + (i < remainder ? 1 : 0),
+      }));
+
+      onUpdate({ team_members: updatedMembers });
+    }
+  };
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-6 mb-6">
       <h2 className="mb-4 text-xl font-bold">Sprint Configuration</h2>

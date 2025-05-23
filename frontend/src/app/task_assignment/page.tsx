@@ -7,13 +7,19 @@ import { Search, ArrowLeft, Users, ListFilter, X, AlertCircle } from "lucide-rea
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Navbar from "@/components/NavBar"
+import { useKanban } from "@/contexts/unifieddashboardcontext"
 
 import { useSprintContext } from "@/contexts/sprintcontext"
-import type { Task } from "@/types/task"
+import type { Task, Workingusers } from "@/types/task"
 import { Progress } from "@/components/progress"
 import DefaultLoading from "@/components/animations/DefaultLoading"
+import { useTasks } from "@/contexts/taskcontext"
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
 export default function TaskAssignmentPage() {
+  const {updateTaskInProject} = useTasks()
+
   const router = useRouter()
   const searchParams = useSearchParams()
   const projectId =
@@ -29,6 +35,7 @@ export default function TaskAssignmentPage() {
   const [assignModalOpen, setAssignModalOpen] = useState(false)
   const [taskToAssign, setTaskToAssign] = useState<Task | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
+  const [isSaving, setIsSaving] = useState(false)
 
   // Sprint context
   const { sprint, tasks, setTasks } = useSprintContext()
@@ -104,12 +111,12 @@ export default function TaskAssignmentPage() {
   })
 
   // Asignar tarea a miembro
-  const assignTask = (taskId: string, memberId: string,name:string) => {
+  const assignTask = (taskId: string, memberId: string, name: string) => {
     setTasks(tasks.map(t => {
       if (t.id !== taskId) return t;
       return {
         ...(t as Task),
-        assignee: [{ users: [memberId, name] }],
+        assignee: [{ users: [memberId, name] }] as Workingusers[],
         assignee_id: memberId,
         sprint_id: sprint.id
       };
@@ -122,7 +129,7 @@ export default function TaskAssignmentPage() {
   // Abrir modal de asignación
   const openAssignModal = (task: Task) => {
     if (selectedMember && selectedMemberName && !task.assignee_id) {
-      assignTask(task.id, selectedMember,selectedMemberName)
+      assignTask(task.id, selectedMember, selectedMemberName)
       return
     }
     setTaskToAssign(task)
@@ -136,13 +143,82 @@ export default function TaskAssignmentPage() {
     ))
   }
 
-  // Guardar y volver a planificación
-  const saveAssignments = () => {
+  // Guardar asignaciones temporalmente en el backend
+  const saveAssignmentsToBackend = async () => {
+    if (!safeSprintId || safeSprintId.startsWith("temp-")) {
+      // Si es un sprint temporal, solo volver
+      router.push(
+        `/sprint_planning?projectId=${projectId}${safeSprintId ? `&sprintId=${safeSprintId}` : ``}`
+      )
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const tasksToUpdate = sprintTasks.map(t => ({
+        id: t.id,
+        title: t.title,
+        description: t.description,
+        user_story_id: t.user_story_id,
+        sprint_id: t.sprint_id,
+        status_khanban: t.status_khanban,
+        priority: t.priority,
+        story_points: t.story_points,
+        deadline: t.deadline,
+        comments: t.comments,
+        created_by: t.created_by,
+        modified_by: t.modified_by,
+        finished_by: t.finished_by,
+        date_created: t.date_created,
+        date_modified: t.date_modified,
+        date_completed: t.date_completed,
+        assignee: t.assignee
+          ? t.assignee.map(a => a.users)
+          : undefined,
+        assignee_id: t.assignee
+          ? t.assignee.map(a => a.users)
+          : undefined,
+      }));
+
+      const taskRes = await fetch(
+        `${API_URL}/projects/${projectId}/tasks/batch`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(tasksToUpdate),
+        }
+      );
+
+      if (!taskRes.ok) {
+        const taskErrorText = await taskRes.text();
+        console.error("Error updating tasks:", taskErrorText);
+        throw new Error(`Tasks update failed: ${taskRes.status} - ${taskErrorText}`);
+      }
+
+      const updatedFromServer: Task[] = await taskRes.json();
+
+      updatedFromServer.forEach(u => {
+        updateTaskInProject(projectId, u.id, u);
+      });
+
+      console.log("Task assignments saved successfully");
+    } catch (error) {
+      console.error("Error saving task assignments:", error);
+      // Aún así permitir navegar de vuelta aunque falle el guardado
+    } finally {
+      setIsSaving(false);
+    }
+
+    // Volver a sprint planning
     router.push(
       `/sprint_planning?projectId=${projectId}${safeSprintId ? `&sprintId=${safeSprintId}` : ``}`
     )
   }
 
+  // Guardar y volver a planificación
+  const saveAssignments = () => {
+    saveAssignmentsToBackend();
+  }
 
   return (
     <div className="min-h-screen bg-[#ebe5eb]/30">
@@ -180,7 +256,10 @@ export default function TaskAssignmentPage() {
           <div className="flex space-x-4 overflow-x-auto pb-4">
             <button
               className={`flex-shrink-0 rounded-lg border ${selectedMember === null ? "border-[#4a2b4a] bg-[#f5f0f1]" : "border-gray-200 bg-white"} p-3 min-w-[200px]`}
-              onClick={() => setSelectedMember(null)}
+              onClick={() => {
+                setSelectedMember(null)
+                setselectedMemberName(null)
+              }}
             >
               <div className="flex items-center gap-2 mb-2">
                 <Users className="h-5 w-5" />
@@ -193,7 +272,10 @@ export default function TaskAssignmentPage() {
               <button
                 key={member.id}
                 className={`flex-shrink-0 rounded-lg border ${selectedMember === member.id ? "border-[#4a2b4a] bg-[#f5f0f1]" : "border-gray-200 bg-white"} p-3 min-w-[200px]`}
-                onClick={() => setSelectedMember(member.id === selectedMember ? null : member.id)}
+                onClick={() => {
+                  setSelectedMember(member.id === selectedMember ? null : member.id)
+                  setselectedMemberName(member.id === selectedMember ? null : member.name)
+                }}
               >
                 <div className="flex items-center gap-2">
                   <img
@@ -362,8 +444,12 @@ export default function TaskAssignmentPage() {
         </div>
 
         <div className="mt-8 flex justify-end">
-          <Button className="bg-[#4a2b4a] text-white hover:bg-[#694969]" onClick={saveAssignments}>
-            Complete Assignment & Return to Planning
+          <Button 
+            className="bg-[#4a2b4a] text-white hover:bg-[#694969]" 
+            onClick={saveAssignments}
+            disabled={isSaving}
+          >
+            {isSaving ? "Saving..." : "Complete Assignment & Return to Planning"}
           </Button>
         </div>
       </div>
@@ -410,7 +496,7 @@ export default function TaskAssignmentPage() {
                     className={`w-full text-left border rounded-md p-3 hover:bg-gray-50 transition-colors ${
                       wouldOverload ? "border-red-300" : "border-gray-200"
                     }`}
-                    onClick={() => assignTask(taskToAssign.id, member.id,member.name)}
+                    onClick={() => assignTask(taskToAssign.id, member.id, member.name)}
                   >
                     <div className="flex items-center gap-3">
                       <img

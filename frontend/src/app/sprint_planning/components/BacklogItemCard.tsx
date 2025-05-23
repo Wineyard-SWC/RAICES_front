@@ -20,10 +20,8 @@ export default function BacklogItemCard({
   onAdd,
   isSelected = false,
 }: Props) {
-  /* ---------- salida temprana si item no existe ---------- */
   if (!item) return null
 
-  /* ---------- helpers ---------- */
   const priority = (item as any).priority?.toLowerCase?.() ?? "medium"
 
   const getPriorityBadge = () => {
@@ -60,9 +58,8 @@ export default function BacklogItemCard({
       </span>
     )
 
-  const totalPoints = tasks.reduce((sum, t) => sum + (t.story_points || 0), 0)
+  const totalPoints = (tasks || []).reduce((sum, task) => sum + (task.story_points || 0), 0)
 
-  /* ---------- render ---------- */
   return (
     <div
       className={`rounded-lg border ${
@@ -102,7 +99,7 @@ export default function BacklogItemCard({
       <h3 className="font-medium">{item.title}</h3>
       <p className="text-sm text-gray-500">{item.description}</p>
 
-      {tasks.length > 0 && (
+      {(tasks || []).length > 0 && (
         <div className="mt-3 pl-3 border-l-2 border-gray-200">
           <div className="text-xs text-gray-500 mb-1">{tasks.length} tasks</div>
           {tasks.slice(0, 3).map(t => (

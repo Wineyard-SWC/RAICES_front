@@ -352,44 +352,57 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       date_modified: new Date().toISOString()
     }
 
-    try {
-      const backendData = prepareTaskDataForBackend(updateData)
+    const normalizedData = {
+    ...updateData,
+    assignee: Array.isArray(updateData.assignee)
+      ? updateData.assignee.map(item => Array.isArray(item) ? item : item.users) as Workinguser[]
+      : [],
+  };
 
-      const response = await fetch(`${API_URL}/projects/${currentProjectId}/tasks/${taskId}`, {
+  try {
+    // 3) Preparamos el payload para el backend (resto de campos, fechas, etc.)
+    const backendData = prepareTaskDataForBackend(normalizedData);
+
+    // 4) Llamada al PUT
+    const response = await fetch(
+      `${API_URL}/projects/${currentProjectId}/tasks/${taskId}`,
+      {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(backendData)
-      })
-
-      if (!response.ok) {
-        const errorData = await response.text()
-        console.error('Backend error:', errorData)
-        throw new Error(`Failed to update task: ${response.status} ${errorData}`)
       }
-
-      const updatedTask = await response.json()
-      updatedTask.assignee = convertAssigneeFromBackend(updatedTask.assignee)
-      
-      const contextUpdate = {
-        ...updatedTask,
-        modified_by: updateData.modified_by as [string, string],
-        updated_at: new Date().toISOString()
-      }
-      
-      tasksContext.updateTaskInProject(currentProjectId, taskId, contextUpdate)
-
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to update task'))
-      console.error('Error updating task:', err)
-      
-      try {
-        const freshData = await getProjectTasks(currentProjectId)
-        tasksContext.setTasksForProject(currentProjectId, freshData)
-      } catch (refreshErr) {
-        console.error('Error refreshing after failed update:', refreshErr)
-      }
+    );
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('Backend error:', errorData);
+      throw new Error(`Failed to update task: ${response.status} ${errorData}`);
     }
-  }, [currentProjectId, getUserInfo, tasksContext])
+
+    // 5) Actualizamos el contexto local
+    const updatedTask = await response.json();
+    // convertAssigneeFromBackend si necesitas volver a { users: [...] }
+    updatedTask.assignee = convertAssigneeFromBackend(updatedTask.assignee);
+
+    const contextUpdate = {
+      ...updatedTask,
+      modified_by: normalizedData.modified_by as [string, string],
+      updated_at: new Date().toISOString()
+    };
+    tasksContext.updateTaskInProject(currentProjectId, taskId, contextUpdate);
+
+  } catch (err) {
+    setError(err instanceof Error ? err : new Error('Failed to update task'));
+    console.error('Error updating task:', err);
+
+    // fallback: recargar todo si algo falla
+    try {
+      const freshData = await getProjectTasks(currentProjectId);
+      tasksContext.setTasksForProject(currentProjectId, freshData);
+    } catch (refreshErr) {
+      console.error('Error refreshing after failed update:', refreshErr);
+    }
+  }
+}, [currentProjectId, getUserInfo, tasksContext]);
 
   const updateTaskComments = useCallback(async (taskId: string, comments: any[]) => {
     if (!currentProjectId) return
