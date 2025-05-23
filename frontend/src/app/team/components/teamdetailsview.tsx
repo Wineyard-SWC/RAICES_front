@@ -91,96 +91,104 @@ const TeamDetailsView = ({ teamId }: TeamDetailsViewProps) => {
           {/* Avatar Display con el mismo estilo de contenedor que las métricas */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-md h-full"> {/* Mismo estilo de contenedor, altura completa */}
-              {dataLoaded.users && (
+              {dataLoaded.users ? (
                 <TeamAvatarsDisplay
                   teamId={teamId}
                   teamMembers={currentTeam.members}
                   projectId={projectId || ""}
                   preloadedUsers={true}
                 />
+              ) : (
+                <div className="flex flex-col justify-center items-center h-full py-20">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#4a2b4a]"></div>
+                  <p className="mt-4 text-lg text-[#4a2b4a]">Loading team members...</p>
+                </div>
               )}
             </div>
           </div>
           
-          {/* Team Metrics Section - Se mantiene igual */}
+          {/* Team Metrics Section - Mejorado visualmente */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md p-6 h-full"> {/* Agregado h-full */}
-              <div className="flex items-center mb-6">
-                <svg className="w-5 h-5 mr-2 text-[#4a2b4a]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0H3v-6a6 6 0 0112 0v6zm0 0h6v-6a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-                <h2 className="text-lg font-semibold">Team Metrics</h2>
+            <div className="bg-white rounded-lg shadow-md p-6 h-full">
+              {/* Header con título más prominente */}
+              <div className="flex items-center mb-8">
+                <div className="w-10 h-10 rounded-full bg-[#4a2b4a]/10 flex items-center justify-center mr-3">
+                  <svg className="w-6 h-6 text-[#4a2b4a]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0H3v-6a6 6 0 0112 0v6zm0 0h6v-6a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-bold text-[#4a2b4a]">Team Metrics</h2>
               </div>
               
-              {/* Team Velocity */}
-              <div className="mb-4">
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-sm text-gray-600">Team Velocity</span>
-                  <span className="text-sm font-medium">{teamMetrics?.velocity} SP/Sprint</span>
+              {/* Team Velocity - Barra más alta y números más grandes */}
+              <div className="mb-7">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium text-gray-600">Team Velocity</span>
+                  <span className="text-lg font-bold text-[#4a2b4a]">{teamMetrics?.velocity} SP/Sprint</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-gray-200 rounded-full h-3">
                   <div 
-                    className="bg-[#4a2b4a] h-2 rounded-full" 
+                    className="bg-[#4a2b4a] h-3 rounded-full transition-all duration-500 ease-in-out"
                     style={{ width: `${Math.min(100, (teamMetrics?.velocity || 0) * 2)}%` }}
                   ></div>
                 </div>
               </div>
               
-              {/* Team Mood */}
-              <div className="mb-6">
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-sm text-gray-600">Team Mood</span>
-                  <span className="text-sm font-medium">
+              {/* Team Mood - Emoji más grande y destacado */}
+              <div className="mb-7">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium text-gray-600">Team Mood</span>
+                  <span className="text-2xl">
                     {teamMetrics?.mood && teamMetrics.mood > 70 ? '😊' : teamMetrics?.mood && teamMetrics.mood > 40 ? '😐' : '😞'}
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-gray-200 rounded-full h-3">
                   <div 
-                    className="bg-[#4a2b4a] h-2 rounded-full" 
+                    className="bg-[#4a2b4a] h-3 rounded-full transition-all duration-500 ease-in-out"
                     style={{ width: `${teamMetrics?.mood || 0}%` }}
                   ></div>
                 </div>
               </div>
               
-              {/* Tasks Overview */}
-              <div className="bg-[#4a2b4a] text-white rounded-md p-4 mb-4">
-                <h3 className="text-sm font-medium mb-2">Tasks Overview</h3>
-                <div className="flex justify-between mb-2">
+              {/* Tasks Overview - Más espacio y números destacados */}
+              <div className="bg-[#4a2b4a] text-white rounded-lg p-5 mb-7">
+                <h3 className="text-base font-bold mb-4">Tasks Overview</h3>
+                <div className="flex justify-between">
                   <div>
-                    <div className="text-xs opacity-80">Completed</div>
-                    <div className="text-lg font-bold">{teamMetrics?.tasksCompleted}%</div>
+                    <div className="text-sm opacity-90 mb-1">Completed</div>
+                    <div className="text-2xl font-bold">{teamMetrics?.tasksCompleted}%</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-xs opacity-80">In Progress</div>
-                    <div className="text-lg font-bold">{teamMetrics?.tasksInProgress}%</div>
+                    <div className="text-sm opacity-90 mb-1">In Progress</div>
+                    <div className="text-2xl font-bold">{teamMetrics?.tasksInProgress}%</div>
                   </div>
                 </div>
               </div>
               
-              {/* Avg Story Time */}
-              <div className="flex justify-between items-center mb-4">
+              {/* Avg Story Time - Iconos más grandes y datos destacados */}
+              <div className="flex justify-between items-center mb-7">
                 <div className="flex items-center">
-                  <div className="w-8 h-8 rounded-full bg-[#EBE5EB] flex items-center justify-center mr-2">
-                    <svg className="w-4 h-4 text-[#4a2b4a]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="w-10 h-10 rounded-full bg-[#EBE5EB] flex items-center justify-center mr-3">
+                    <svg className="w-5 h-5 text-[#4a2b4a]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
-                  <span className="text-sm text-gray-600">Avg. Story Time</span>
+                  <span className="text-sm font-medium text-gray-600">Avg. Story Time</span>
                 </div>
-                <span className="text-sm font-medium">{teamMetrics?.avgStoryTime} days</span>
+                <span className="text-lg font-bold text-[#4a2b4a]">{teamMetrics?.avgStoryTime} days</span>
               </div>
               
-              {/* Sprint Progress */}
+              {/* Sprint Progress - Estilo coherente con el ítem anterior */}
               <div className="flex justify-between items-center">
                 <div className="flex items-center">
-                  <div className="w-8 h-8 rounded-full bg-[#EBE5EB] flex items-center justify-center mr-2">
-                    <svg className="w-4 h-4 text-[#4a2b4a]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="w-10 h-10 rounded-full bg-[#EBE5EB] flex items-center justify-center mr-3">
+                    <svg className="w-5 h-5 text-[#4a2b4a]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
                   </div>
-                  <span className="text-sm text-gray-600">Sprint Progress</span>
+                  <span className="text-sm font-medium text-gray-600">Sprint Progress</span>
                 </div>
-                <span className="text-sm font-medium">{teamMetrics?.sprintProgress}%</span>
+                <span className="text-lg font-bold text-[#4a2b4a]">{teamMetrics?.sprintProgress}%</span>
               </div>
             </div>
           </div>
