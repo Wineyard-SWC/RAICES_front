@@ -8,6 +8,7 @@ import ProductBacklog from "./components/ProductBacklog";
 import SprintSidebar from "./components/SprintSidebar";
 import DefaultLoading from "@/components/animations/DefaultLoading";
 import { useSprintPlanningLogic } from "./hooks/useSprintPlanningLogic";
+import { useTasks } from "@/contexts/taskcontext";
 
 export default function SprintPlanningPage() {
   const router = useRouter();
@@ -27,6 +28,10 @@ export default function SprintPlanningPage() {
     handleTeamMemberRemove,
     toggleSidebar,
   } = useSprintPlanningLogic();
+
+  const { getTasksForProject } = useTasks();
+
+  const currenttasks  = getTasksForProject(projectId!);
 
   if (loading) return <DefaultLoading text="sprint" />;
   
@@ -63,18 +68,18 @@ export default function SprintPlanningPage() {
 
           {/* Sección de miembros del equipo */}
           <TeamMembersSection
-            members={sprint.team_members}
+            members={sprint.team_members || []}
             ownerId={ownerId}
             projectId={projectId}
             onAdd={handleTeamMemberAdd}
             onUpdate={handleTeamMemberUpdate}
             onRemove={handleTeamMemberRemove}
           />
-
           {/* Backlog del producto */}
           <div className="mt-6">
             <ProductBacklog
-              userStories={sprint.user_stories}
+              tasks={currenttasks!}
+              userStories={sprint.user_stories || []}
               onToggleUserStory={handleToggleUserStory}
             />
           </div>
@@ -82,6 +87,7 @@ export default function SprintPlanningPage() {
 
         {/* Sidebar del sprint */}
         <SprintSidebar
+          tasks={currenttasks!}
           sprint={sprint}
           isOpen={openSB}
           onToggle={toggleSidebar}
