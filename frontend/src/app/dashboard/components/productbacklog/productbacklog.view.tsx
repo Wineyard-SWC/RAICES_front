@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { TasksKanban } from "../dashboard/dashboard.taskskanban";
 import { useKanban } from "@/contexts/unifieddashboardcontext";
 import { ItemsUnderReview } from "./productbacklog.itemsunderreview";
@@ -9,15 +9,17 @@ import TaskSidebar from "./productbacklog.sidebar";
 import { useSearchParams } from "next/navigation";
 import { useUserPermissions } from "@/contexts/UserPermissions";
 
-interface ProductBacklogViewProps {
-  onBack: () => void;
+// Loading component
+function LoadingProductBacklog() {
+  return (
+    <div className="p-8 flex justify-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4A2B4A]"></div>
+    </div>
+  );
 }
 
-// Definir constantes para los permisos
-const PERMISSION_ITEM_REVIEW = 1 << 5;
-const PERMISSION_REQ_MANAGE = 1 << 2;  // Nuevo permiso para gestionar items
-
-const ProductBacklogPage: React.FC<ProductBacklogViewProps> = ({onBack}) => {
+// Client component that uses search params
+function ProductBacklogContent({ onBack }) {
   const searchParams = useSearchParams()
   const [BacklogactiveView, setBacklogActiveView] = useState<"backlog" | "kanban">("kanban")
   const [showBugReportForm, setShowBugReportForm] = useState(false);
@@ -142,5 +144,16 @@ const ProductBacklogPage: React.FC<ProductBacklogViewProps> = ({onBack}) => {
     </div>
   )
 }
+
+const PERMISSION_ITEM_REVIEW = 1 << 5;
+const PERMISSION_REQ_MANAGE = 1 << 2;  // Nuevo permiso para gestionar items
+
+const ProductBacklogPage = ({ onBack }) => {
+  return (
+    <Suspense fallback={<LoadingProductBacklog />}>
+      <ProductBacklogContent onBack={onBack} />
+    </Suspense>
+  );
+};
 
 export default ProductBacklogPage;

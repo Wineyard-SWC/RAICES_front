@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { AvatarCreator, AvatarCreatorConfig, AvatarExportedEvent } from '@readyplayerme/react-avatar-creator';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAvatar } from '@/contexts/AvatarContext';
@@ -10,7 +10,17 @@ import { useUpdateAvatar } from '../avatar_creator/hooks/useUpdateAvatar';
 // Estilo para el iframe del editor
 const editorStyle = { width: '100%', height: '100vh', border: 'none' };
 
-export default function AvatarEditorPage() {
+// Loading component to show while params are loading
+function LoadingEditor() {
+  return (
+    <div className="flex items-center justify-center h-screen bg-slate-50">
+      <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-800"></div>
+    </div>
+  );
+}
+
+// Client component that uses searchParams
+function AvatarEditorContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -125,7 +135,7 @@ export default function AvatarEditorPage() {
         </button>
         <h1 className="text-xl font-bold mx-auto pr-24">Edit Your Avatar</h1>
       </div>
-      
+
       {/* Editor de Avatar */}
       <div className="pt-16 h-full">
         <AvatarCreator
@@ -149,5 +159,14 @@ export default function AvatarEditorPage() {
         </div>
       )}
     </div>
+  );
+}
+
+// Main page component with Suspense
+export default function AvatarEditorPage() {
+  return (
+    <Suspense fallback={<LoadingEditor />}>
+      <AvatarEditorContent />
+    </Suspense>
   );
 }
