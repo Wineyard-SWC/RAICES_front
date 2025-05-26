@@ -12,7 +12,7 @@ export const useUserProjectRole = (userId: string | null, projectId: string) => 
   useEffect(() => {
     const fetchUserRole = async () => {
       if (!userId || !projectId) return
-
+      
       setLoading(true)
       setError(null)
 

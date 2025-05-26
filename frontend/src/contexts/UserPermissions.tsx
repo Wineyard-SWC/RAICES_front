@@ -305,10 +305,11 @@ export const UserPermissionsProvider = ({ children }: { children: ReactNode }) =
   
   // Cargar permisos automáticamente cuando se monta el componente
   useEffect(() => {
+
     if (userId) {
       loadUserPermissionsIfNeeded(userId);
     }
-  }, [userId, loadUserPermissionsIfNeeded]);
+  }, [userId]);
   
   // Valor del contexto
   const contextValue = {

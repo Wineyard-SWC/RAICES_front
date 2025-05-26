@@ -63,7 +63,7 @@ const TeamsView = () => {
         })
         .catch(err => console.error("Error cargando usuarios del proyecto:", err));
     }
-  }, [projectId, loadUsersIfNeeded]);
+  }, [projectId]);
 
   // Initialize tabs
   useEffect(() => {
@@ -82,7 +82,7 @@ const TeamsView = () => {
     if (projectId) {
       fetchTeams(projectId);
     }
-  }, [projectId, fetchTeams]);
+  }, [projectId]);
 
   // Filter teams based on search term
   useEffect(() => {

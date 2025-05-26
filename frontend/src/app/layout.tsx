@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import { AllProviders } from "@/providers/providers";
 
 import "../styles/globals.css";
+import { AppProvider } from "@/contexts/appContext/AppContext";
 
 const inter = Inter({
   subsets: ['latin'],
@@ -29,10 +30,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${inter.variable}`}>
       <body>
-        <AllProviders>
-          {children}
-          <div id="modal-root" />
-        </AllProviders>
+        <AppProvider>
+          <AllProviders>
+            {children}
+            <div id="modal-root" />
+          </AllProviders>
+        </AppProvider>
       </body>
     </html>
   );

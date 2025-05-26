@@ -22,6 +22,7 @@ import { useState, useEffect, useRef } from "react"
 import { isUserStory } from "@/types/taskkanban"
 import { useKanban } from "@/contexts/unifieddashboardcontext"
 import { useUserPermissions } from "@/contexts/UserPermissions" // Importar hook de permisos
+import { TaskCardCompactView } from "./dashboard.taskcompactcard"
 
 // Definir constantes para los permisos
 const PERMISSION_REQ_MANAGE = 1 << 2;  // Gestión de items (crear/editar/eliminar)
@@ -29,6 +30,7 @@ const PERMISSION_REQ_MANAGE = 1 << 2;  // Gestión de items (crear/editar/elimin
 interface TaskCardProps {
   task: TaskOrStory;
   columnId: string;
+  compact?: boolean;
   view?: string;
   usertype?: string;
   onDelete?: (id: string, columid:string) => void;
@@ -37,7 +39,7 @@ interface TaskCardProps {
 
 }
 
-export const TaskCard = ({ task, columnId, view, usertype, onDelete,onChangeStatus, onViewDetails}: TaskCardProps) => {
+export const TaskCard = ({ task, columnId, view, usertype, compact, onDelete, onChangeStatus, onViewDetails}: TaskCardProps) => {
   const [menuOpen, setMenuOpen] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -190,7 +192,21 @@ export const TaskCard = ({ task, columnId, view, usertype, onDelete,onChangeStat
   const assignees = normalizeAssignees(task.assignee)
 
 
-   return (
+  if (compact) {
+    return (
+      <TaskCardCompactView
+        task={task}
+        columnId={columnId}
+        view={view}
+        usertype={usertype}
+        onDelete={onDelete}
+        onChangeStatus={onChangeStatus}
+        onViewDetails={onViewDetails}
+      />
+    )
+  }
+
+  return (
     <div
       className={`hover:bg-[#EBE5EB] cursor-pointer bg-white rounded-md p-5 shadow-sm 
                     ${cardTypeColors[cardType]} border-t border-r border-b border-[#D3C7D3] 

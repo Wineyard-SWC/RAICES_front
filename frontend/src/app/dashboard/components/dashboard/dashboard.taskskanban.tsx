@@ -6,12 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
-import { TaskCard } from "./dashboard.taskcard"
 import { isBug,isTask,isUserStory, TaskColumns } from "@/types/taskkanban"
 import { useKanban } from "@/contexts/unifieddashboardcontext"
 import { TaskOrStory } from "@/types/taskkanban"
-import { Task } from "@/types/task"
-import { UserStory } from "@/types/userstory"
+import { TaskCardCompactView } from "./dashboard.taskcompactcard"
 
 interface TasksKanbanProps {
   onNavigate?: () => void;
@@ -292,7 +290,8 @@ export const TasksKanban = ({ onNavigate, view, onTaskSelect }: TasksKanbanProps
                                   {...provided.draggableProps}
                                   {...provided.dragHandleProps}
                                 >
-                                  <TaskCard 
+                                  <TaskCardCompactView
+                                    compact={true}
                                     task={task} 
                                     columnId={columnId} 
                                     view={view} 
@@ -349,7 +348,8 @@ export const TasksKanban = ({ onNavigate, view, onTaskSelect }: TasksKanbanProps
                                       {...provided.draggableProps}
                                       {...provided.dragHandleProps}
                                     >
-                                      <TaskCard
+                                      <TaskCardCompactView
+                                        compact={true}
                                         task={task}
                                         columnId={columnId}
                                         view={view}

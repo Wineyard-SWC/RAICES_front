@@ -55,6 +55,9 @@ export default function DashboardPage() {
   
   // Actualizar el proyecto actual en el contexto de permisos
   useEffect(() => {
+    if (!userId) return
+    if (!currentProjectId) return
+
     if (currentProjectId) {
       // Verificar si es diferente del proyecto actual en el contexto
       const currentContextProject = getCurrentProject()
@@ -70,7 +73,7 @@ export default function DashboardPage() {
         })
       }
     }
-  }, [currentProjectId, userId, getCurrentProject, setCurrentProjectPermissions, loadUserPermissionsIfNeeded])
+  }, [currentProjectId, userId])
 
   if (loading) {
     return null

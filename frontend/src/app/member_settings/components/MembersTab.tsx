@@ -41,7 +41,7 @@ export default function MembersTab() {
   const [memberToEditId, setMemberToEditId] = useState<string | null>(null);
   const [selectedRoleName, setSelectedRoleName] = useState<string>("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  
+
   const PERMISSIONS = {
     MEMBER_MANAGE: 1 << 1,
   };
@@ -54,7 +54,7 @@ export default function MembersTab() {
       // Cargar usuarios del proyecto
       loadUsersIfNeeded(storedProjectId);
     }
-  }, [loadUsersIfNeeded]);
+  }, [currentProjectId]);
   
   // Obtener la lista de miembros del proyecto
   const members = getUsersForProject(currentProjectId);
