@@ -5,6 +5,8 @@ import { useState, useEffect, useCallback } from "react";
 import { X, Search, Plus, User } from "lucide-react";
 import { useUsers } from "@/hooks/useUsers";
 import type { User as UserType } from "@/hooks/useUsers";
+import { useProjectUsers } from "@/contexts/ProjectusersContext"
+import AvatarProfileIcon from "@/components/Avatar/AvatarDisplay"
 
 interface CreateProjectModalProps {
   isOpen: boolean;
@@ -27,8 +29,46 @@ const CreateProjectModal = ({
   const [selectedUsers, setSelectedUsers] = useState<UserType[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [currentProjectId, setCurrentProjectId] = useState<string>("");
+  const { getUsersForProject, loadUsersIfNeeded } = useProjectUsers();
 
   const { users, loading, searchUsers } = useUsers();
+
+  // Obtener el ID del proyecto actual
+  useEffect(() => {
+    const storedProjectId = localStorage.getItem("currentProjectId");
+    if (storedProjectId) {
+      setCurrentProjectId(storedProjectId);
+      // Cargar usuarios del proyecto
+      loadUsersIfNeeded(storedProjectId);
+    }
+  }, [loadUsersIfNeeded]);
+
+  // Obtener la lista de miembros del proyecto
+  const projectMembers = getUsersForProject(currentProjectId);
+
+  // Crea una función para combinar los usuarios buscados con los datos del proyecto
+  const getEnrichedUsers = (searchedUsers: UserType[]) => {
+    console.log('--- getEnrichedUsers ---');
+    console.log('Project Members:', projectMembers);
+    console.log('Searched Users:', searchedUsers);
+    
+    return searchedUsers.map(user => {
+      const projectMember = projectMembers.find(member => member.userRef === user.id);
+      const enrichedUser = {
+        ...user,
+        photoURL: projectMember?.avatarUrl || user.photoURL,
+      };
+      
+      console.log(`User ${user.id} (${user.name}) - Merged data:`, {
+        originalPhoto: user.photoURL,
+        projectAvatar: projectMember?.avatarUrl,
+        finalPhoto: enrichedUser.photoURL
+      });
+      
+      return enrichedUser;
+    });
+  };
 
   // Initialize dates with default values
   useEffect(() => {
@@ -258,12 +298,10 @@ const CreateProjectModal = ({
               {searchTerm.length >= 2 && (
                 <div className="mt-2 border border-[#ebe5eb] rounded-md max-h-[200px] overflow-y-auto">
                   {loading ? (
-                    <div className="p-3 text-center text-[#694969]">
-                      Searching users...
-                    </div>
+                    <div className="p-3 text-center text-[#694969]">Searching users...</div>
                   ) : users.length > 0 ? (
                     <ul>
-                      {users.map((user) => (
+                      {getEnrichedUsers(users).map((user) => (
                         <li
                           key={user.id}
                           className="p-2 hover:bg-[#ebe5eb] cursor-pointer flex items-center"
@@ -271,33 +309,28 @@ const CreateProjectModal = ({
                         >
                           <div className="h-8 w-8 rounded-full bg-[#ebe5eb] overflow-hidden mr-3">
                             {user.photoURL ? (
-                              <img
-                                src={user.photoURL || "/placeholder.svg"}
-                                alt={user.name}
-                                className="h-full w-full object-cover"
+                              <AvatarProfileIcon 
+                                avatarUrl={user.photoURL} 
+                                size={32} 
+                                borderWidth={2}
+                                borderColor="#4a2b4a"
                               />
                             ) : (
                               <div className="h-full w-full flex items-center justify-center bg-[#4a2b4a] text-white">
-                                <User size={16} />
+                                {user?.name?.charAt(0).toUpperCase() || <User size={16} />}
                               </div>
                             )}
                           </div>
                           <div>
-                            <p className="text-[#4a2b4a] font-medium">
-                              {user.name}
-                            </p>
-                            <p className="text-xs text-[#694969]">
-                              {user.email}
-                            </p>
+                            <p className="text-[#4a2b4a] font-medium">{user.name}</p>
+                            <p className="text-xs text-[#694969]">{user.email}</p>
                           </div>
                           <Plus size={16} className="ml-auto text-[#4a2b4a]" />
                         </li>
                       ))}
                     </ul>
                   ) : (
-                    <div className="p-3 text-center text-[#694969]">
-                      No users found
-                    </div>
+                    <div className="p-3 text-center text-[#694969]">No users found</div>
                   )}
                 </div>
               )}
