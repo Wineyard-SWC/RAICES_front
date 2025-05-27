@@ -2,13 +2,16 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { X } from "lucide-react"
 
 import { useUser } from "@/contexts/usercontext"
 import { useGetProjectByCode } from "@/hooks/useGetProjectByCode"
 import { useGetProjectOwner } from "@/hooks/useGetProjectOwner"
 import { useJoinProject } from "@/hooks/useJoinProject"
+import { useAvatar } from "@/contexts/AvatarContext"
+import AvatarProfileIcon from "@/components/Avatar/AvatarDisplay"
+
 
 interface JoinProjectModalProps {
   isOpen: boolean
@@ -26,6 +29,23 @@ const JoinProjectModal = ({ isOpen, onClose, onSuccess }: JoinProjectModalProps)
   const { project, loading: loadingProject, error: projectError } = useGetProjectByCode(invitationCode);
   const { owner, loading: loadingOwner } = useGetProjectOwner(project?.id || null);
   const { joinProject, loading: joiningProject, error: joinError } = useJoinProject(userId);
+  const { fetchAvatar } = useAvatar();
+  const [ownerAvatarUrl, setOwnerAvatarUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (owner?.id) {
+      fetchAvatar(owner.userRef)
+        .then(url => {
+          setOwnerAvatarUrl(url);
+        })
+        .catch(error => {
+          console.error(`[JoinProjectModal] Error fetching avatar for owner ${owner.id}:`, error);
+        });
+    } else {
+      console.log('[JoinProjectModal] No owner ID available yet');
+    }
+  }, [owner, fetchAvatar]);
+  
 
   const handleSubmitCode = (e: React.FormEvent) => {
     e.preventDefault()
@@ -113,12 +133,13 @@ const JoinProjectModal = ({ isOpen, onClose, onSuccess }: JoinProjectModalProps)
               ) : (
                 <>
                   <div className="flex items-start mb-6">
-                    <div className="h-12 w-12 rounded-full bg-[#ebe5eb] overflow-hidden mr-4">
-                      {owner?.photoURL ? (
-                        <img
-                          src={owner.photoURL || "/placeholder.svg"}
-                          alt={owner.name}
-                          className="h-full w-full object-cover"
+                    <div className="h-12 w-12 rounded-full bg-[#ebe5eb] overflow-hidden mr-4 shrink-0">
+                      {owner?.id ? (
+                        <AvatarProfileIcon 
+                          avatarUrl={ownerAvatarUrl} 
+                          size={48} 
+                          borderWidth={2}
+                          borderColor="#4a2b4a"
                         />
                       ) : (
                         <div className="h-full w-full flex items-center justify-center bg-[#4a2b4a] text-white">
@@ -126,12 +147,14 @@ const JoinProjectModal = ({ isOpen, onClose, onSuccess }: JoinProjectModalProps)
                         </div>
                       )}
                     </div>
-                    <div>
+                    <div className="min-w-0"> 
                       <p className="text-[#4a2b4a] font-medium">
                         <span className="font-bold">{owner?.name}</span> has invited you to join:
                       </p>
                       <h3 className="text-xl font-bold text-[#4a2b4a] mt-1">{project?.title}</h3>
-                      <p className="text-[#694969] text-sm mt-1">{project?.description}</p>
+                      <div className="text-[#694969] text-sm mt-1 max-h-[100px] overflow-y-auto line-clamp-5">
+                        {project?.description}
+                      </div>
                     </div>
                   </div>
 
