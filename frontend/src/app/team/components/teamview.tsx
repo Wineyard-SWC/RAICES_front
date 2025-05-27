@@ -82,7 +82,7 @@ const TeamsView = () => {
     if (projectId) {
       fetchTeams(projectId);
     }
-  }, [projectId, fetchTeams]);
+  }, [projectId]);
 
   // Filter teams based on search term
   useEffect(() => {

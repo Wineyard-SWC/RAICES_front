@@ -13,7 +13,8 @@ export const useGenerateUserStories = () => {
   const { language} = useLanguageContext();
   
 
-  const route = process.env.NEXT_PUBLIC_USER_STORY_ROUTE!
+  // Use relative URL to your API route proxy
+  const route = '/api/proxy/user-stories';
   
   const currentSession_id = sessionId
   const lang = language

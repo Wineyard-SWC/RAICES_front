@@ -12,7 +12,8 @@ export const useGenerateRequirements = () => {
     const { sessionId,setSessionId} = useSessionContext();
     const { language,setLanguage} = useLanguageContext();
 
-    const apiUrl = process.env.NEXT_PUBLIC_REQUIREMENT_ROUTE!;
+    // Use relative URL to your API route proxy instead of the direct HTTP URL
+    const apiUrl = '/api/proxy/requirements';
 
    
     const lang = language || "en"

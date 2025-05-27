@@ -13,7 +13,8 @@ export const useGenerateEpics = () => {
     const { sessionId} = useSessionContext();
     const { language} = useLanguageContext();
 
-    const apiUrl = process.env.NEXT_PUBLIC_EPIC_ROUTE!  
+    // Use relative URL to your API route proxy
+    const apiUrl = '/api/proxy/epics';  
 
     const currentSession_id = sessionId
     const lang = language
