@@ -3,57 +3,88 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSprintContext } from "@/contexts/sprintcontext";
 import { useTasks } from "@/contexts/taskcontext"
 import { useUserStories  } from "@/contexts/saveduserstoriescontext";
-import type { Sprint, SprintMember } from "@/types/sprint";
-import { buildSprintPayload } from "@/utils/buildSprintPayload";
+import type { Sprint, SprintMember, SprintUserStory } from "@/types/sprint";
 import { getProjectUserStories } from "@/utils/getProjectUserStories";
 import { getProjectTasks } from "@/utils/getProjectTasks";
 import { Task } from "@/types/task";
+import { BasicTask } from "@/types/task";
+import { useKanban } from "@/contexts/unifieddashboardcontext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
-// Función para obtener el propietario del proyecto
-async function fetchProjectOwner(projectId: string): Promise<SprintMember|null> {
-  const res = await fetch(`${API_URL}/project_users/project/${projectId}`);
-  if (!res.ok) return null;
-  const list = await res.json();
-  
-  if (!Array.isArray(list) || list.length === 0) return null;
 
-  // Busca un usuario con rol "owner" o toma el primero disponible
-  const raw = list.find((u:any) => (u.role || "").toLowerCase()==="owner") || list[0];
-  
-  return {
-    id: raw.id,
-    name: raw.name || raw.email || "Owner",
-    role: raw.role || "Owner",
-    avatar: raw.avatar,
-    capacity: 0,
-    allocated: 0,
-  };
+
+
+
+
+async function fetchProjectOwner(projectId: string): Promise<SprintMember|null> {
+  try {
+    const res = await fetch(`${API_URL}/project_users/project/${projectId}`);
+    if (!res.ok) {
+      console.error("Error fetching project users:", res.status);
+      return null;
+    }
+    const list = await res.json();
+    
+    console.log("Project users for owner detection:", list); // Para debug
+    
+    if (!Array.isArray(list) || list.length === 0) return null;
+
+    const raw = list.find((u:any) => (u.role || "").toLowerCase() === "owner") || list[0];
+    
+    console.log("Selected owner:", raw); // Para debug
+    
+    return {
+      id: String(raw.id || raw.user_id || raw.userId || ''),
+      name: raw.name || raw.username || raw.email || "Owner",
+      role: raw.role || "Owner", 
+      avatar: raw.photoURL || raw.avatar || raw.profile_picture,
+      capacity: 40, 
+      allocated: 0,
+    };
+  } catch (error) {
+    console.error("Error in fetchProjectOwner:", error);
+    return null;
+  }
 }
 
+function toTaskFormData(task: BasicTask) {
+  return {
+    id: task.id,
+    title: task.title,
+    description: task.description,
+    user_story_id: task.user_story_id,
+    assignee: task.assignee || undefined,  
+    assignee_id: task.assignee_id || undefined,  
+    sprint_id: task.sprint_id,
+    status_khanban: task.status_khanban,
+    priority: task.priority,
+    story_points: task.story_points,
+    deadline: task.deadline,
+    comments: task.comments,
+    created_by: task.created_by,
+    modified_by: task.modified_by,
+    finished_by: task.finished_by,
+    date_created: task.date_created,
+    date_modified: task.date_modified,
+    date_completed: task.date_completed,
+  }
+}
+
+
 export function useSprintPlanningLogic() {
-  // Obtener parámetros de la URL
   const router = useRouter();
   const params = useSearchParams();
   const projectId = params.get("projectId") || "";
   const sprintId = params.get("sprintId") || "";
-
-  // Context del sprint
+  const [user_stories,setUserStories]= useState<SprintUserStory[]>([]);
   const { sprint, tasks, setSprint, setTasks } = useSprintContext();
-  
-  // Context de tareas (con cache)
   const taskContext = useTasks();
-  
-  // Context de user stories (con cache)
   const userStoryContext = useUserStories();
-
-  // Estados del UI
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string|null>(null);
   const [openSB, setOpenSB] = useState(true);
-
-  // Crear un sprint local vacío con el propietario del proyecto
+  
   const makeLocalSprint = async (): Promise<Sprint> => {
     const now = new Date().toISOString();
     const in2w = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
@@ -61,7 +92,7 @@ export function useSprintPlanningLogic() {
     
     return {
       id: `temp-${Date.now()}`,
-      name: `Sprint ${new Date().getMonth() + 1}`,
+      name: `New Sprint`,
       project_id: projectId,
       start_date: now,
       end_date: in2w,
@@ -74,65 +105,183 @@ export function useSprintPlanningLogic() {
     };
   };
 
-  // 1️⃣ Cargar sprint existente o crear uno local
+  function normalizeAcceptanceCriteria(userStory: any): any[] {
+    let criteria = null;
+    
+    // Primero intenta desde el objeto directo
+    if (Array.isArray(userStory?.acceptance_criteria)) {
+      criteria = userStory.acceptance_criteria;
+    } else if (Array.isArray(userStory?.acceptanceCriteria)) {
+      criteria = userStory.acceptanceCriteria;
+    }
+    
+    return criteria || [];
+  }
+
+  function ensureAcceptanceCriteriaStructure(criteria : any[]) {
+    return criteria.map(criterion => {
+      if (typeof criterion === 'object' && criterion.id && criterion.description) {
+        return {
+          id: criterion.id,
+          description: criterion.description,
+          date_completed: criterion.date_completed || "",
+          date_created: criterion.date_created || new Date().toISOString(),
+          date_modified: criterion.date_modified || new Date().toISOString(),
+          finished_by: criterion.finished_by || ["", ""],
+          created_by: criterion.created_by || ["RAICES_IA", "RAICES_IA"],
+          modified_by: criterion.modified_by || ["RAICES_IA", "RAICES_IA"]
+        };
+      }
+      
+      if (typeof criterion === 'string') {
+        return {
+          id: `temp-${Date.now()}-${Math.random()}`,
+          description: criterion,
+          date_completed: "",
+          date_created: new Date().toISOString(),
+          date_modified: new Date().toISOString(),
+          finished_by: ["", ""],
+          created_by: ["RAICES_IA", "RAICES_IA"],
+          modified_by: ["RAICES_IA", "RAICES_IA"]
+        };
+      }
+      
+      return {
+        id: `temp-${Date.now()}-${Math.random()}`,
+        description: criterion?.description || "Sin descripción",
+        date_completed: "",
+        date_created: new Date().toISOString(),
+        date_modified: new Date().toISOString(),
+        finished_by: ["", ""],
+        created_by: ["RAICES_IA", "RAICES_IA"],
+        modified_by: ["RAICES_IA", "RAICES_IA"]
+      };
+    });
+  }
+
   useEffect(() => {
     if (!projectId) return;
-
+    
     const load = async () => {
       try {
         setLoading(true);
+        
+        let projectTasks: Task[] = [];
+        try {
+          projectTasks = await taskContext.loadTasksIfNeeded(
+            projectId,
+            getProjectTasks,
+            30 * 60 * 1000  
+          );            
+        } catch (err) {
+          console.error("Error loading tasks from context:", err);
+          projectTasks = await getProjectTasks(projectId);
+        }
+        
+        setTasks(projectTasks);
 
-        // Cargar sprint existente
-        if (sprintId) {
-          // Obtener sprint desde API
+        // Si ya hay un sprint en el contexto y es el mismo que estamos buscando, usarlo
+        if (sprint && sprint.id === sprintId) {
+          console.log("Using existing sprint from context:", sprint.id);
+          setLoading(false);
+          return;
+        }
+
+        if (sprintId && !sprintId.startsWith("temp-")) {
           const sprintRes = await fetch(`${API_URL}/projects/${projectId}/sprints/${sprintId}`);
           
           if (!sprintRes.ok) throw new Error("Sprint not found");
           const raw: Sprint = await sprintRes.json();
 
-          // Obtener tareas usando el context (con cache)
-          let projectTasks: Task[] = [];
-          try {
-            projectTasks = await taskContext.loadTasksIfNeeded(
-              projectId,
-              getProjectTasks, // función que hace la llamada a la API
-              5 * 60 * 1000    // cache por 5 minutos
-            );
-          } catch (err) {
-            console.error("Error loading tasks from context:", err);
-            // Fallback: intentar cargar directamente
-            projectTasks = await getProjectTasks(projectId);
-          }
-
-          // Agregar owner si no está presente
           const owner = await fetchProjectOwner(projectId);
-          if (owner && !raw.team_members.some(m => m.id === owner.id)) {
-            raw.team_members.push(owner);
+          console.log("Owner found:", owner);
+
+          // FIX: Asegurar que team_members siempre sea un array
+          if (!Array.isArray(raw.team_members)) {
+            raw.team_members = [];
           }
 
-          // Hidratar las tasks (convertir IDs string a objetos Task completos)
-          const hydratedStories = raw.user_stories.map(us => {
-            const fullTasks = us.tasks
-              .map(id => projectTasks.find(t => t.id === id))
-              .filter(Boolean) as Task[];
+          if (owner) {
+            const existingMember = raw.team_members.find(m => m.id === owner.id);
+            if (!existingMember) {
+              raw.team_members = [...raw.team_members, owner];
+            }
+          }
 
-            if (us.tasks.length && fullTasks.length === 0) {
-              console.warn(
-                `[SprintPlanning] No se encontraron las Tasks de la historia ${us.id}. ` +
-                `Ids esperados: ${us.tasks.join(", ")}`
-              );
+          const hydratedStories: SprintUserStory[] = raw.user_stories.map((us: any) => {
+            if (us.userStory && typeof us.userStory === "object") {
+              return us as SprintUserStory;
             }
 
-            return { ...us, tasks: fullTasks };
+            const fullTaskIds = Array.isArray(us.tasks)
+              ? us.tasks.filter((taskId: string) => 
+                  projectTasks.some(pt => pt.id === taskId)
+                )
+              : [];
+
+            const acceptance_criteria = normalizeAcceptanceCriteria(us);
+            const structuredCriteria = ensureAcceptanceCriteriaStructure(acceptance_criteria);
+
+            return {
+              id: us.id,
+              userStory: {
+                ...us,
+                acceptance_criteria: structuredCriteria
+              },
+              tasks: fullTaskIds,
+              selected: !!us.selected
+            } as SprintUserStory;
           });
 
-          // Guardar en contexto global
-          setTasks(projectTasks);
-          setSprint({ ...raw, user_stories: hydratedStories });
+          setSprint({ 
+            ...raw,  
+            team_members: raw.team_members,
+            user_stories: hydratedStories
+          });
+
         }
-        // Crear sprint nuevo en memoria
-        else if (!sprint) {
-          setSprint(await makeLocalSprint());
+        else if (!sprint || sprint.project_id !== projectId) {
+          // Solo crear un nuevo sprint si no hay uno en el contexto o es de otro proyecto
+          const newSprint = await makeLocalSprint();
+          setSprint(newSprint);
+
+          let stories: any[] = [];
+          try {
+            stories = await userStoryContext.loadUserStoriesIfNeeded(
+              projectId,
+              getProjectUserStories,
+              30 * 60 * 1000        
+            );
+          } catch (err) {
+            stories = await getProjectUserStories(projectId);
+          }
+          
+          const mappedUserStories = stories.map(st => {
+            const acceptance_criteria = normalizeAcceptanceCriteria(st);
+            const structuredCriteria = ensureAcceptanceCriteriaStructure(acceptance_criteria);
+            
+            const relatedTaskIds = projectTasks
+              .filter(t => t.user_story_id === st.uuid)
+              .map(t => t.id);
+                        
+            return {
+              id: st.uuid,
+              userStory: { 
+                ...st, 
+                acceptance_criteria: structuredCriteria
+              },
+              selected: false,
+              tasks: relatedTaskIds,
+            };
+          });
+          
+          // Solo actualizar las user stories si es necesario
+          if (!sprint || sprint.project_id !== projectId) {
+            setSprint({
+              ...newSprint,
+              user_stories: mappedUserStories,
+            });
+          }
         }
 
       } catch (e: any) {
@@ -143,184 +292,162 @@ export function useSprintPlanningLogic() {
     };
 
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, sprintId]);
 
-  // 2️⃣ Llenar backlog para sprint local
-  useEffect(() => {
-    if (!projectId || !sprint) return;
-    if (sprintId) return; // Solo para sprints nuevos
-    if (sprint.user_stories.length) return; // Ya tiene historias
 
-    const fill = async () => {
-      setLoading(true);
-      try {
-        // Cargar user stories usando el context (con cache)
-        let stories: any[] = [];
-        try {
-          stories = await userStoryContext.loadUserStoriesIfNeeded(
-            projectId,
-            getProjectUserStories, // función que hace la llamada a la API
-            10 * 60 * 1000          // cache por 10 minutos
-          );
-        } catch (err) {
-          console.error("Error loading user stories from context:", err);
-          // Fallback: intentar cargar directamente
-          stories = await getProjectUserStories(projectId);
-        }
-
-        // Cargar tareas usando el context (con cache)
-        let allTasks: Task[] = [];
-        try {
-          allTasks = await taskContext.loadTasksIfNeeded(
-            projectId,
-            getProjectTasks,
-            5 * 60 * 1000   // cache por 5 minutos
-          );
-        } catch (err) {
-          console.error("Error loading tasks from context:", err);
-          // Fallback: intentar cargar directamente
-          allTasks = await getProjectTasks(projectId);
-        }
-        
-        setTasks(allTasks);
-        setSprint({
-          ...sprint,
-          user_stories: stories.map(st => ({
-            id: st.uuid,
-            userStory: st,
-            selected: false,
-            tasks: allTasks.filter(t => t.user_story_id === st.uuid),
-          })),
-        });
-      } catch (e: any) {
-        setError(e.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fill();
-  }, [projectId, sprint, taskContext, userStoryContext]);
-
-  // Guardar sprint (crear o actualizar)
   const handleSaveSprint = async () => {
     if (!sprint) return;
 
-    // Construir payload con solo las historias seleccionadas
-    const payload = buildSprintPayload({
-      ...sprint,
-      user_stories: sprint.user_stories
-        .filter((us) => us.selected)
-        .map((us) => ({
-          ...us,
-          tasks: tasks.filter((t) => t.user_story_id === us.id),
-        })),
-    });
+    // Primero, calcular los assignees únicos por user story
+    const userStoriesWithAssignees = sprint.user_stories
+      .filter((us) => us.selected)
+      .map((us) => {
+        const rawCriteria = normalizeAcceptanceCriteria(us.userStory);
+        const structuredCriteria = ensureAcceptanceCriteriaStructure(rawCriteria);
+        
+        // Obtener todas las tareas de esta user story
+        const storyTasks = tasks.filter(t => 
+          us.tasks.includes(t.id) && t.assignee && t.assignee.length > 0
+        );
+        
+        // Extraer assignees únicos de las tareas
+        const uniqueAssignees = new Map<string, [string, string]>();
+        storyTasks.forEach(task => {
+          if (task.assignee && Array.isArray(task.assignee)) {
+            task.assignee.forEach(assignee => {
+              if (assignee.users && assignee.users[0]) {
+                uniqueAssignees.set(assignee.users[0], assignee.users);
+              }
+            });
+          }
+        });
+        
+        // Convertir a formato del backend para user stories
+        const assigneeList = Array.from(uniqueAssignees.values()).map(users => ({
+          users: users
+        }));
+        
+        return {
+          id: us.id,
+          title: us.userStory?.title || "Sin título",
+          description: us.userStory?.description || "Sin descripción",
+          acceptance_criteria: structuredCriteria,
+          tasks: us.tasks || [],
+          selected: us.selected,
+          assignee: assigneeList.length > 0 ? assigneeList : undefined
+        };
+      });
+
+    const payload = {
+      name: sprint.name,
+      start_date: new Date(sprint.start_date),
+      end_date: new Date(sprint.end_date),
+      duration_weeks: sprint.duration_weeks,
+      status: sprint.status,
+      team_members: (sprint.team_members || []).map(member => ({
+        id: member.id,
+        name: member.name,
+        role: member.role,
+        avatar: member.avatar || null,
+        capacity: member.capacity,
+        allocated: member.allocated
+      })),
+      user_stories: userStoriesWithAssignees
+    };
 
     setLoading(true);
 
     try {
-      // 1) Guardar sprint (PUT si existe, POST si es nuevo)
       const url = sprintId
         ? `${API_URL}/projects/${projectId}/sprints/${sprintId}`
         : `${API_URL}/projects/${projectId}/sprints`;
 
+      console.log("Guardando sprint con assignees:", sprintId, payload);
       const res = await fetch(url, {
-        method: sprintId ? "PUT" : "POST",
+        method: sprintId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Save failed");
-      const saved: Sprint = await res.json();
-      setSprint(saved);
-
-      // 2) Actualizar sprint_id en las tareas
-      const updatedTasks = tasks.map(t =>
-        t.sprint_id === sprint.id
-          ? { ...t, sprint_id: saved.id }
-          : t
-      );
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Server response:", errorText);
+        throw new Error(`Save failed: ${res.status} - ${errorText}`);
+      }
       
-      setTasks(updatedTasks);
+      const saved: Sprint = await res.json();
 
-      // 3) Actualizar tareas en el context también
-      taskContext.setTasksForProject(projectId, updatedTasks);
 
-      // 4) Guardar tareas en lote
-      const tasksToUpsert = updatedTasks
-        .filter((t) => t.sprint_id === saved.id)
-        .map((t) => ({
-          id: t.id,
-          title: t.title,
-          description: t.description,
-          user_story_id: t.user_story_id,
-          assignee: t.assignee,
-          sprint_id: t.sprint_id,
-          status_khanban: t.status_khanban,
-          priority: t.priority,
-          story_points: t.story_points,
-          deadline: t.deadline,
-          comments: t.comments,
-        }));
-
-      const taskRes = await fetch(
-        `${API_URL}/projects/${projectId}/tasks/batch`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(tasksToUpsert),
-        }
-      );
-      if (!taskRes.ok) throw new Error("Tasks batch failed");
-
-      // 5) Navegar de vuelta al dashboard
+      setSprint(saved);
+      
       router.push(`/dashboard?projectId=${projectId}`);
+      return saved;
+
     } catch (e: any) {
+      console.error("Error saving sprint:", e);
       setError(e.message);
+      return null;
     } finally {
       setLoading(false);
     }
   };
 
+
   // Funciones auxiliares para la UI
   const handleSprintUpdate = (updates: Partial<Sprint>) => {
-    setSprint({ ...sprint!, ...updates });
+    if (!sprint) return;
+    setSprint({ ...sprint, ...updates });
   };
 
   const handleToggleUserStory = (id: string) => {
+    if (!sprint) return;
     setSprint({
-      ...sprint!,
-      user_stories: sprint!.user_stories.map(us =>
+      ...sprint,
+      user_stories: sprint.user_stories.map(us =>
         us.id === id ? { ...us, selected: !us.selected } : us
       ),
     });
   };
 
   const handleTeamMemberAdd = (member: SprintMember) => {
-    if (sprint!.team_members.some(mem => mem.id === member.id)) return;
+    if (!sprint) return;
+    
+    // FIX: Asegurar que team_members existe antes de usar some
+    const currentMembers = sprint.team_members || [];
+    if (currentMembers.some(mem => mem.id === member.id)) return;
+    
     setSprint({
-      ...sprint!,
-      team_members: [...sprint!.team_members, member],
+      ...sprint,
+      team_members: [...currentMembers, member],
     });
   };
 
   const handleTeamMemberUpdate = (id: string, data: Partial<SprintMember>) => {
+    if (!sprint) return;
+    
+    // FIX: Asegurar que team_members existe
+    const currentMembers = sprint.team_members || [];
     setSprint({
-      ...sprint!,
-      team_members: sprint!.team_members.map(mem =>
+      ...sprint,
+      team_members: currentMembers.map(mem =>
         mem.id === id ? { ...mem, ...data } : mem
       ),
     });
   };
 
   const handleTeamMemberRemove = (id: string) => {
+    if (!sprint) return;
+    
+    // FIX: Asegurar que team_members existe y es un array
+    const currentMembers = sprint.team_members || [];
+    if (currentMembers.length === 0) return;
+    
     // No permitir eliminar al owner (primer miembro)
-    if (id === sprint!.team_members[0]?.id) return;
+    if (id === currentMembers[0]?.id) return;
+    
     setSprint({
-      ...sprint!,
-      team_members: sprint!.team_members.filter(mem => mem.id !== id),
+      ...sprint,
+      team_members: currentMembers.filter(mem => mem.id !== id),
     });
   };
 
@@ -331,15 +458,12 @@ export function useSprintPlanningLogic() {
     loading,
     error,
     sprint,
-    tasks,
     projectId,
     sprintId,
     openSB,
+    user_stories,
+    ownerId: sprint?.team_members && sprint.team_members.length > 0 ? sprint.team_members[0]?.id : undefined,
     
-    // Datos computados
-    ownerId: sprint?.team_members[0]?.id,
-    
-    // Funciones
     handleSaveSprint,
     handleSprintUpdate,
     handleToggleUserStory,

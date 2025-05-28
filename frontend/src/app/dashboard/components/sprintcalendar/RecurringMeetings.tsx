@@ -1,15 +1,22 @@
 "use client";
 
 import React from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { RecurringMeeting } from './types';
 
 interface RecurringMeetingsProps {
   meetings: RecurringMeeting[];
   onAddMeeting: () => void;
+  onDeleteMeeting: (meetingId: string) => void;
+  onViewMeetingDetails: (meetingId: string) => void;
 }
 
-export const RecurringMeetings: React.FC<RecurringMeetingsProps> = ({ meetings, onAddMeeting }) => {
+export const RecurringMeetings: React.FC<RecurringMeetingsProps> = ({ 
+  meetings, 
+  onAddMeeting,
+  onDeleteMeeting,
+  onViewMeetingDetails
+}) => {
   const getBadgeColor = (frequency: string) => {
     return 'bg-purple-100 text-purple-800';
   };
@@ -21,16 +28,30 @@ export const RecurringMeetings: React.FC<RecurringMeetingsProps> = ({ meetings, 
       </div>
       <div className="p-4">
         <div className="space-y-4">
-          {/* TODO: Replace with dynamic meetings data */}
           {meetings.map((meeting) => (
             <div key={meeting.id} className="flex items-center justify-between">
-              <div>
+              <div 
+                className="flex-grow cursor-pointer" 
+                onClick={() => onViewMeetingDetails(meeting.id)}
+              >
                 <h4 className="font-medium">{meeting.title}</h4>
                 <p className="text-sm text-gray-600">{meeting.schedule}</p>
               </div>
-              <span className={`px-2 py-1 text-xs font-medium rounded-full capitalize ${getBadgeColor(meeting.frequency)}`}>
-                {meeting.frequency}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className={`px-2 py-1 text-xs font-medium rounded-full capitalize ${getBadgeColor(meeting.frequency)}`}>
+                  {meeting.frequency}
+                </span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteMeeting(meeting.id);
+                  }}
+                  className="text-gray-500 hover:text-red-600 p-1"
+                  title="Delete meeting"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           ))}
           {meetings.length === 0 && (

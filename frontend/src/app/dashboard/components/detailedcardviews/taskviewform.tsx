@@ -1,11 +1,15 @@
 import { Clock, Calendar, User, Users, BookOpen, Hash, GitBranch } from "lucide-react";
 import { Task } from "@/types/task";
+import { useKanban } from "@/contexts/unifieddashboardcontext";
+import { getUserStoryTitleByTaskId2 } from "@/utils/kanbanUtils";
 
 interface TaskViewFormProps {
   task: Task;
 }
 
 const TaskViewForm = ({ task }: TaskViewFormProps) => {
+  const { tasks: kanbanTasks } = useKanban();
+
   return (
     <>
       {/* Title */}
@@ -68,7 +72,9 @@ const TaskViewForm = ({ task }: TaskViewFormProps) => {
           <p className="font-semibold text-[#4A2B4A] text-lg mb-1">Related User Story:</p>
           <div className="flex items-center">
             <BookOpen className="h-4 w-4 mr-2 text-gray-500" />
-            <p className="text-black text-lg">{task.user_story_title || task.user_story_id}</p>
+            <p className="text-black text-lg">
+              {getUserStoryTitleByTaskId2(task.id, kanbanTasks) || "—"}
+            </p>
           </div>
         </div>
       )}

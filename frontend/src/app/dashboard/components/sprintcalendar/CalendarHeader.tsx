@@ -1,7 +1,9 @@
+// CalendarHeader.tsx
 "use client";
 
 import React from 'react';
 import { Plus } from 'lucide-react';
+import { Sprint } from './types';
 
 interface CalendarHeaderProps {
   currentPeriod: string;
@@ -11,6 +13,7 @@ interface CalendarHeaderProps {
   selectedSprint: string;
   onSprintChange: (sprint: string) => void;
   onBack: () => void;
+  sprints: Sprint[];
 }
 
 export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
@@ -20,7 +23,8 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   onAddEvent,
   selectedSprint,
   onSprintChange,
-  onBack
+  onBack,
+  sprints
 }) => {
   return (
     <div className="mb-6 flex items-center justify-between">
@@ -28,10 +32,10 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
         <h1 className="text-2xl font-bold">Sprint Calendar</h1>
         <p className="text-sm text-gray-600">View and manage sprint tasks by date</p>
         <button
-            onClick={onBack}
-            className="text-[#4A2B4A] text-sm font-medium hover:underline"
-          > {"<- Go back "}
-          </button>
+          onClick={onBack}
+          className="text-[#4A2B4A] text-sm font-medium hover:underline"
+        > {"<- Go back "}
+        </button>
       </div>
       <div className="flex items-center gap-2">
         <select 
@@ -39,10 +43,11 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
           onChange={(e) => onSprintChange(e.target.value)}
           className="w-[180px] px-3 py-2 border border-gray-300 rounded-md"
         >
-          {/* TODO: Replace with dynamic sprint options */}
-          <option value="current">Current Sprint</option>
-          <option value="previous">Previous Sprint</option>
-          <option value="next">Next Sprint</option>
+          {sprints.map(sprint => (
+            <option key={sprint.id} value={sprint.id}>
+              {sprint.name}
+            </option>
+          ))}
         </select>
         <button
           onClick={onAddEvent}

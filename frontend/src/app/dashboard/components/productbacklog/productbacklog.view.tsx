@@ -1,18 +1,25 @@
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { TasksKanban } from "../dashboard/dashboard.taskskanban";
 import { useKanban } from "@/contexts/unifieddashboardcontext";
-import {ItemsUnderReview} from "./productbacklog.itemsunderreview";
+import { ItemsUnderReview } from "./productbacklog.itemsunderreview";
 import { Plus } from "lucide-react";
 import CreateItemSidebar from "../detailedcardviews/createItem"; 
 import { TaskOrStory } from "@/types/taskkanban";
 import TaskSidebar from "./productbacklog.sidebar";
 import { useSearchParams } from "next/navigation";
+import { useUserPermissions } from "@/contexts/UserPermissions";
 
-interface ProductBacklogViewProps {
-  onBack: () => void;
+// Loading component
+function LoadingProductBacklog() {
+  return (
+    <div className="p-8 flex justify-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4A2B4A]"></div>
+    </div>
+  );
 }
 
-const ProductBacklogPage: React.FC<ProductBacklogViewProps> = ({onBack}) => {
+// Client component that uses search params
+function ProductBacklogContent({ onBack }) {
   const searchParams = useSearchParams()
   const [BacklogactiveView, setBacklogActiveView] = useState<"backlog" | "kanban">("kanban")
   const [showBugReportForm, setShowBugReportForm] = useState(false);
@@ -21,9 +28,18 @@ const ProductBacklogPage: React.FC<ProductBacklogViewProps> = ({onBack}) => {
   const [selectedTask, setSelectedTask] = useState<TaskOrStory | null>(null);
   const isAdmin = true
   const { tasks } = useKanban();
+  
+  // Obtener la función hasPermission del contexto
+  const { hasPermission } = useUserPermissions();
+  
+  // Verificar si el usuario tiene los permisos necesarios
+  const canReviewItems = hasPermission(PERMISSION_ITEM_REVIEW);
+  const canManageItems = hasPermission(PERMISSION_REQ_MANAGE);  // Verificar permiso para gestionar items
+  
   const currentProjectId = searchParams.get("projectId") ||
     (typeof window !== "undefined" && localStorage.getItem("currentProjectId")) ||
     ""
+  
   const handleOpenCreateItem = () => {
     setShowCreateSidebar(true);
   };
@@ -62,28 +78,33 @@ const ProductBacklogPage: React.FC<ProductBacklogViewProps> = ({onBack}) => {
 
             {/* Botones de acción */}
             <div className="flex items-center gap-4">
-              {/* Botón para crear nuevo item - reemplaza el de Report Bug */}
-              <button
-                onClick={handleOpenCreateItem}
-                className="p-2 rounded-md font-semibold bg-[#4A2B4A] text-white flex justify-center items-center hover:bg-[#3a2248]"
-              >
-                <Plus className="mr-2 h-4 w-4" /> Create Item
-              </button>
+              {/* Botón para crear nuevo item - visible solo si tiene permiso REQ_MANAGE */}
+              {canManageItems && (
+                <button
+                  onClick={handleOpenCreateItem}
+                  className="p-2 rounded-md font-semibold bg-[#4A2B4A] text-white flex justify-center items-center hover:bg-[#3a2248]"
+                >
+                  <Plus className="mr-2 h-4 w-4" /> Create Item
+                </button>
+              )}
 
-              {BacklogactiveView === "kanban" ? (
-                <button
-                  onClick={() => setBacklogActiveView("backlog")}
-                  className="p-2 rounded-md font-semibold bg-white text-[#4A2B4A] flex justify-center items-center border border-[#4A2B4A] hover:bg-[#e2d4e4]"
-                >
-                  Show In Review Tasks
-                </button>
-              ) : (
-                <button
-                  onClick={() => setBacklogActiveView("kanban")}
-                  className="p-2 rounded-md font-semibold bg-white text-[#4A2B4A] flex justify-center items-center border border-[#4A2B4A] hover:bg-[#e2d4e4]"
-                >
-                  Show Full Backlog
-                </button>
+              {/* Mostrar botón de Review Tasks solo si tiene permiso ITEM_REVIEW */}
+              {canReviewItems && (
+                BacklogactiveView === "kanban" ? (
+                  <button
+                    onClick={() => setBacklogActiveView("backlog")}
+                    className="p-2 rounded-md font-semibold bg-white text-[#4A2B4A] flex justify-center items-center border border-[#4A2B4A] hover:bg-[#e2d4e4]"
+                  >
+                    Show In Review Tasks
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setBacklogActiveView("kanban")}
+                    className="p-2 rounded-md font-semibold bg-white text-[#4A2B4A] flex justify-center items-center border border-[#4A2B4A] hover:bg-[#e2d4e4]"
+                  >
+                    Show Full Backlog
+                  </button>
+                )
               )}
             </div>
           </div>
@@ -99,7 +120,8 @@ const ProductBacklogPage: React.FC<ProductBacklogViewProps> = ({onBack}) => {
 
           {/* Layout Flexível - Kanban */}
           <div className="w-full pb-8">
-            {BacklogactiveView === "kanban" ? (
+            {/* Si no tiene permiso, siempre mostrar la vista kanban */}
+            {BacklogactiveView === "kanban" || !canReviewItems ? (
               <TasksKanban view="backlog" onTaskSelect={handleOpenTaskDetails} />
             ) : (
               <ItemsUnderReview reviewItems={reviewItems} />
@@ -107,8 +129,9 @@ const ProductBacklogPage: React.FC<ProductBacklogViewProps> = ({onBack}) => {
           </div>
         </div>
       </main>
-      {/* Sidebar para crear nuevos items */}
-      {currentProjectId && (
+      
+      {/* Solo mostrar el sidebar de creación si tiene el permiso correspondiente */}
+      {currentProjectId && canManageItems && (
         <CreateItemSidebar
           isOpen={showCreateSidebar}
           onClose={handleCloseCreateItem}
@@ -121,5 +144,16 @@ const ProductBacklogPage: React.FC<ProductBacklogViewProps> = ({onBack}) => {
     </div>
   )
 }
+
+const PERMISSION_ITEM_REVIEW = 1 << 5;
+const PERMISSION_REQ_MANAGE = 1 << 2;  // Nuevo permiso para gestionar items
+
+const ProductBacklogPage = ({ onBack }) => {
+  return (
+    <Suspense fallback={<LoadingProductBacklog />}>
+      <ProductBacklogContent onBack={onBack} />
+    </Suspense>
+  );
+};
 
 export default ProductBacklogPage;

@@ -1,21 +1,38 @@
 "use client"
-
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Search, Filter } from "lucide-react"
-import { Input  } from "@/components/ui/input"
+import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-
-import BacklogItemCard     from "./BacklogItemCard"
+import BacklogItemCard from "./BacklogItemCard"
 import type { SprintUserStory } from "@/types/sprint"
+import type { Task } from "@/types/task"
 
 interface Props {
   userStories: SprintUserStory[]
   onToggleUserStory: (id: string) => void
+  tasks: Task[]
 }
 
-export default function ProductBacklog({ userStories, onToggleUserStory }: Props) {
+export default function ProductBacklog({ userStories, tasks, onToggleUserStory }: Props) {
   const [searchTerm,      setSearchTerm]   = useState("")
   const [priorityFilter,  setPriority]     = useState<string | null>(null)
+
+  const tasksMap = useMemo(() => {
+    const map = new Map<string, Task>();
+    tasks.forEach(task => {
+      map.set(task.id, task);
+    });
+    return map;
+  }, [tasks]);
+
+  const enrichedUserStories = useMemo(() => {
+    return userStories.map(sprintStory => ({
+      ...sprintStory,
+      taskObjects: sprintStory.tasks
+        .map(taskId => tasksMap.get(taskId))
+        .filter(Boolean) as Task[]
+    }));
+  }, [userStories, tasksMap]);
 
   /* ------------ helpers ------------ */
   const nextPriority = () => {
@@ -26,7 +43,7 @@ export default function ProductBacklog({ userStories, onToggleUserStory }: Props
   }
 
   /* ------------ filtro seguro ------------ */
-  const filteredStories = userStories
+  const filteredStories = enrichedUserStories
     .filter(Boolean)                               // quita nulos en el array
     .filter(us => !!us.userStory)                  // quita los que no traen historia
     .filter(us => {
@@ -103,7 +120,7 @@ export default function ProductBacklog({ userStories, onToggleUserStory }: Props
               key={sprintStory.id}
               type="story"
               item={sprintStory.userStory}     // ¡ya existe!
-              tasks={sprintStory.tasks}
+              tasks={sprintStory.taskObjects}
               isSelected={sprintStory.selected}
               onAdd={() => onToggleUserStory(sprintStory.id)}
             />

@@ -21,7 +21,10 @@ import ConfirmDialog from "@/components/confimDialog"
 import { useState, useEffect, useRef } from "react"
 import { isUserStory } from "@/types/taskkanban"
 import { useKanban } from "@/contexts/unifieddashboardcontext"
+import { useUserPermissions } from "@/contexts/UserPermissions" // Importar hook de permisos
 
+// Definir constantes para los permisos
+const PERMISSION_REQ_MANAGE = 1 << 2;  // Gestión de items (crear/editar/eliminar)
 
 interface TaskCardProps {
   task: TaskOrStory;
@@ -43,6 +46,12 @@ export const TaskCard = ({ task, columnId, view, usertype, onDelete,onChangeStat
   const [itemToDelete, setItemToDelete] = useState<{ id: string; columnId: string } | null>(null);
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
+
+  // Obtener la función hasPermission del contexto
+  const { hasPermission } = useUserPermissions();
+  
+  // Verificar si el usuario tiene los permisos necesarios
+  const canManageItems = hasPermission(PERMISSION_REQ_MANAGE);  // Para Delete
 
   const menuRef = useRef<HTMLDivElement>(null) 
 
@@ -166,6 +175,21 @@ export const TaskCard = ({ task, columnId, view, usertype, onDelete,onChangeStat
     }
   };
 
+  type RawAssignee = { users: [string,string] } | [string,string]
+
+  function normalizeAssignees(raw?: RawAssignee[]): { users: [string,string] }[] {
+    if (!raw) return []
+    return raw.map(item => {
+      if (Array.isArray(item)) {
+        return { users: item }
+      }
+      return item
+    })
+  } 
+
+  const assignees = normalizeAssignees(task.assignee)
+
+
    return (
     <div
       className={`hover:bg-[#EBE5EB] cursor-pointer bg-white rounded-md p-5 shadow-sm 
@@ -198,6 +222,7 @@ export const TaskCard = ({ task, columnId, view, usertype, onDelete,onChangeStat
         </Button>
         {menuOpen && (
           <div className="absolute right-0 mt-2 w-40 bg-white border rounded-md shadow-lg z-20">
+            {/* View Details siempre está disponible para todos los usuarios */}
             <button
               className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-[#4A2B4A] hover:bg-gray-100"
               onClick={(e) => {
@@ -208,27 +233,31 @@ export const TaskCard = ({ task, columnId, view, usertype, onDelete,onChangeStat
               <Eye className="h-4 w-4" /> View Details
             </button>
 
-            <button
-              className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-[#4A2B4A] hover:bg-gray-100"
-              onClick={(e) => {
-                e.stopPropagation();
-                setMenuOpen(false)
-                setShowChangeStatusModal(true)
-              }}
-            >
-              <CheckSquare className="h-4 w-4" /> Change Status
-            </button>
+            {/* Change Status solo si tiene permiso ITEM_REVIEW */}
+            {canManageItems && (
+              <button
+                className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-[#4A2B4A] hover:bg-gray-100"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuOpen(false);
+                  setShowChangeStatusModal(true);
+                }}
+              >
+                <CheckSquare className="h-4 w-4" /> Change Status
+              </button>
+            )}
 
-            {view !== "dashboard" && (
+            {/* Delete solo si tiene permiso REQ_MANAGE y no está en dashboard */}
+            {view !== "dashboard" && canManageItems && (
               <button
                 className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-gray-100"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setMenuOpen(false)
+                  setMenuOpen(false);
                   setTimeout(() => {
-                    setItemToDelete({ id: task.id, columnId })
-                    setShowDeleteConfirm(true)
-                  }, 0)
+                    setItemToDelete({ id: task.id, columnId });
+                    setShowDeleteConfirm(true);
+                  }, 0);
                 }}
               >
                 <Trash className="h-4 w-4" /> Delete
@@ -249,10 +278,10 @@ export const TaskCard = ({ task, columnId, view, usertype, onDelete,onChangeStat
       {/* Info adicional */}
       <div className="text-sm text-gray-600 mt-3 space-y-2.5">
         {/* Asignado */}
-        {Array.isArray(task.assignee) && task.assignee.length > 0 && (
+        {Array.isArray(assignees) && assignees.length > 0 && (
           <div className="flex items-center gap-1.5">
             <Users className="h-4 w-4 text-gray-500" />
-            <span className="font-medium">Assigned to:</span> {task.assignee[0].users[1]}
+            <span className="font-medium">Assigned to:</span> {assignees[0].users[1]}
           </div>
         )}
 
@@ -394,7 +423,8 @@ export const TaskCard = ({ task, columnId, view, usertype, onDelete,onChangeStat
       {/* Modal y confirmación */}
       {showModal && <TaskDetailModal open={showModal} task={task} onClose={() => setShowModal(false)} />}
 
-      {<Dialog open={showChangeStatusModal} onClose={() => {
+      {showChangeStatusModal && canManageItems && (
+        <Dialog open={showChangeStatusModal} onClose={() => {
           setShowChangeStatusModal(false)
           setWarningMessage(null)
         }} className="relative z-50">
@@ -485,9 +515,10 @@ export const TaskCard = ({ task, columnId, view, usertype, onDelete,onChangeStat
               </div>
             </DialogPanel>
           </div>
-        </Dialog>}
+        </Dialog>
+      )}
       
-      {showDeleteConfirm && itemToDelete && (
+      {showDeleteConfirm && itemToDelete && canManageItems && (
         <ConfirmDialog
           open={showDeleteConfirm}
           title="Delete Item"

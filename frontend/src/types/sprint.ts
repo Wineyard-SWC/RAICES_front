@@ -13,7 +13,7 @@ export interface SprintMember {
 export interface SprintUserStory {
   id: string
   userStory: UserStory
-  tasks: Task[]
+  tasks: string[]
   selected: boolean
 }
 

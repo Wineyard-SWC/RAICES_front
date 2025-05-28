@@ -91,15 +91,16 @@ function AnimatedTeamAvatar({ member, position, minDelay, maxDelay, idleTime, ho
       <primitive object={avatarGltf.scene} scale={1.4} position={[0, -1.65, 0]} />
       <mesh rotation={[-Math.PI/2, 0, 0]} position={[0, -1.65, 0]}>  
         <circleGeometry args={[0.75, 32]} />
-        <meshStandardMaterial color="#672767" opacity={0.7} transparent />
+        <meshStandardMaterial color="#4a2b4a" opacity={0.25} transparent />
       </mesh>
 
       {hoveredId === member.id && (
         <Html center distanceFactor={4} className="pointer-events-none">
-          <div className="bg-white p-2 rounded shadow-md border">
+          <div className="bg-white p-4 rounded shadow-md border w-32 h-32 flex flex-col items-center justify-center">
             <div className="text-2xl mb-1">{member.emoji}</div>
-            <div className="font-semibold text-[#4a2b4a]">{member.name}</div>
-            <div className="text-sm text-[#694969]">{member.role}</div>
+            <div className="font-semibold text-[#4a2b4a] text-center whitespace-normal break-words leading-tight">
+              {member.name}
+            </div>
           </div>
         </Html>
       )}
@@ -153,7 +154,7 @@ export default function TeamAvatarsDisplay({ teamId, teamMembers, projectId, pre
         <div className="w-full h-[500px]">
           <Canvas dpr={[1, 2]} shadows>
             <ambientLight intensity={0.7} />
-            <directionalLight intensity={1} position={[2, 0, 5]} />
+            <directionalLight intensity={1} position={[5, 10, 5]} />
             <PerspectiveCamera makeDefault position={[0, -0.5, 7]} fov={35} />
 
             {members.map((m, i) => {

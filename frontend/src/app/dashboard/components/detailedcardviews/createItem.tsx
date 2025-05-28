@@ -257,7 +257,7 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
                   variant="outline"
                   size="sm"
                   onClick={() => setSelectedType(null)}
-                  className="bg-gray-600 text-white hover:bg-gray-700"
+                  className="bg-[#4A2B4A] text-white hover:bg-gray-700"
                 >
                   Back
                 </Button>
