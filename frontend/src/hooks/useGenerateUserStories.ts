@@ -1,7 +1,7 @@
 'use client';
 import { useState } from "react";
 import { UserStoryResponse } from "@/types/userstory";
-import { useSessionContext } from "@/contexts/sessioncontext";
+import { useGenerativeAISession } from "@/contexts/generativeAISessionContext"; // Updated import
 import { useLanguageContext } from "@/contexts/languagecontext";
 
 
@@ -9,7 +9,7 @@ export const useGenerateUserStories = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [generatedOutput, setGeneratedOutput] = useState<UserStoryResponse| null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { sessionId} = useSessionContext();
+  const { sessionId} = useGenerativeAISession(); // Updated hook
   const { language} = useLanguageContext();
   
 

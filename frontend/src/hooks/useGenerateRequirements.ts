@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from "react";
-import { useSessionContext } from "@/contexts/sessioncontext";
+import { useGenerativeAISession } from "@/contexts/generativeAISessionContext"; // Updated import
 import { useLanguageContext } from "@/contexts/languagecontext";
 
 
@@ -9,7 +9,7 @@ export const useGenerateRequirements = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [generatedOutput, setGeneratedOutput] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
-    const { sessionId,setSessionId} = useSessionContext();
+    const { sessionId, setSessionId } = useGenerativeAISession(); // Updated hook
     const { language,setLanguage} = useLanguageContext();
 
     const apiUrl = process.env.NEXT_PUBLIC_REQUIREMENT_ROUTE!;

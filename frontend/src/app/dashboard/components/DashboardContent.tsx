@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react" // Add this import
 import Navbar from "@/components/NavBar"
 import DashboardMainPage from "./dashboard/dashboard.view"
 import ProductBacklogPage from "./productbacklog/productbacklog.view"
@@ -15,9 +16,10 @@ export default function DashboardContent() {
   const [activeView, setActiveView] = useState<"dashboard" | "details" | "planning" | "calendar">("dashboard")
   const [loading, setLoading] = useState(true)
   const router = useRouter()
+  const { data: session } = useSession() // Get session data
   
   // Obtener información del usuario actual
-  const { userId } = useUser()
+  const { userId, setUserId } = useUser()
   
   // Obtener contexto de avatar
   const { avatarUrl, fetchAvatar } = useAvatar()
@@ -32,21 +34,22 @@ export default function DashboardContent() {
   // Estado para almacenar el ID del proyecto
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null)
   
-  // Cargar datos iniciales: verificar autenticación y obtener proyecto
+  // Cargar datos iniciales: obtener proyecto
   useEffect(() => {
-    // Verificar autenticación
-    const storedUserId = localStorage.getItem("userId")
-    if (!storedUserId) {
-      router.push("/login")
-      return
+    // Use session.user.uid instead of localStorage
+    console.log("*****************************************************************************************************************************************")
+    //console.log(session.user.uid);
+    if (session?.user?.uid && !userId) {
+      console.log("***************************************** No userId found, setting from session:", session.user.uid)
+      setUserId(session.user.uid)
     }
     
-    // Obtener ID del proyecto actual
+    // Obtener ID del proyecto actual (still using localStorage for this)
     const projectId = localStorage.getItem("currentProjectId")
     setCurrentProjectId(projectId)
     
     setLoading(false)
-  }, [userId, router])
+  }, [session, userId, setUserId, router])
   
   // Cargar avatar si no está disponible
   useEffect(() => {

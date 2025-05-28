@@ -1,11 +1,13 @@
+'use client' // Add this line to make it a client component
+
 import type React from "react"
 import type { ReactNode } from "react"
+import { SessionProvider } from "next-auth/react"
 import { UserProvider } from "@/contexts/usercontext"
 import { RequirementProvider } from "@/contexts/requirementcontext"
 import { EpicProvider } from "@/contexts/epiccontext"
 import { UserStoryProvider } from "@/contexts/userstorycontext"
 import { ProjectProvider } from "@/contexts/projectcontext"
-import { SessionProvider } from "@/contexts/sessioncontext"
 import { SelectedRequirementProvider } from "@/contexts/selectedrequirements"
 import { SelectedEpicProvider } from "@/contexts/selectedepics"
 import { SelectedUserStoriesProvider } from "@/contexts/selecteduserstories"
@@ -24,7 +26,8 @@ import { KanbanProvider } from "@/contexts/unifieddashboardcontext"
 import { ProjectUsersProvider } from "@/contexts/ProjectusersContext"
 import { UserPermissionsProvider } from "@/contexts/UserPermissions"
 import { CalendarProvider } from "@/contexts/CalendarContext"
-
+import { GenerativeAISessionProvider } from "@/contexts/generativeAISessionContext"
+         
 interface ProvidersProps {
   children: ReactNode
 }
@@ -32,54 +35,56 @@ interface ProvidersProps {
 export function AllProviders({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
-      <UserProvider>
-        <AvatarProvider>
-          <UserRolesProvider>
-            <ProjectProvider>
-              <RequirementProvider>
-                <EpicProvider>
-                  <UserStoryProvider>
-                    <TaskProvider>
-                      <SprintProvider>
-                        <SelectedRequirementProvider>
-                          <SelectedEpicProvider>
-                            <SelectedUserStoriesProvider>
-                              <LanguageProvider>
-                                <SprintDataProvider>
-                                  <SavedUserStoryProvider>
-                                    <AssignmentProvider>
-                                      <GeneratedTasksProvider>
-                                        <BugProvider>
-                                          <KanbanProvider>
-                                            <TeamsProvider>
-                                              <ProjectUsersProvider>
-                                                <UserPermissionsProvider>
-                                                  <CalendarProvider>
-                                                    {children}
-                                                    <div id="modal-root" />
-                                                  </CalendarProvider>
-                                                </UserPermissionsProvider>
-                                              </ProjectUsersProvider>
-                                            </TeamsProvider>
-                                          </KanbanProvider>
-                                        </BugProvider>
-                                      </GeneratedTasksProvider>
-                                    </AssignmentProvider>
-                                  </SavedUserStoryProvider>
-                                </SprintDataProvider>
-                              </LanguageProvider>
-                            </SelectedUserStoriesProvider>
-                          </SelectedEpicProvider>
-                        </SelectedRequirementProvider>
-                      </SprintProvider>
-                    </TaskProvider>
-                  </UserStoryProvider>
-                </EpicProvider>
-              </RequirementProvider>
-            </ProjectProvider>
-          </UserRolesProvider>
-        </AvatarProvider>
-      </UserProvider>
+      <GenerativeAISessionProvider>
+        <UserProvider>
+          <AvatarProvider>
+            <UserRolesProvider>
+              <ProjectProvider>
+                <RequirementProvider>
+                  <EpicProvider>
+                    <UserStoryProvider>
+                      <TaskProvider>
+                        <SprintProvider>
+                          <SelectedRequirementProvider>
+                            <SelectedEpicProvider>
+                              <SelectedUserStoriesProvider>
+                                <LanguageProvider>
+                                  <SprintDataProvider>
+                                    <SavedUserStoryProvider>
+                                      <AssignmentProvider>
+                                        <GeneratedTasksProvider>
+                                          <BugProvider>
+                                            <KanbanProvider>
+                                              <TeamsProvider>
+                                                <ProjectUsersProvider>
+                                                  <UserPermissionsProvider>
+                                                    <CalendarProvider>
+                                                      {children}
+                                                      <div id="modal-root" />
+                                                    </CalendarProvider>
+                                                  </UserPermissionsProvider>
+                                                </ProjectUsersProvider>
+                                              </TeamsProvider>
+                                            </KanbanProvider>
+                                          </BugProvider>
+                                        </GeneratedTasksProvider>
+                                      </AssignmentProvider>
+                                    </SavedUserStoryProvider>
+                                  </SprintDataProvider>
+                                </LanguageProvider>
+                              </SelectedUserStoriesProvider>
+                            </SelectedEpicProvider>
+                          </SelectedRequirementProvider>
+                        </SprintProvider>
+                      </TaskProvider>
+                    </UserStoryProvider>
+                  </EpicProvider>
+                </RequirementProvider>
+              </ProjectProvider>
+            </UserRolesProvider>
+          </AvatarProvider>
+        </UserProvider>
+      </GenerativeAISessionProvider>
     </SessionProvider>
   )
 }
