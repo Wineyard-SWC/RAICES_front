@@ -28,6 +28,11 @@ type UsersByProjectId = Record<string, {
   lastFetched: number;
 }>
 
+interface AllUsersCache {
+  users: ProjectUser[];
+  lastFetched: number;
+}
+
 // Tiempo de caché por defecto (30 minutos)
 const DEFAULT_CACHE_MAX_AGE = 30 * 60 * 1000;
 
@@ -41,6 +46,8 @@ interface ProjectUsersContextType {
   getUserById: (projectId: string, userId: string) => ProjectUser | undefined;
   clearProjectCache: (projectId: string) => void;
   clearAllCache: () => void;
+  getAllUsers: () => Promise<ProjectUser[]>;
+  getAllUsersFromCache: () => ProjectUser[];
 }
 
 // Crear el contexto
@@ -49,6 +56,7 @@ const ProjectUsersContext = createContext<ProjectUsersContextType | undefined>(u
 // Proveedor del contexto
 export const ProjectUsersProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [usersByProject, setUsersByProject] = useState<UsersByProjectId>({});
+  const [allUsersCache, setAllUsersCache] = useState<AllUsersCache | null>(null);
   const [loadingState, setLoadingState] = useState<Record<string, boolean>>({});
   const [errorState, setErrorState] = useState<Record<string, string | null>>({});
   const { userRoles } = useUserRoles();
@@ -73,6 +81,79 @@ export const ProjectUsersProvider: React.FC<{ children: ReactNode }> = ({ childr
     const users = usersByProject[projectId]?.users || [];
     return users.find(user => user.userRef === userId);
   }, [usersByProject]);
+
+  // Función para obtener todos los usuarios desde la caché
+  const getAllUsersFromCache = useCallback((): ProjectUser[] => {
+    return allUsersCache?.users || [];
+  }, [allUsersCache]);
+
+  // Función para cargar todos los usuarios
+  const getAllUsers = useCallback(async (): Promise<ProjectUser[]> => {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) throw new Error('Authentication token not found');
+
+      // Verificar si tenemos datos en caché recientes
+      if (allUsersCache && (Date.now() - allUsersCache.lastFetched < DEFAULT_CACHE_MAX_AGE)) {
+        return allUsersCache.users;
+      }
+
+      setLoadingState(prev => ({ ...prev, 'all_users': true }));
+      setErrorState(prev => ({ ...prev, 'all_users': null }));
+
+      // 1. Obtener todos los usuarios básicos
+      const response = await fetch(`${API_URL}/users`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch users: ${response.status}`);
+      }
+
+      const users: ProjectUser[] = await response.json();
+      
+      // 2. Enriquecer cada usuario con datos adicionales
+      const enrichedUsers = await Promise.all(users.map(async (user) => {
+        try {
+          // Obtener datos adicionales del usuario
+          const userDataResponse = await fetch(`${AVATAR_API_URL}/users/${user.id}`, {
+            headers: {
+              'application': 'json',
+            }
+          });
+          
+          if (userDataResponse.ok) {
+            const userData = await userDataResponse.json();
+            return {
+              ...user,
+              avatarUrl: userData.avatar_url,
+              gender: userData.gender,
+              bitmask: 0 // No tenemos rol en este contexto
+            };
+          }
+          return user;
+        } catch (error) {
+          console.warn(`Error enriching user ${user.id}:`, error);
+          return user;
+        }
+      }));
+      // Actualizar caché
+      setAllUsersCache({
+        users: enrichedUsers,
+        lastFetched: Date.now()
+      });
+
+      return enrichedUsers;
+    } catch (error) {
+      console.error("Error loading all users:", error);
+      setErrorState(prev => ({ ...prev, 'all_users': error instanceof Error ? error.message : "Failed to load users" }));
+      return allUsersCache?.users || [];
+    } finally {
+      setLoadingState(prev => ({ ...prev, 'all_users': false }));
+    }
+  }, [allUsersCache]);
 
   // Función para cargar usuarios y enriquecerlos con bitmask y datos adicionales
   const loadProjectUsers = useCallback(async (projectId: string): Promise<ProjectUser[]> => {
@@ -311,7 +392,9 @@ export const ProjectUsersProvider: React.FC<{ children: ReactNode }> = ({ childr
       refreshUsers,
       getUserById,
       clearProjectCache,
-      clearAllCache
+      clearAllCache,
+      getAllUsers,
+      getAllUsersFromCache
     }}>
       {children}
     </ProjectUsersContext.Provider>

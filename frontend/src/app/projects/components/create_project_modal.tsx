@@ -30,47 +30,18 @@ const CreateProjectModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [currentProjectId, setCurrentProjectId] = useState<string>("");
-  const { getUsersForProject, loadUsersIfNeeded } = useProjectUsers();
-
   const { users, loading, searchUsers } = useUsers();
+  const { getAllUsers, getAllUsersFromCache } = useProjectUsers();
 
-  // Obtener el ID del proyecto actual
+  // Cargar todos los usuarios al montar el componente
   useEffect(() => {
-    const storedProjectId = localStorage.getItem("currentProjectId");
-    if (storedProjectId) {
-      setCurrentProjectId(storedProjectId);
-      // Cargar usuarios del proyecto
-      loadUsersIfNeeded(storedProjectId);
-    }
-  }, [loadUsersIfNeeded]);
+    const loadUsers = async () => {
+      await getAllUsers();
+    };
+    loadUsers();
+  }, [getAllUsers]);
 
-  // Obtener la lista de miembros del proyecto
-  const projectMembers = getUsersForProject(currentProjectId);
-
-  // Crea una función para combinar los usuarios buscados con los datos del proyecto
-  const getEnrichedUsers = (searchedUsers: UserType[]) => {
-    console.log('--- getEnrichedUsers ---');
-    console.log('Project Members:', projectMembers);
-    console.log('Searched Users:', searchedUsers);
-    
-    return searchedUsers.map(user => {
-      const projectMember = projectMembers.find(member => member.userRef === user.id);
-      const enrichedUser = {
-        ...user,
-        photoURL: projectMember?.avatarUrl || user.photoURL,
-      };
-      
-      console.log(`User ${user.id} (${user.name}) - Merged data:`, {
-        originalPhoto: user.photoURL,
-        projectAvatar: projectMember?.avatarUrl,
-        finalPhoto: enrichedUser.photoURL
-      });
-      
-      return enrichedUser;
-    });
-  };
-
-  // Initialize dates with default values
+  // Inicializar fechas con valores por defecto
   useEffect(() => {
     const today = new Date();
     const nextMonth = new Date();
@@ -80,7 +51,7 @@ const CreateProjectModal = ({
     setEndDate(nextMonth.toISOString().split("T")[0]);
   }, []);
 
-  // Handle user search with improved debounce
+  // Manejar búsqueda de usuarios
   const handleSearchChange = useCallback(
     (value: string) => {
       setSearchTerm(value);
@@ -88,6 +59,21 @@ const CreateProjectModal = ({
     },
     [searchUsers]
   );
+
+  // Función para enriquecer usuarios con datos de avatar
+  const getEnrichedUsers = (searchedUsers: UserType[]) => {
+    const cachedUsers = getAllUsersFromCache();
+    
+    return searchedUsers.map(user => {
+      // Buscar usuario en caché para obtener datos adicionales
+      const cachedUser = cachedUsers.find(u => u.id === user.id);
+      
+      return {
+        ...user,
+        photoURL: cachedUser?.avatarUrl || user.photoURL || null
+      };
+    });
+  };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
