@@ -26,8 +26,8 @@ import { KanbanProvider } from "@/contexts/unifieddashboardcontext"
 import { ProjectUsersProvider } from "@/contexts/ProjectusersContext"
 import { UserPermissionsProvider } from "@/contexts/UserPermissions"
 import { CalendarProvider } from "@/contexts/CalendarContext"
-import { GenerativeAISessionProvider } from "@/contexts/generativeaisessioncontext"
-
+import { GenerativeAISessionProvider } from "@/contexts/generativeAISessionContext"
+         
 interface ProvidersProps {
   children: ReactNode
 }

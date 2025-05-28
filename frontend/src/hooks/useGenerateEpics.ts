@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { Epic, EpicResponse } from "@/types/epic";
 import { Requirement } from "@/types/requirement";
-import { useGenerativeAISession } from "@/contexts/generativeaisessioncontext"; // Updated import
 import { useLanguageContext } from "@/contexts/languagecontext";
+import { useGenerativeAISession } from "@/contexts/generativeAISessionContext";
 
 export const useGenerateEpics = () => {
     const [isLoading, setIsLoading] = useState(false);

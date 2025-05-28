@@ -1,7 +1,7 @@
 'use client';
 import { useState } from "react";
 import { UserStoryResponse } from "@/types/userstory";
-import { useGenerativeAISession } from "@/contexts/generativeaisessioncontext"; // Updated import
+import { useGenerativeAISession } from "@/contexts/generativeAISessionContext"; // Updated import
 import { useLanguageContext } from "@/contexts/languagecontext";
 
 
