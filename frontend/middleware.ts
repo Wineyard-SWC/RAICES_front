@@ -21,9 +21,10 @@ export const config = {
     "/dashboard/:path*",
     "/avatar_editor/:path*",
     "/avatar_creator/:path*",
-    "/gen_tasks/:path*",
+    "/gen_tasks/:path*", 
     "/gen_epics/:path*",
     "/gen_user_stories/:path*",
-    "/gen_requirements/:path*"
+    "/gen_requirements/:path*",
+    "/sprint_planning/:path*"
   ],
 }
