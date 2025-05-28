@@ -19,6 +19,8 @@ import { registerAvatarUser } from '@/utils/Avatar/userConfig';
 import { useInitializeUserRoles } from '@/hooks/usePostDefaultRoles'; // Importar inicialización de roles
 import { useProjectUsers } from '@/contexts/ProjectusersContext';
 import { useUserPermissions } from '@/contexts/UserPermissions';
+import { signIn } from "next-auth/react";
+import { signOut } from "next-auth/react";
 
 export const useAuth = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -182,6 +184,12 @@ export const useAuth = () => {
       localStorage.setItem('authToken', token);
       localStorage.setItem('userId', user.uid);
 
+      await signIn("credentials", { 
+        email: email,
+        password: password,
+        redirect: false // Important: prevent NextAuth from redirecting
+      });
+
       await validateTokenWithBackend(token);
       
       // Procesar post-autenticación (usuario existente)
@@ -207,6 +215,12 @@ export const useAuth = () => {
 
       localStorage.setItem('authToken', token);
       localStorage.setItem('userId', user.uid);
+
+      await signIn("credentials", { 
+        email: user.email || '',
+        password: '', // No password needed for Google sign-in
+        redirect: false // Important: prevent NextAuth from redirecting
+      });
 
       await validateTokenWithBackend(token);
       
@@ -282,6 +296,8 @@ export const useAuth = () => {
       resetdata();
 
       await auth.signOut();
+      await signOut({ redirect: false });
+
       setUserId('');
       
       localStorage.removeItem('authToken');

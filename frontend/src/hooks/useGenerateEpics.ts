@@ -3,14 +3,14 @@
 import { useState } from "react";
 import { Epic, EpicResponse } from "@/types/epic";
 import { Requirement } from "@/types/requirement";
-import { useSessionContext } from "@/contexts/sessioncontext";
+import { useGenerativeAISession } from "@/contexts/generativeaisessioncontext"; // Updated import
 import { useLanguageContext } from "@/contexts/languagecontext";
 
 export const useGenerateEpics = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [generatedOutput, setGeneratedOutput] = useState<EpicResponse | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const { sessionId} = useSessionContext();
+    const { sessionId } = useGenerativeAISession(); // Updated hook
     const { language} = useLanguageContext();
 
     const apiUrl = process.env.NEXT_PUBLIC_EPIC_ROUTE!  
