@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Plus, Bug, BookOpen, CheckSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/contexts/usercontext";
@@ -15,9 +15,11 @@ import { postUserStories as addStory } from "@/utils/postUserStories";
 import { Task, TaskFormData } from "@/types/task";
 import { UserStory } from "@/types/userstory";
 import { Bug as BugType } from "@/types/bug";
-import { v4 as uuidv4 } from "uuid"
-import { Dialog,DialogPanel } from "@headlessui/react";
-
+import { v4 as uuidv4 } from "uuid";
+import { Dialog, DialogPanel } from "@headlessui/react";
+import { getProjectEpics } from "@/utils/getProjectEpics";
+import { getProjectSprints } from "@/utils/getProjectSprints";
+import { Sprint } from "@/types/sprint";
 
 interface CreateItemSidebarProps {
   isOpen: boolean;
@@ -27,22 +29,95 @@ interface CreateItemSidebarProps {
 
 type ItemType = "task" | "userstory" | "bug" | null;
 
+// Project user interface
+interface ProjectUser {
+  id: string;
+  name: string;
+  role?: string;
+  email?: string;
+}
+
+// Epic interface (simplified for the form)
+interface EpicOption {
+  id: string;
+  name: string;
+}
+
 const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProps) => {
   const [selectedType, setSelectedType] = useState<ItemType>(null);
   const { userId, userData } = useUser();
-  const taskcontext = useTasks()
-  const storiescontext = useUserStories()
-  const {addBugToProject} = useBugs() 
-  const {getUserStoriesForProject} = useUserStories()
-  const {getTasksForProject} = useTasks()
+  const taskcontext = useTasks();
+  const storiescontext = useUserStories();
+  const { addBugToProject } = useBugs();
+  const { getUserStoriesForProject } = useUserStories();
+  const { getTasksForProject } = useTasks();
+  
+  // Add states for available data
+  const [availableSprints, setAvailableSprints] = useState<Sprint[]>([]);
+  const [availableEpics, setAvailableEpics] = useState<EpicOption[]>([]);
+  const [availableUsers, setAvailableUsers] = useState<ProjectUser[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const onlystories = getUserStoriesForProject(projectId!)
-  const onlytasks = getTasksForProject(projectId!)   
+  const onlystories = getUserStoriesForProject(projectId!);
+  const onlytasks = getTasksForProject(projectId!);
   
   const getUserInfo = (): [string, string] => {
-        return [userId, userData?.name!];
-    };
+    return [userId, userData?.name!];
+  };
   const userInfo = getUserInfo();
+
+  // Fetch available data when component mounts or projectId changes
+  useEffect(() => {
+    if (!projectId || !isOpen) return;
+    
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch available sprints
+        const sprints = await getProjectSprints(projectId);
+        setAvailableSprints(sprints);
+        
+        // Fetch available epics
+        const epics = await getProjectEpics(projectId);
+        const formattedEpics = epics.map(epic => ({
+          id: epic.idTitle || epic.uuid,
+          name: epic.title || epic.idTitle
+        }));
+        setAvailableEpics(formattedEpics);
+        
+        // Fetch available users (project members)
+        const apiURL = process.env.NEXT_PUBLIC_API_URL;
+        const usersResponse = await fetch(`${apiURL}/project_users/project/${projectId}`);
+        
+        if (!usersResponse.ok) {
+          console.warn("Failed to fetch project users, using empty list");
+          setAvailableUsers([]);
+          return;
+        }
+        
+        const users = await usersResponse.json();
+        
+        const formattedUsers = users.map((user: any) => ({
+          id: user.id || user.user_id || user.userId,
+          name: user.name || user.username || user.email || "User",
+          role: user.role || "Team Member",
+          email: user.email
+        }));
+        
+        setAvailableUsers(formattedUsers);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        // Set empty arrays to prevent errors
+        setAvailableSprints([]);
+        setAvailableEpics([]);
+        setAvailableUsers([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [projectId, isOpen]);
 
   const handleCreate = async (itemData: any, type: ItemType) => {
     try 
@@ -194,8 +269,11 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
           <CreateTaskForm 
             onSave={(data:Task) => handleCreate(data, "task")}
             onCancel={() => setSelectedType(null)}
-            availableSprints={[]}
-            availableUsers={[]}
+            availableSprints={availableSprints.map(sprint => ({
+              id: sprint.id,
+              name: sprint.name
+            }))}
+            availableUsers={availableUsers}
             userstories={onlystories}
           />
         );
@@ -204,9 +282,12 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
           <CreateUserStoryForm 
             onSave={(data:UserStory) => handleCreate(data, "userstory")}
             onCancel={() => setSelectedType(null)}
-            availableEpics={[]}
-            availableSprints={[]}
-            availableUsers={[]}
+            availableEpics={availableEpics}
+            availableSprints={availableSprints.map(sprint => ({
+              id: sprint.id,
+              name: sprint.name
+            }))}
+            availableUsers={availableUsers}
           />
         );
       case "bug":
@@ -214,10 +295,10 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
           <CreateBugForm 
             onSave={(data:BugType) => handleCreate(data, "bug")}
             onCancel={() => setSelectedType(null)}
-            availableSprints={[]}
+            projectId={projectId}
             availableTasks={onlytasks}
             availableUserStories={onlystories}
-            availableUsers={[]}
+            //availableUsers={availableUsers}
           />
         );
       default:
@@ -237,8 +318,7 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
         <DialogPanel
           className="pointer-events-auto w-[33vw] h-screen bg-[#F5F0F1] shadow-xl flex flex-col transition-transform duration-300"
           style={{ 
-            // Se eliminó marginTop para que la sidebar ocupe toda la altura
-            height: '100vh' // Cambiado a 100vh para cubrir toda la altura de la ventana
+            height: '100vh'
           }}
         >
           {/* Header */}
@@ -273,7 +353,13 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
 
           {/* Content Area - Scrollable */}
           <div className="space-y-4 flex-grow overflow-y-auto px-6 py-4 pr-2">
-            {renderForm()}
+            {isLoading && selectedType ? (
+              <div className="flex justify-center items-center py-8">
+                <p className="text-lg text-gray-600">Loading project data...</p>
+              </div>
+            ) : (
+              renderForm()
+            )}
           </div>
         </DialogPanel>
       </div>
