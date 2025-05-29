@@ -8,6 +8,7 @@ export interface SprintMember {
   avatar?: string
   capacity: number
   allocated: number
+  userRef?: string
 }
 
 export interface SprintUserStory {

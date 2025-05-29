@@ -4,6 +4,9 @@ import Image from "next/image";
 import { X } from "lucide-react";
 import { Progress } from "@/components/progress";
 import type { SprintMember } from "@/types/sprint";
+import AvatarProfileIcon from "@/components/Avatar/AvatarDisplay"
+import { User } from "lucide-react";
+
 
 interface Props {
   member: SprintMember & { fixed?: boolean };
@@ -38,13 +41,20 @@ export default function TeamMemberCard({
       )}
 
       <div className="flex items-center gap-2">
-        <img
-          src={member.avatar || "https://cdn-icons-png.flaticon.com/512/921/921071.png"}
-          alt={member.name}
-          width={32}
-          height={32}
-          className="rounded-full object-cover"
-        />
+        <div className="h-10 w-10 rounded-full bg-[#ebe5eb] overflow-hidden mr-3">
+          {member.avatar ? (
+            <AvatarProfileIcon 
+              avatarUrl={member.avatar} 
+              size={40} 
+              borderWidth={2}
+              borderColor="#4a2b4a"
+            />
+          ) : (
+            <div className="h-full w-full flex items-center justify-center bg-[#4a2b4a] text-white">
+              {member?.name?.charAt(0).toUpperCase() || <User size={16} />}
+            </div>
+          )}
+        </div>
         <div>
           <div className="font-medium">{member.name}</div>
           <div className="text-xs text-gray-500">{member.role}</div>

@@ -8,16 +8,46 @@ import { getProjectUserStories } from "@/utils/getProjectUserStories";
 import { getProjectTasks } from "@/utils/getProjectTasks";
 import { Task } from "@/types/task";
 import { BasicTask } from "@/types/task";
-import { useKanban } from "@/contexts/unifieddashboardcontext";
+import { useAvatar } from "@/contexts/AvatarContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
+async function enrichMemberWithAvatar(
+  member: SprintMember, 
+  fetchAvatar: (userId: string) => Promise<string | null>
+): Promise<SprintMember> {
+  try {
+  
+    const isOwner = member.role?.toLowerCase() === "owner";
+    const userIdToFetch = isOwner && member.userRef ? member.userRef : member.id;
+    
+    // console.log(`Fetching avatar for ${member.name} (${member.role}): using ID ${userIdToFetch}`);
+    
+    const avatarUrl = await fetchAvatar(userIdToFetch);
+    return {
+      ...member,
+      avatar: avatarUrl || member.avatar || null
+    };
+  } catch (error) {
+    console.error(`Error fetching avatar for member ${member.id}:`, error);
+    return member;
+  }
+}
 
+async function enrichMembersWithAvatars(
+  members: SprintMember[], 
+  fetchAvatar: (userId: string) => Promise<string | null>
+): Promise<SprintMember[]> {
+  const enrichedMembers = await Promise.all(
+    members.map(member => enrichMemberWithAvatar(member, fetchAvatar))
+  );
+  return enrichedMembers;
+}
 
-
-
-
-async function fetchProjectOwner(projectId: string): Promise<SprintMember|null> {
+async function fetchProjectOwner(
+  projectId: string,
+  fetchAvatar: (userId: string) => Promise<string | null> 
+): Promise<SprintMember|null> {
   try {
     const res = await fetch(`${API_URL}/project_users/project/${projectId}`);
     if (!res.ok) {
@@ -34,14 +64,17 @@ async function fetchProjectOwner(projectId: string): Promise<SprintMember|null> 
     
     console.log("Selected owner:", raw); // Para debug
     
-    return {
+    const baseMember: SprintMember = {
       id: String(raw.id || raw.user_id || raw.userId || ''),
       name: raw.name || raw.username || raw.email || "Owner",
       role: raw.role || "Owner", 
       avatar: raw.photoURL || raw.avatar || raw.profile_picture,
       capacity: 40, 
       allocated: 0,
+      userRef: raw.userRef || null
     };
+
+    return await enrichMemberWithAvatar(baseMember, fetchAvatar);
   } catch (error) {
     console.error("Error in fetchProjectOwner:", error);
     return null;
@@ -84,11 +117,12 @@ export function useSprintPlanningLogic() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string|null>(null);
   const [openSB, setOpenSB] = useState(true);
+  const { fetchAvatar } = useAvatar();
   
   const makeLocalSprint = async (): Promise<Sprint> => {
     const now = new Date().toISOString();
     const in2w = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
-    const owner = await fetchProjectOwner(projectId);
+    const owner = await fetchProjectOwner(projectId, fetchAvatar);
     
     return {
       id: `temp-${Date.now()}`,
@@ -193,7 +227,7 @@ export function useSprintPlanningLogic() {
           if (!sprintRes.ok) throw new Error("Sprint not found");
           const raw: Sprint = await sprintRes.json();
 
-          const owner = await fetchProjectOwner(projectId);
+          const owner = await fetchProjectOwner(projectId, fetchAvatar); 
           console.log("Owner found:", owner);
 
           // FIX: Asegurar que team_members siempre sea un array
@@ -201,10 +235,12 @@ export function useSprintPlanningLogic() {
             raw.team_members = [];
           }
 
+          const enrichedMembers = await enrichMembersWithAvatars(raw.team_members, fetchAvatar);
+
           if (owner) {
-            const existingMember = raw.team_members.find(m => m.id === owner.id);
+            const existingMember = enrichedMembers.find(m => m.id === owner.id);
             if (!existingMember) {
-              raw.team_members = [...raw.team_members, owner];
+              enrichedMembers.push(owner);
             }
           }
 
@@ -235,7 +271,7 @@ export function useSprintPlanningLogic() {
 
           setSprint({ 
             ...raw,  
-            team_members: raw.team_members,
+            team_members: enrichedMembers,
             user_stories: hydratedStories
           });
 
@@ -292,7 +328,7 @@ export function useSprintPlanningLogic() {
     };
 
     load();
-  }, [projectId, sprintId]);
+  }, [projectId, sprintId, fetchAvatar]);
 
 
   const handleSaveSprint = async () => {
@@ -409,16 +445,18 @@ export function useSprintPlanningLogic() {
     });
   };
 
-  const handleTeamMemberAdd = (member: SprintMember) => {
+  const handleTeamMemberAdd = async (member: SprintMember) => {
     if (!sprint) return;
     
     // FIX: Asegurar que team_members existe antes de usar some
     const currentMembers = sprint.team_members || [];
     if (currentMembers.some(mem => mem.id === member.id)) return;
+
+    const enrichedMember = await enrichMemberWithAvatar(member, fetchAvatar);
     
     setSprint({
       ...sprint,
-      team_members: [...currentMembers, member],
+      team_members: [...currentMembers, enrichedMember],
     });
   };
 
