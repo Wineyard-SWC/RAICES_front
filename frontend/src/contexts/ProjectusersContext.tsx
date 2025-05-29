@@ -194,12 +194,12 @@ export const ProjectUsersProvider: React.FC<{ children: ReactNode }> = ({ childr
           if (userDataResponse.ok) {
             const userData = await userDataResponse.json();
 
-            console.log(`Datos obtenidos JSON para ${user.name}:`, userData);
+            // console.log(`Datos obtenidos JSON para ${user.name}:`, userData);
 
             avatarUrl = userData.avatar_url;
             gender = userData.gender;
             
-            console.log(`Datos adicionales obtenidos para ${user.name}:`, { avatarUrl, gender });
+            // console.log(`Datos adicionales obtenidos para ${user.name}:`, { avatarUrl, gender });
           } else {
             console.warn(`No se pudieron obtener datos adicionales para el usuario ${user.userRef}`);
           }
@@ -264,26 +264,26 @@ export const ProjectUsersProvider: React.FC<{ children: ReactNode }> = ({ childr
     const now = Date.now();
     
     // Mejorar el logging para depuración
-    console.log(`Verificando caché para proyecto ${projectId}:`);
-    console.log(`- Datos en caché:`, cachedData ? 'Sí' : 'No');
+    // console.log(`Verificando caché para proyecto ${projectId}:`);
+    // console.log(`- Datos en caché:`, cachedData ? 'Sí' : 'No');
     
     if (cachedData?.users.length > 0) {
       const cacheAge = now - cachedData.lastFetched;
-      console.log(`- Edad de la caché: ${(cacheAge/1000).toFixed(1)}s (máx: ${(maxAgeMs/1000).toFixed(1)}s)`);
+      // console.log(`- Edad de la caché: ${(cacheAge/1000).toFixed(1)}s (máx: ${(maxAgeMs/1000).toFixed(1)}s)`);
       
       // Si tenemos datos en caché y no están expirados, los devolvemos
       if (cacheAge < maxAgeMs) {
-        console.log(`- Usando datos en caché (${cachedData.users.length} usuarios)`);
+        // console.log(`- Usando datos en caché (${cachedData.users.length} usuarios)`);
         return cachedData.users;
       }
-      console.log(`- Caché expirada, refrescando datos`);
+      // console.log(`- Caché expirada, refrescando datos`);
     } else {
       console.log(`- No hay datos en caché, cargando por primera vez`);
     }
     
     // Evitar solicitudes duplicadas para el mismo projectId
     if (loadingState[projectId]) {
-      console.log(`- Ya hay una solicitud en curso para este proyecto, esperando...`);
+      // console.log(`- Ya hay una solicitud en curso para este proyecto, esperando...`);
       // Esperar a que la solicitud existente termine
       const maxWait = 5000; // 5 segundos máximo de espera
       const startWait = Date.now();
@@ -302,7 +302,7 @@ export const ProjectUsersProvider: React.FC<{ children: ReactNode }> = ({ childr
     setErrorState(prev => ({ ...prev, [projectId]: null }));
 
     try {
-      console.log(`- Iniciando carga de datos para proyecto ${projectId}`);
+      // console.log(`- Iniciando carga de datos para proyecto ${projectId}`);
       const fetchedUsers = await loadProjectUsers(projectId);
       
       setUsersByProject(prev => ({
@@ -313,7 +313,7 @@ export const ProjectUsersProvider: React.FC<{ children: ReactNode }> = ({ childr
         }
       }));
       
-      console.log(`- Datos cargados: ${fetchedUsers.length} usuarios`);
+      // console.log(`- Datos cargados: ${fetchedUsers.length} usuarios`);
       return fetchedUsers;
     } catch (err) {
       console.error(`Error fetching users for project ${projectId}:`, err);

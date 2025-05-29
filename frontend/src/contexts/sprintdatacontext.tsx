@@ -133,7 +133,7 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
         console.error(data.error)
         return
       }
-      console.log('BURNDOWN CHART DATA:', JSON.parse(JSON.stringify(data)))
+      // console.log('BURNDOWN CHART DATA:', JSON.parse(JSON.stringify(data)))
       setBurndownData(data)
     } catch (error) {
       console.error("Error fetching burndown data:", error)

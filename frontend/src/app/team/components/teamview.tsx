@@ -59,7 +59,7 @@ const TeamsView = () => {
       loadUsersIfNeeded(projectId)
         .then(users => {
           setProjectUsers(users);
-          console.log("Usuarios del proyecto cargados:", users);
+          // console.log("Usuarios del proyecto cargados:", users);
         })
         .catch(err => console.error("Error cargando usuarios del proyecto:", err));
     }

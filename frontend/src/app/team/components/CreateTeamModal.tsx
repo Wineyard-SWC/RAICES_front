@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useTeams } from "@/contexts/teamscontext";
 import { X, Search, Plus, User } from "lucide-react";
-import { useUsers } from "@/hooks/useUsers";
+import { useSearchUsersProject } from "@/hooks/useSearchUsersProject";
 import type { User as UserType } from "@/hooks/useUsers";
 import { useProjectUsers } from "@/contexts/ProjectusersContext"
 import AvatarProfileIcon from "@/components/Avatar/AvatarDisplay"
@@ -21,7 +21,7 @@ export const CreateTeamModal: React.FC<CreateTeamModalProps> = ({
   projectId 
 }) => {
   const { createTeam } = useTeams();
-  const { users, loading, searchUsers } = useUsers();
+  const { users, loading, searchUsers } = useSearchUsersProject();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -64,11 +64,11 @@ export const CreateTeamModal: React.FC<CreateTeamModalProps> = ({
         photoURL: projectMember?.avatarUrl || user.photoURL,
       };
       
-      console.log(`User ${user.id} (${user.name}) - Merged data:`, {
-        originalPhoto: user.photoURL,
-        projectAvatar: projectMember?.avatarUrl,
-        finalPhoto: enrichedUser.photoURL
-      });
+      // console.log(`User ${user.id} (${user.name}) - Merged data:`, {
+      //   originalPhoto: user.photoURL,
+      //   projectAvatar: projectMember?.avatarUrl,
+      //   finalPhoto: enrichedUser.photoURL
+      // });
       
       return enrichedUser;
     });
@@ -76,7 +76,7 @@ export const CreateTeamModal: React.FC<CreateTeamModalProps> = ({
 
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
-    searchUsers(value);
+    searchUsers(value, projectId);
   };
 
   const validateForm = () => {

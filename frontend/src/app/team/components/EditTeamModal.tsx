@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useTeams } from "@/contexts/teamscontext";
 import { X, Search, Plus, User } from "lucide-react";
-import { useUsers } from "@/hooks/useUsers";
+import { useSearchUsersProject } from "@/hooks/useSearchUsersProject";
 import type { User as UserType } from "@/hooks/useUsers";
 import { useProjectUsers } from "@/contexts/ProjectusersContext"
 import AvatarProfileIcon from "@/components/Avatar/AvatarDisplay"
@@ -35,7 +35,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
   team 
 }) => {
   const { updateTeam } = useTeams();
-  const { users, loading, searchUsers } = useUsers();
+  const { users, loading, searchUsers } = useSearchUsersProject();
   const [name, setName] = useState(team.name);
   const [description, setDescription] = useState(team.description);
   const [searchTerm, setSearchTerm] = useState("");
@@ -43,7 +43,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
     team.members.map(member => ({
       id: member.id,
       name: member.name,
-      email: "", // Will be filled from search
+      email: "", 
       photoURL: ""
     }))
   );
@@ -86,11 +86,11 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
         photoURL: projectMember?.avatarUrl || user.photoURL,
       };
       
-      console.log(`User ${user.id} (${user.name}) - Merged data:`, {
-        originalPhoto: user.photoURL,
-        projectAvatar: projectMember?.avatarUrl,
-        finalPhoto: enrichedUser.photoURL
-      });
+      // console.log(`User ${user.id} (${user.name}) - Merged data:`, {
+      //   originalPhoto: user.photoURL,
+      //   projectAvatar: projectMember?.avatarUrl,
+      //   finalPhoto: enrichedUser.photoURL
+      // });
       
       return enrichedUser;
     });
@@ -119,7 +119,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
 
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
-    searchUsers(value);
+    searchUsers(value, team.projectId);
   };
 
   const validateForm = () => {
