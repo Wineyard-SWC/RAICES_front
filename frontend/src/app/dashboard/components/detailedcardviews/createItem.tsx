@@ -235,11 +235,14 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
       {/* Sidebar Drawer Panel */}
       <div className="fixed inset-y-0 right-0 flex max-w-full pointer-events-none">
         <DialogPanel
-          className="px-6 py-4 pointer-events-auto w-[33vw] h-full bg-[#F5F0F1] shadow-xl flex flex-col transition-transform duration-300"
-          style={{ marginTop: '77px', height: 'calc(100vh - 77px)' }}
+          className="pointer-events-auto w-[33vw] h-screen bg-[#F5F0F1] shadow-xl flex flex-col transition-transform duration-300"
+          style={{ 
+            // Se eliminó marginTop para que la sidebar ocupe toda la altura
+            height: '100vh' // Cambiado a 100vh para cubrir toda la altura de la ventana
+          }}
         >
           {/* Header */}
-          <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
+          <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200 px-6 pt-6">
             <div className="flex items-center gap-2">
               <Plus className="h-6 w-6 text-[#4A2B4A]" />
               <h2 className="text-xl font-bold text-[#4A2B4A]">
@@ -269,7 +272,7 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
           </div>
 
           {/* Content Area - Scrollable */}
-          <div className="space-y-4 flex-grow overflow-y-auto pr-2">
+          <div className="space-y-4 flex-grow overflow-y-auto px-6 py-4 pr-2">
             {renderForm()}
           </div>
         </DialogPanel>
