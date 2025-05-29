@@ -4,8 +4,8 @@ import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface CalendarTabsProps {
-  activeTab: 'day' | 'week' | 'month';
-  onTabChange: (tab: 'day' | 'week' | 'month') => void;
+  activeTab: 'week' | 'month';
+  onTabChange: (tab: 'week' | 'month') => void;
   currentPeriod: string;
   onPrevious: () => void;
   onNext: () => void;
@@ -42,8 +42,8 @@ export const CalendarTabs: React.FC<CalendarTabsProps> = ({
       </div>
       
       <div className="p-4">
-        <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg mb-4">
-          {(['day', 'week', 'month'] as const).map((tab) => (
+        <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg mb-4 w-fit">
+          {(['week', 'month'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => onTabChange(tab)}

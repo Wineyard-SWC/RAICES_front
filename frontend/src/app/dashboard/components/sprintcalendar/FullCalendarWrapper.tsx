@@ -1,7 +1,7 @@
 // FullCalendarWrapper.tsx
 "use client";
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -10,18 +10,57 @@ import { Event } from './types';
 
 interface FullCalendarWrapperProps {
   events: Event[];
-  view: 'day' | 'week' | 'month';
+  view: 'week' | 'month';
   onEventClick: (eventId: string) => void;
   onDateSelect: (date: Date) => void;
 }
 
-export const FullCalendarWrapper: React.FC<FullCalendarWrapperProps> = ({
+export interface CalendarRef {
+  prev: () => void;
+  next: () => void;
+  today: () => void;
+  getDate: () => Date;
+}
+
+export const FullCalendarWrapper = forwardRef<CalendarRef, FullCalendarWrapperProps>(({
   events,
   view,
   onEventClick,
   onDateSelect
-}) => {
+}, ref) => {
   const calendarRef = useRef<FullCalendar>(null);
+
+  // Expose calendar API methods
+  useImperativeHandle(ref, () => ({
+    prev: () => {
+      if (calendarRef.current) {
+        const calendarApi = calendarRef.current.getApi();
+        calendarApi.prev();
+        return calendarApi.getDate();
+      }
+    },
+    next: () => {
+      if (calendarRef.current) {
+        const calendarApi = calendarRef.current.getApi();
+        calendarApi.next();
+        return calendarApi.getDate();
+      }
+    },
+    today: () => {
+      if (calendarRef.current) {
+        const calendarApi = calendarRef.current.getApi();
+        calendarApi.today();
+        return calendarApi.getDate();
+      }
+    },
+    getDate: () => {
+      if (calendarRef.current) {
+        const calendarApi = calendarRef.current.getApi();
+        return calendarApi.getDate();
+      }
+      return new Date();
+    }
+  }));
 
   // Convert events to FullCalendar format
   const fullCalendarEvents = events.map(event => ({
@@ -45,8 +84,6 @@ export const FullCalendarWrapper: React.FC<FullCalendarWrapperProps> = ({
 
   const getCalendarView = () => {
     switch (view) {
-      case 'day':
-        return 'timeGridDay';
       case 'week':
         return 'timeGridWeek';
       case 'month':
@@ -76,6 +113,8 @@ export const FullCalendarWrapper: React.FC<FullCalendarWrapperProps> = ({
         selectMirror={true}
         dayMaxEvents={true}
         weekends={true}
+        slotMinTime="06:00:00"
+        slotMaxTime="21:00:00"
         eventClick={(info) => {
           // If this is a recurring instance, use the original event ID
           const eventId = info.event.extendedProps.isRecurringInstance 
@@ -102,4 +141,4 @@ export const FullCalendarWrapper: React.FC<FullCalendarWrapperProps> = ({
       />
     </div>
   );
-};
+});

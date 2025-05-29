@@ -29,8 +29,8 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   return (
     <div className="mb-6 flex items-center justify-between">
       <div>
-        <h1 className="text-2xl font-bold">Sprint Calendar</h1>
-        <p className="text-sm text-gray-600">View and manage sprint tasks by date</p>
+        <h1 className="text-2xl font-bold">Calendar</h1>
+        <p className="text-sm text-gray-600">View and manage tasks by date</p>
         <button
           onClick={onBack}
           className="text-[#4A2B4A] text-sm font-medium hover:underline"

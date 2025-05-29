@@ -1,11 +1,11 @@
 // SprintCalendarView.tsx
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { CalendarHeader } from './CalendarHeader';
 import { CalendarTabs } from './CalendarTabs';
-import { FullCalendarWrapper } from './FullCalendarWrapper';
+import { FullCalendarWrapper, CalendarRef } from './FullCalendarWrapper';
 import { AddEventDialog } from './AddEventDialog';
 import { UpcomingDeadlines } from './UpcomingDeadlines';
 import { RecurringMeetings } from './RecurringMeetings';
@@ -17,13 +17,13 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function SprintCalendarView({ onBack }: { onBack?: () => void }) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'day' | 'week' | 'month'>('week');
+  const [activeTab, setActiveTab] = useState<'week' | 'month'>('week');
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
   const [currentPeriod, setCurrentPeriod] = useState('');
-  
   const [selectedMeeting, setSelectedMeeting] = useState<Event | null>(null);
   const [isMeetingDetailsOpen, setIsMeetingDetailsOpen] = useState(false);
-  
+  const calendarRef = useRef<CalendarRef>(null);
+
   const {
     events,
     sprints,
@@ -36,32 +36,56 @@ export default function SprintCalendarView({ onBack }: { onBack?: () => void }) 
     projectId,
   } = useCalendar();
 
-  useEffect(() => {
-    if (selectedSprint && sprints.length > 0) {
-      const sprint = sprints.find(s => s.id === selectedSprint);
-      if (sprint) {
-        const startDate = new Date(sprint.start_date).toLocaleDateString('en-US', { 
-          month: 'short', 
-          day: 'numeric' 
-        });
-        const endDate = new Date(sprint.end_date).toLocaleDateString('en-US', { 
-          month: 'short', 
-          day: 'numeric', 
-          year: 'numeric' 
-        });
-        setCurrentPeriod(`${startDate} - ${endDate}`);
+  const formatCurrentPeriod = (date: Date) => {
+    if (activeTab === 'week') {
+      // For week view, show the week range
+      const start = new Date(date);
+      start.setDate(start.getDate() - start.getDay()); // Start of week (Sunday)
+      const end = new Date(start);
+      end.setDate(end.getDate() + 6); // End of week (Saturday)
+      
+      // Format: "May 1 - May 7, 2025"
+      const startMonth = start.toLocaleDateString('en-US', { month: 'short' });
+      const endMonth = end.toLocaleDateString('en-US', { month: 'short' });
+      const startDay = start.getDate();
+      const endDay = end.getDate();
+      const year = end.getFullYear();
+      
+      if (startMonth === endMonth) {
+        return `${startMonth} ${startDay} - ${endDay}, ${year}`;
+      } else {
+        return `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${year}`;
       }
+    } else {
+      // For month view, show the month and year
+      return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
     }
-  }, [selectedSprint, sprints]);
+  };
+
+  // Update current period when view changes
+  useEffect(() => {
+    if (calendarRef.current) {
+      const date = calendarRef.current.getDate();
+      setCurrentPeriod(formatCurrentPeriod(date));
+    }
+  }, [activeTab]);
 
   const handlePrevious = () => {
-    // Implement navigation to previous period
-    console.log('Navigate to previous period');
+    if (calendarRef.current) {
+      const date = calendarRef.current.prev();
+      if (date) {
+        setCurrentPeriod(formatCurrentPeriod(date));
+      }
+    }
   };
 
   const handleNext = () => {
-    // Implement navigation to next period
-    console.log('Navigate to next period');
+    if (calendarRef.current) {
+      const date = calendarRef.current.next();
+      if (date) {
+        setCurrentPeriod(formatCurrentPeriod(date));
+      }
+    }
   };
 
   const handleAddEvent = async (formData: any) => {
@@ -191,6 +215,7 @@ export default function SprintCalendarView({ onBack }: { onBack?: () => void }) 
         {error && <div className="text-red-500 text-center py-4">{error}</div>}
 
         <FullCalendarWrapper
+          ref={calendarRef}
           events={events}
           view={activeTab}
           onEventClick={handleEventClick}
