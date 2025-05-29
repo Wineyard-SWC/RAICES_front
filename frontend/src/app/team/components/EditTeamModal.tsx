@@ -5,6 +5,8 @@ import { useTeams } from "@/contexts/teamscontext";
 import { X, Search, Plus, User } from "lucide-react";
 import { useUsers } from "@/hooks/useUsers";
 import type { User as UserType } from "@/hooks/useUsers";
+import { useProjectUsers } from "@/contexts/ProjectusersContext"
+import AvatarProfileIcon from "@/components/Avatar/AvatarDisplay"
 
 interface EditTeamModalProps {
   isOpen: boolean;
@@ -47,6 +49,8 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [currentProjectId, setCurrentProjectId] = useState<string>("");
+  const { loadUsersIfNeeded, getUsersForProject } = useProjectUsers();
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "unset";
@@ -55,21 +59,63 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
     };
   }, [isOpen]);
 
+
+  // Obtener el ID del proyecto actual
+  useEffect(() => {
+    const storedProjectId = localStorage.getItem("currentProjectId");
+    if (storedProjectId) {
+      setCurrentProjectId(storedProjectId);
+      // Cargar usuarios del proyecto
+      loadUsersIfNeeded(storedProjectId);
+    }
+  }, [loadUsersIfNeeded]);
+  
+  // Obtener la lista de miembros del proyecto
+  const projectMembers = getUsersForProject(currentProjectId);
+
+  // Crea una función para combinar los usuarios buscados con los datos del proyecto
+  const getEnrichedUsers = (searchedUsers: UserType[]) => {
+    // console.log('--- getEnrichedUsers ---');
+    // console.log('Project Members:', projectMembers);
+    // console.log('Searched Users:', searchedUsers);
+    
+    return searchedUsers.map(user => {
+      const projectMember = projectMembers.find(member => member.userRef === user.id);
+      const enrichedUser = {
+        ...user,
+        photoURL: projectMember?.avatarUrl || user.photoURL,
+      };
+      
+      console.log(`User ${user.id} (${user.name}) - Merged data:`, {
+        originalPhoto: user.photoURL,
+        projectAvatar: projectMember?.avatarUrl,
+        finalPhoto: enrichedUser.photoURL
+      });
+      
+      return enrichedUser;
+    });
+  };
+
   // Reset form when team changes
   useEffect(() => {
     if (team) {
       setName(team.name);
       setDescription(team.description);
-      setSelectedUsers(
-        team.members.map(member => ({
+      
+      // Obtener usuarios enriquecidos del proyecto
+      const enrichedMembers = team.members.map(member => {
+        const projectMember = projectMembers.find(pm => pm.userRef === member.id);
+        return {
           id: member.id,
           name: member.name,
-          email: "",
-          photoURL: ""
-        }))
-      );
+          email: projectMember?.email || "",
+          photoURL: projectMember?.avatarUrl || null
+        };
+      });
+      
+      setSelectedUsers(enrichedMembers);
     }
-  }, [team]);
+  }, [team, projectMembers]); // Añade projectMembers como dependencia
 
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
@@ -179,51 +225,6 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
               <label className="block text-sm font-medium text-[#4a2b4a] mb-1">
                 Team Members
               </label>
-              
-              {/* Current members */}
-              {selectedUsers.length > 0 && (
-                <div className="mb-4">
-                  <h3 className="text-sm font-medium text-[#4a2b4a] mb-2">
-                    Current Members ({selectedUsers.length})
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedUsers.map((user) => (
-                      <div
-                        key={user.id}
-                        className="flex items-center bg-[#ebe5eb] rounded-full pl-2 pr-1 py-1"
-                      >
-                        <div className="h-6 w-6 rounded-full bg-[#ebe5eb] overflow-hidden mr-2">
-                          {user.photoURL ? (
-                            <img
-                              src={user.photoURL}
-                              alt={user.name}
-                              className="h-full w-full object-cover"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = "/placeholder.svg";
-                              }}
-                            />
-                          ) : (
-                            <div className="h-full w-full flex items-center justify-center bg-[#4a2b4a] text-white">
-                              <User size={12} />
-                            </div>
-                          )}
-                        </div>
-                        <span className="text-sm text-[#4a2b4a]">
-                          {user.name}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveUser(user.id)}
-                          className="ml-1 p-1 rounded-full hover:bg-[#d1c6d1]"
-                          disabled={isSubmitting}
-                        >
-                          <X size={14} className="text-[#694969]" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* Search for new members */}
               <div className="relative">
@@ -250,47 +251,81 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
                     </div>
                   ) : users.length > 0 ? (
                     <ul>
-                      {users
-                        .filter(user => !selectedUsers.some(u => u.id === user.id))
-                        .map((user) => (
-                          <li
-                            key={user.id}
-                            className="p-2 hover:bg-[#ebe5eb] cursor-pointer flex items-center"
-                            onClick={() => handleAddUser(user)}
-                          >
-                            <div className="h-8 w-8 rounded-full bg-[#ebe5eb] overflow-hidden mr-3">
-                              {user.photoURL ? (
-                                <img
-                                  src={user.photoURL}
-                                  alt={user.name}
-                                  className="h-full w-full object-cover"
-                                  onError={(e) => {
-                                    (e.target as HTMLImageElement).src = "/placeholder.svg";
-                                  }}
-                                />
-                              ) : (
-                                <div className="h-full w-full flex items-center justify-center bg-[#4a2b4a] text-white">
-                                  <User size={16} />
-                                </div>
-                              )}
-                            </div>
-                            <div>
-                              <p className="text-[#4a2b4a] font-medium">
-                                {user.name}
-                              </p>
-                              <p className="text-xs text-[#694969]">
-                                {user.email}
-                              </p>
-                            </div>
-                            <Plus size={16} className="ml-auto text-[#4a2b4a]" />
-                          </li>
-                        ))}
+                      {getEnrichedUsers(users).filter(user => !selectedUsers.some(u => u.id === user.id)).map((user) => (
+                        <li
+                          key={user.id}
+                          className="p-2 hover:bg-[#ebe5eb] cursor-pointer flex items-center"
+                          onClick={() => handleAddUser(user)}
+                        >
+                          <div className="h-8 w-8 rounded-full bg-[#ebe5eb] overflow-hidden mr-3">
+                            {user.photoURL ? (
+                              <AvatarProfileIcon 
+                                avatarUrl={user.photoURL} 
+                                size={32} 
+                                borderWidth={2}
+                                borderColor="#4a2b4a"
+                              />
+                            ) : (
+                              <div className="h-full w-full flex items-center justify-center bg-[#4a2b4a] text-white">
+                                {user?.name?.charAt(0).toUpperCase() || <User size={16} />}
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-[#4a2b4a] font-medium">{user.name}</p>
+                            <p className="text-xs text-[#694969]">{user.email}</p>
+                          </div>
+                          <Plus size={16} className="ml-auto text-[#4a2b4a]" />
+                        </li>
+                      ))}
                     </ul>
                   ) : (
                     <div className="p-3 text-center text-[#694969]">
                       No users found
                     </div>
                   )}
+                </div>
+              )}
+              {/* Current members */}
+              {selectedUsers.length > 0 && (
+                <div className="mt-4 mb-4">
+                  <h3 className="text-sm font-medium text-[#4a2b4a] mb-2">
+                    Current Members ({selectedUsers.length})
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedUsers.map((user) => (
+                      <div
+                        key={user.id}
+                        className="flex items-center bg-[#ebe5eb] rounded-full pl-2 pr-1 py-1"
+                      >
+                        <div className="h-8 w-8 rounded-full bg-[#ebe5eb] overflow-hidden mr-3">
+                          {user.photoURL ? (
+                            <AvatarProfileIcon 
+                              avatarUrl={user.photoURL} 
+                              size={32} 
+                              borderWidth={2}
+                              borderColor="#4a2b4a"
+                            />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center bg-[#4a2b4a] text-white">
+                              {user?.name?.charAt(0).toUpperCase() || <User size={16} />}
+                            </div>
+                          )}
+                        </div>
+                        <span className="text-sm text-[#4a2b4a]">
+                          {user.name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveUser(user.id)}
+                          className="ml-1 p-1 rounded-full hover:bg-[#d1c6d1]"
+                          disabled={isSubmitting}
+                        >
+                          <X size={14} className="text-[#694969]" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
               {errors.members && (

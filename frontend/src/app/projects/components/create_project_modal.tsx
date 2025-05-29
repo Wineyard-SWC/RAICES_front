@@ -29,7 +29,6 @@ const CreateProjectModal = ({
   const [selectedUsers, setSelectedUsers] = useState<UserType[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [currentProjectId, setCurrentProjectId] = useState<string>("");
   const { users, loading, searchUsers } = useUsers();
   const { getAllUsers, getAllUsersFromCache } = useProjectUsers();
 
@@ -287,7 +286,7 @@ const CreateProjectModal = ({
                     <div className="p-3 text-center text-[#694969]">Searching users...</div>
                   ) : users.length > 0 ? (
                     <ul>
-                      {getEnrichedUsers(users).map((user) => (
+                      {getEnrichedUsers(users).filter(user => !selectedUsers.some(u => u.id === user.id)).map((user) => (
                         <li
                           key={user.id}
                           className="p-2 hover:bg-[#ebe5eb] cursor-pointer flex items-center"
@@ -333,16 +332,17 @@ const CreateProjectModal = ({
                         key={user.id}
                         className="flex items-center bg-[#ebe5eb] rounded-full pl-2 pr-1 py-1"
                       >
-                        <div className="h-6 w-6 rounded-full bg-[#ebe5eb] overflow-hidden mr-2">
+                        <div className="h-8 w-8 rounded-full bg-[#ebe5eb] overflow-hidden mr-3">
                           {user.photoURL ? (
-                            <img
-                              src={user.photoURL || "/placeholder.svg"}
-                              alt={user.name}
-                              className="h-full w-full object-cover"
+                            <AvatarProfileIcon 
+                              avatarUrl={user.photoURL} 
+                              size={32} 
+                              borderWidth={2}
+                              borderColor="#4a2b4a"
                             />
                           ) : (
                             <div className="h-full w-full flex items-center justify-center bg-[#4a2b4a] text-white">
-                              <User size={12} />
+                              {user?.name?.charAt(0).toUpperCase() || <User size={16} />}
                             </div>
                           )}
                         </div>

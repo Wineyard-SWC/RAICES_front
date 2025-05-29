@@ -5,6 +5,9 @@ import { useTeams } from "@/contexts/teamscontext";
 import { X, Search, Plus, User } from "lucide-react";
 import { useUsers } from "@/hooks/useUsers";
 import type { User as UserType } from "@/hooks/useUsers";
+import { useProjectUsers } from "@/contexts/ProjectusersContext"
+import AvatarProfileIcon from "@/components/Avatar/AvatarDisplay"
+
 
 interface CreateTeamModalProps {
   isOpen: boolean;
@@ -25,6 +28,8 @@ export const CreateTeamModal: React.FC<CreateTeamModalProps> = ({
   const [selectedUsers, setSelectedUsers] = useState<UserType[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [currentProjectId, setCurrentProjectId] = useState<string>("");
+  const { loadUsersIfNeeded, getUsersForProject } = useProjectUsers();
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "unset";
@@ -32,6 +37,42 @@ export const CreateTeamModal: React.FC<CreateTeamModalProps> = ({
       document.body.style.overflow = "unset";
     };
   }, [isOpen]);
+
+  // Obtener el ID del proyecto actual
+  useEffect(() => {
+    const storedProjectId = localStorage.getItem("currentProjectId");
+    if (storedProjectId) {
+      setCurrentProjectId(storedProjectId);
+      // Cargar usuarios del proyecto
+      loadUsersIfNeeded(storedProjectId);
+    }
+  }, [loadUsersIfNeeded]);
+  
+  // Obtener la lista de miembros del proyecto
+  const projectMembers = getUsersForProject(currentProjectId);
+
+  // Crea una función para combinar los usuarios buscados con los datos del proyecto
+  const getEnrichedUsers = (searchedUsers: UserType[]) => {
+    // console.log('--- getEnrichedUsers ---');
+    // console.log('Project Members:', projectMembers);
+    // console.log('Searched Users:', searchedUsers);
+    
+    return searchedUsers.map(user => {
+      const projectMember = projectMembers.find(member => member.userRef === user.id);
+      const enrichedUser = {
+        ...user,
+        photoURL: projectMember?.avatarUrl || user.photoURL,
+      };
+      
+      console.log(`User ${user.id} (${user.name}) - Merged data:`, {
+        originalPhoto: user.photoURL,
+        projectAvatar: projectMember?.avatarUrl,
+        finalPhoto: enrichedUser.photoURL
+      });
+      
+      return enrichedUser;
+    });
+  };
 
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
@@ -137,48 +178,7 @@ export const CreateTeamModal: React.FC<CreateTeamModalProps> = ({
               <label className="block text-sm font-medium text-[#4a2b4a] mb-1">
                 Team Members
               </label>
-              
-              {/* Selected members */}
-              {selectedUsers.length > 0 && (
-                <div className="mb-4">
-                  <h3 className="text-sm font-medium text-[#4a2b4a] mb-2">
-                    Selected Members
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedUsers.map((user) => (
-                      <div
-                        key={user.id}
-                        className="flex items-center bg-[#ebe5eb] rounded-full pl-2 pr-1 py-1"
-                      >
-                        <div className="h-6 w-6 rounded-full bg-[#ebe5eb] overflow-hidden mr-2">
-                          {user.photoURL ? (
-                            <img
-                              src={user.photoURL || "/placeholder.svg"}
-                              alt={user.name}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <div className="h-full w-full flex items-center justify-center bg-[#4a2b4a] text-white">
-                              <User size={12} />
-                            </div>
-                          )}
-                        </div>
-                        <span className="text-sm text-[#4a2b4a]">
-                          {user.name}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveUser(user.id)}
-                          className="ml-1 p-1 rounded-full hover:bg-[#d1c6d1]"
-                        >
-                          <X size={14} className="text-[#694969]" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
+            
               <div className="relative">
                 <input
                   type="text"
@@ -202,7 +202,7 @@ export const CreateTeamModal: React.FC<CreateTeamModalProps> = ({
                     </div>
                   ) : users.length > 0 ? (
                     <ul>
-                      {users.map((user) => (
+                      {getEnrichedUsers(users).filter(user => !selectedUsers.some(u => u.id === user.id)).map((user) => (
                         <li
                           key={user.id}
                           className="p-2 hover:bg-[#ebe5eb] cursor-pointer flex items-center"
@@ -210,24 +210,21 @@ export const CreateTeamModal: React.FC<CreateTeamModalProps> = ({
                         >
                           <div className="h-8 w-8 rounded-full bg-[#ebe5eb] overflow-hidden mr-3">
                             {user.photoURL ? (
-                              <img
-                                src={user.photoURL || "/placeholder.svg"}
-                                alt={user.name}
-                                className="h-full w-full object-cover"
+                              <AvatarProfileIcon 
+                                avatarUrl={user.photoURL} 
+                                size={32} 
+                                borderWidth={2}
+                                borderColor="#4a2b4a"
                               />
                             ) : (
                               <div className="h-full w-full flex items-center justify-center bg-[#4a2b4a] text-white">
-                                <User size={16} />
+                                {user?.name?.charAt(0).toUpperCase() || <User size={16} />}
                               </div>
                             )}
                           </div>
                           <div>
-                            <p className="text-[#4a2b4a] font-medium">
-                              {user.name}
-                            </p>
-                            <p className="text-xs text-[#694969]">
-                              {user.email}
-                            </p>
+                            <p className="text-[#4a2b4a] font-medium">{user.name}</p>
+                            <p className="text-xs text-[#694969]">{user.email}</p>
                           </div>
                           <Plus size={16} className="ml-auto text-[#4a2b4a]" />
                         </li>
@@ -238,6 +235,47 @@ export const CreateTeamModal: React.FC<CreateTeamModalProps> = ({
                       No users found
                     </div>
                   )}
+                </div>
+              )}
+              {/* Selected members */}
+              {selectedUsers.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-sm font-medium text-[#4a2b4a] mb-2">
+                    Selected Members
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedUsers.map((user) => (
+                      <div
+                        key={user.id}
+                        className="flex items-center bg-[#ebe5eb] rounded-full pl-2 pr-1 py-1"
+                      >
+                        <div className="h-8 w-8 rounded-full bg-[#ebe5eb] overflow-hidden mr-3">
+                          {user.photoURL ? (
+                            <AvatarProfileIcon 
+                              avatarUrl={user.photoURL} 
+                              size={32} 
+                              borderWidth={2}
+                              borderColor="#4a2b4a"
+                            />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center bg-[#4a2b4a] text-white">
+                              {user?.name?.charAt(0).toUpperCase() || <User size={16} />}
+                            </div>
+                          )}
+                        </div>
+                        <span className="text-sm text-[#4a2b4a]">
+                          {user.name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveUser(user.id)}
+                          className="ml-1 p-1 rounded-full hover:bg-[#d1c6d1]"
+                        >
+                          <X size={14} className="text-[#694969]" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
               {errors.members && (
