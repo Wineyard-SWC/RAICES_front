@@ -11,6 +11,7 @@ interface BugEditFormProps {
   availableSprints?: Array<{ id: string; name: string }>;
   availableTasks?: Array<{ id: string; title: string }>;
   availableUserStories?: Array<{ id: string; title: string }>;
+  validationErrors?: Record<string, string>; // Add this prop
 }
 
 const BugEditForm = ({ 
@@ -20,7 +21,8 @@ const BugEditForm = ({
   availableUsers = [], 
   availableSprints = [], 
   availableTasks = [], 
-  availableUserStories = [] 
+  availableUserStories = [],
+  validationErrors = {} // Default to empty object
 }: BugEditFormProps) => {
   const [formData, setFormData] = useState({
     title: task.title || "",
@@ -237,9 +239,12 @@ const BugEditForm = ({
           type="text"
           value={formData.title}
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-          className="w-full p-2 border border-gray-300 rounded-md text-lg"
+          className={`w-full p-2 border ${validationErrors.title ? 'border-red-500' : 'border-gray-300'} rounded-md text-lg`}
           placeholder="Enter bug title"
         />
+        {validationErrors.title && (
+          <p className="text-red-500 text-sm mt-1">{validationErrors.title}</p>
+        )}
       </div>
 
       {/* Description */}
@@ -249,9 +254,12 @@ const BugEditForm = ({
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           rows={3}
-          className="w-full p-2 border border-gray-300 rounded-md text-lg"
+          className={`w-full p-2 border ${validationErrors.description ? 'border-red-500' : 'border-gray-300'} rounded-md text-lg`}
           placeholder="Enter bug description"
         />
+        {validationErrors.description && (
+          <p className="text-red-500 text-sm mt-1">{validationErrors.description}</p>
+        )}
       </div>
 
       {/* Priority, Severity, Type */}

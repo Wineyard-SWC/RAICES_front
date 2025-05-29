@@ -20,9 +20,10 @@ interface UserStoryEditFormProps {
   task: UserStory;
   onSave: (updatedFields: any) => void;
   onCancel: () => void;
+  availableEpics?: Array<any>;
+  availableSprints?: Array<any>;
   availableUsers?: Array<{ id: string; name: string }>;
-  availableSprints?: Array<{ id: string; name: string }>;
-  availableEpics?: Array<{ id: string; name: string }>;
+  validationErrors?: Record<string, string>; // Add this prop
 }
 
 const getNow = () => new Date().toISOString();

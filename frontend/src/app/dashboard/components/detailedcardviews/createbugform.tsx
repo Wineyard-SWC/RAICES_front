@@ -1,26 +1,32 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Save, X, Plus, Trash, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { BugSeverity, BugType, BugPriority } from "@/types/bug";
-import { v4 as uuidv4 } from "uuid"
+import { v4 as uuidv4 } from "uuid";
+import { useUser } from "@/contexts/usercontext";
+import { getProjectSprints } from "@/utils/getProjectSprints";
 
 interface CreateBugFormProps {
   onSave: (data: any) => void;
   onCancel: () => void;
-  availableUsers?: Array<{ id: string; name: string }>;
-  availableSprints?: Array<{ id: string; name: string }>;
+  projectId: string; // Add projectId to props
   availableTasks?: Array<{ id: string; title: string }>;
   availableUserStories?: Array<{ id: string; title: string }>;
 }
+
 const CreateBugForm = ({ 
   onSave, 
-  onCancel, 
-  availableUsers = [], 
-  availableSprints = [], 
+  onCancel,
+  projectId,
   availableTasks = [], 
   availableUserStories = [] 
 }: CreateBugFormProps) => { 
-   const [formData, setFormData] = useState({
+  const { userId } = useUser();
+  const [availableSprints, setAvailableSprints] = useState<Array<{ id: string; name: string }>>([]);
+  const [availableUsers, setAvailableUsers] = useState<Array<{ id: string; name: string }>>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const [formData, setFormData] = useState({
     title: "",
     description: "",
     priority: "Medium" as BugPriority,
@@ -227,6 +233,43 @@ const CreateBugForm = ({
     { value: "Other", label: "Other", description: "Other types of bugs" },
   ];
 
+  // Fetch available sprints and users when component mounts
+  useEffect(() => {
+    async function fetchProjectData() {
+      if (!projectId) return;
+      
+      setIsLoading(true);
+      try {
+        // Fetch available sprints for the project
+        const sprints = await getProjectSprints(projectId);
+        setAvailableSprints(
+          sprints.map(sprint => ({ 
+            id: sprint.id, 
+            name: sprint.name 
+          }))
+        );
+        
+        // Fetch project team members (users)
+        const API_URL = process.env.NEXT_PUBLIC_API_URL;
+        const usersResponse = await fetch(`${API_URL}/project_users/project/${projectId}`);
+        if (usersResponse.ok) {
+          const users = await usersResponse.json();
+          setAvailableUsers(
+            users.map((user: any) => ({ 
+              id: user.id || user.user_id || user.userId, 
+              name: user.name || user.username || user.email 
+            }))
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching project data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    fetchProjectData();
+  }, [projectId]);
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
@@ -399,6 +442,7 @@ const CreateBugForm = ({
             value={formData.sprintId}
             onChange={(e) => setFormData({ ...formData, sprintId: e.target.value })}
             className="w-full p-3 border border-gray-300 rounded-md text-lg"
+            disabled={isLoading}
           >
             <option value="">-- No Sprint --</option>
             {availableSprints.map(sprint => (
@@ -407,6 +451,7 @@ const CreateBugForm = ({
               </option>
             ))}
           </select>
+          {isLoading && <p className="text-sm text-gray-500 mt-1">Loading sprints...</p>}
         </div>
       </div>
 
@@ -441,6 +486,7 @@ const CreateBugForm = ({
             value={tempInputs.newAssignee}
             onChange={(e) => setTempInputs({ ...tempInputs, newAssignee: e.target.value })}
             className="flex-1 p-2 border border-gray-300 rounded-md text-lg"
+            disabled={isLoading}
           >
             <option value="">Select user to assign</option>
             {availableUsers
@@ -457,10 +503,12 @@ const CreateBugForm = ({
             variant="outline"
             size="sm"
             className="bg-[#4A2B4A] text-white hover:bg-[#3a2248]"
+            disabled={isLoading || !tempInputs.newAssignee}
           >
             <Plus className="h-4 w-4" />
           </Button>
         </div>
+        {isLoading && <p className="text-sm text-gray-500 mt-1">Loading users...</p>}
       </div>
 
       {/* Expected vs Actual Behavior */}
@@ -807,6 +855,5 @@ const CreateBugForm = ({
     </form>
   );
 };
-
 
 export default CreateBugForm;
