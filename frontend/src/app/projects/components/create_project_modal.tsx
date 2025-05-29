@@ -5,6 +5,8 @@ import { useState, useEffect, useCallback } from "react";
 import { X, Search, Plus, User } from "lucide-react";
 import { useUsers } from "@/hooks/useUsers";
 import type { User as UserType } from "@/hooks/useUsers";
+import { useProjectUsers } from "@/contexts/ProjectusersContext"
+import AvatarProfileIcon from "@/components/Avatar/AvatarDisplay"
 
 interface CreateProjectModalProps {
   isOpen: boolean;
@@ -27,10 +29,18 @@ const CreateProjectModal = ({
   const [selectedUsers, setSelectedUsers] = useState<UserType[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
   const { users, loading, searchUsers } = useUsers();
+  const { getAllUsers, getAllUsersFromCache } = useProjectUsers();
 
-  // Initialize dates with default values
+  // Cargar todos los usuarios al montar el componente
+  useEffect(() => {
+    const loadUsers = async () => {
+      await getAllUsers();
+    };
+    loadUsers();
+  }, [getAllUsers]);
+
+  // Inicializar fechas con valores por defecto
   useEffect(() => {
     const today = new Date();
     const nextMonth = new Date();
@@ -40,7 +50,7 @@ const CreateProjectModal = ({
     setEndDate(nextMonth.toISOString().split("T")[0]);
   }, []);
 
-  // Handle user search with improved debounce
+  // Manejar búsqueda de usuarios
   const handleSearchChange = useCallback(
     (value: string) => {
       setSearchTerm(value);
@@ -48,6 +58,21 @@ const CreateProjectModal = ({
     },
     [searchUsers]
   );
+
+  // Función para enriquecer usuarios con datos de avatar
+  const getEnrichedUsers = (searchedUsers: UserType[]) => {
+    const cachedUsers = getAllUsersFromCache();
+    
+    return searchedUsers.map(user => {
+      // Buscar usuario en caché para obtener datos adicionales
+      const cachedUser = cachedUsers.find(u => u.id === user.id);
+      
+      return {
+        ...user,
+        photoURL: cachedUser?.avatarUrl || user.photoURL || null
+      };
+    });
+  };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -258,12 +283,10 @@ const CreateProjectModal = ({
               {searchTerm.length >= 2 && (
                 <div className="mt-2 border border-[#ebe5eb] rounded-md max-h-[200px] overflow-y-auto">
                   {loading ? (
-                    <div className="p-3 text-center text-[#694969]">
-                      Searching users...
-                    </div>
+                    <div className="p-3 text-center text-[#694969]">Searching users...</div>
                   ) : users.length > 0 ? (
                     <ul>
-                      {users.map((user) => (
+                      {getEnrichedUsers(users).filter(user => !selectedUsers.some(u => u.id === user.id)).map((user) => (
                         <li
                           key={user.id}
                           className="p-2 hover:bg-[#ebe5eb] cursor-pointer flex items-center"
@@ -271,33 +294,28 @@ const CreateProjectModal = ({
                         >
                           <div className="h-8 w-8 rounded-full bg-[#ebe5eb] overflow-hidden mr-3">
                             {user.photoURL ? (
-                              <img
-                                src={user.photoURL || "/placeholder.svg"}
-                                alt={user.name}
-                                className="h-full w-full object-cover"
+                              <AvatarProfileIcon 
+                                avatarUrl={user.photoURL} 
+                                size={32} 
+                                borderWidth={2}
+                                borderColor="#4a2b4a"
                               />
                             ) : (
                               <div className="h-full w-full flex items-center justify-center bg-[#4a2b4a] text-white">
-                                <User size={16} />
+                                {user?.name?.charAt(0).toUpperCase() || <User size={16} />}
                               </div>
                             )}
                           </div>
                           <div>
-                            <p className="text-[#4a2b4a] font-medium">
-                              {user.name}
-                            </p>
-                            <p className="text-xs text-[#694969]">
-                              {user.email}
-                            </p>
+                            <p className="text-[#4a2b4a] font-medium">{user.name}</p>
+                            <p className="text-xs text-[#694969]">{user.email}</p>
                           </div>
                           <Plus size={16} className="ml-auto text-[#4a2b4a]" />
                         </li>
                       ))}
                     </ul>
                   ) : (
-                    <div className="p-3 text-center text-[#694969]">
-                      No users found
-                    </div>
+                    <div className="p-3 text-center text-[#694969]">No users found</div>
                   )}
                 </div>
               )}
@@ -314,16 +332,17 @@ const CreateProjectModal = ({
                         key={user.id}
                         className="flex items-center bg-[#ebe5eb] rounded-full pl-2 pr-1 py-1"
                       >
-                        <div className="h-6 w-6 rounded-full bg-[#ebe5eb] overflow-hidden mr-2">
+                        <div className="h-8 w-8 rounded-full bg-[#ebe5eb] overflow-hidden mr-3">
                           {user.photoURL ? (
-                            <img
-                              src={user.photoURL || "/placeholder.svg"}
-                              alt={user.name}
-                              className="h-full w-full object-cover"
+                            <AvatarProfileIcon 
+                              avatarUrl={user.photoURL} 
+                              size={32} 
+                              borderWidth={2}
+                              borderColor="#4a2b4a"
                             />
                           ) : (
                             <div className="h-full w-full flex items-center justify-center bg-[#4a2b4a] text-white">
-                              <User size={12} />
+                              {user?.name?.charAt(0).toUpperCase() || <User size={16} />}
                             </div>
                           )}
                         </div>

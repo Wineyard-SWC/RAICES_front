@@ -9,6 +9,7 @@ interface ProjectOwner {
   name: string
   email: string
   photoURL: string
+  userRef: string
 }
 
 export const useGetProjectOwner = (projectId: string | null) => {
@@ -34,7 +35,9 @@ export const useGetProjectOwner = (projectId: string | null) => {
         const users = await response.json()
 
         // Find the owner (user with role "owner")
-        const ownerUser = users.find((user: any) => user.role === "owner")
+        const ownerUser = users.find((user: any) => 
+          user.role.toLowerCase() === "owner"
+        );        
 
         if (ownerUser) {
           setOwner({
@@ -42,6 +45,7 @@ export const useGetProjectOwner = (projectId: string | null) => {
             name: ownerUser.name,
             email: ownerUser.email,
             photoURL: ownerUser.photoURL || "",
+            userRef: ownerUser.userRef
           })
         } else {
           setError("Could not find project owner")
