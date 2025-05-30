@@ -18,6 +18,7 @@ interface ProjectUser {
   username?: string;
   avatar?: string;
   profile_picture?: string;
+  userRef?: string | null;
 }
 
 interface Props {
@@ -94,6 +95,7 @@ export default function AddTeamMemberCard({ projectId, already, onAdd }: Props) 
       avatar: u.avatar || "https://cdn-icons-png.flaticon.com/512/921/921071.png",
       capacity: 40,
       allocated: 0,
+      userRef: u.userRef || null
     };
 
     console.log("Adding new member:", newMember); 

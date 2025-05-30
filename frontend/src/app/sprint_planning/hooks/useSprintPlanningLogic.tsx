@@ -18,10 +18,9 @@ async function enrichMemberWithAvatar(
 ): Promise<SprintMember> {
   try {
   
-    const isOwner = member.role?.toLowerCase() === "owner";
-    const userIdToFetch = isOwner && member.userRef ? member.userRef : member.id;
+    const userIdToFetch = member.userRef ? member.userRef : member.id;
     
-    // console.log(`Fetching avatar for ${member.name} (${member.role}): using ID ${userIdToFetch}`);
+    // console.log(`Fetching avatar for ${member.name} (${member.role}): using ID ${userIdToFetch} ---> ${member.userRef}`);
     
     const avatarUrl = await fetchAvatar(userIdToFetch);
     return {
@@ -452,6 +451,7 @@ export function useSprintPlanningLogic() {
     const currentMembers = sprint.team_members || [];
     if (currentMembers.some(mem => mem.id === member.id)) return;
 
+    console.log("Adding team member:", member);
     const enrichedMember = await enrichMemberWithAvatar(member, fetchAvatar);
     
     setSprint({
