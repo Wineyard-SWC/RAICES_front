@@ -56,7 +56,7 @@ export default function TeamMemberCard({
           )}
         </div>
         <div>
-          <div className="font-medium">{member.name}</div>
+          <div className="font-medium max-w-[120px]">{member.name}</div>
           <div className="text-xs text-gray-500">{member.role}</div>
         </div>
       </div>
