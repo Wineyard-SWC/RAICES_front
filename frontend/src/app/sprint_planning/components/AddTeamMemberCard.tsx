@@ -51,28 +51,31 @@ export default function AddTeamMemberCard({ projectId, already, onAdd }: Props) 
         return res.json();
       })
       .then((list: ProjectUser[]) => {
-        console.log("Raw users from API:", list); 
+        // console.log("Raw users from API:", list); 
         
         const normalized = list.map(u => ({
           ...u,
-          id: String(u.id || u.user_id || u.userId || ''),
+          id: String(u.userRef || u.user_id || u.userId || ''),
           name: u.name || u.username || u.email || 'Unknown User',
           avatar: u.photoURL || u.avatar || u.profile_picture
         }));
         
-        console.log("Normalized users:", normalized); 
-        
+        // console.log("Normalized users:", normalized); 
+
         const alreadyIds = already.map(m => m.id);
-        const filtered = normalized.filter(u => u.id && !alreadyIds.includes(u.id));
+        // console.log("🔍 Already IDs:", alreadyIds); 
+        // console.log("🔍 Normalized IDs:", normalized.map(u => u.id));
+
+        const filtered = normalized.filter(u => {
+          const isIncluded = alreadyIds.includes(u.id);
+          // console.log(`🔍 User ${u.id} (${u.name}) - Already included: ${isIncluded}`);
+          return u.id && !isIncluded;
+        });
+
+        // console.log("🔍 Final filtered count:", filtered.length); 
+        // console.log("Filtered users (not in sprint):", filtered);
         
-        console.log("Filtered users (not in sprint):", filtered);
-        
-        if (filtered.length === 0 && normalized.length > 0) {
-          console.warn("No available users after filtering, showing all for debug");
-          setUsers(normalized);
-        } else {
-          setUsers(filtered);
-        }
+        setUsers(filtered); 
       })
       .catch(e => {
         console.error("Error loading users:", e);
@@ -94,8 +97,7 @@ export default function AddTeamMemberCard({ projectId, already, onAdd }: Props) 
       role: u.role || "Developer", 
       avatar: u.avatar || "https://cdn-icons-png.flaticon.com/512/921/921071.png",
       capacity: 40,
-      allocated: 0,
-      userRef: u.userRef || null
+      allocated: 0
     };
 
     console.log("Adding new member:", newMember); 

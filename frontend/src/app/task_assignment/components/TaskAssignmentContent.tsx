@@ -85,10 +85,10 @@ export default function TaskAssignmentContent() {
     const memberTasks = sprintTasks.filter(t => t.assignee_id === member.id)
     const tasksCount = memberTasks.length
     
-    // Contar puntos asignados a este miembro
+    // Contar puntos asignados a este miembro (con verificación de seguridad)
     const storyPoints = memberTasks.reduce((sum, task) => {
       const userStory = sprint.user_stories.find(us => us.id === task.user_story_id)
-      return sum + (userStory?.storyPoints || 0)
+      return sum + (userStory?.userStory?.points || 0)
     }, 0)
     
     // Calcular capacidad utilizada
@@ -129,41 +129,45 @@ export default function TaskAssignmentContent() {
   // Guardar asignaciones temporalmente en el backend
   const saveAssignmentsToBackend = async () => {
     if (!safeSprintId || safeSprintId.startsWith("temp-")) {
-      // Si es un sprint temporal, solo volver
+      // Actualiza el contexto global de tareas para que SprintPlanning vea los cambios
+      sprintTasks.forEach(t => {
+        updateTaskInProject(projectId, t.id, t);
+      });
+
+      // Luego navega de regreso
       router.push(
         `/sprint_planning?projectId=${projectId}${safeSprintId ? `&sprintId=${safeSprintId}` : ``}`
-      )
+      );
       return;
     }
 
     setIsSaving(true);
     try {
-      const tasksToUpdate = sprintTasks.map(t => ({
-        id: t.id,
-        title: t.title,
-        description: t.description,
-        user_story_id: t.user_story_id,
-        priority: t.priority,
-        assignee_id: t.assignee_id,
-        status: t.status || "todo",
-        assignee: t.assignee_id 
-          ? [{ 
-              users: [t.assignee_id, t.assignee_id],
-              fullName: sprint.team_members.find(m => m.id === t.assignee_id)?.name || ""
-            }] 
-          : undefined
-      }));
+      const tasksToUpdate = sprintTasks.map(t => {
+        const member = sprint.team_members.find(m => m.id === t.assignee_id);
+        return {
+          id: t.id,
+          title: t.title || "",
+          description: t.description || "",
+          user_story_id: t.user_story_id || "",
+          priority: t.priority || "Medium",
+          status_khanban: t.status_khanban || "To Do",
+          story_points: t.story_points ?? 0,
+          // NO incluyas assignee_id
+          ...(t.assignee_id && member
+            ? { assignee: [[t.assignee_id, member.name]] }
+            : {})
+        };
+      });
+      console.log("[TASK ASSIGNMENT] Tareas a actualizar (payload):", tasksToUpdate);
 
       // Actualizar tareas en el backend
-      const taskRes = await fetch(`${API_URL}/tasks/batch-update`, {
-        method: "PUT",
+      const taskRes = await fetch(`${API_URL}/projects/${projectId}/tasks/batch`, {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          tasks: tasksToUpdate,
-          projectId
-        }),
+        body: JSON.stringify(tasksToUpdate)
       });
 
       if (!taskRes.ok) {
@@ -173,6 +177,7 @@ export default function TaskAssignmentContent() {
       }
 
       const updatedFromServer: Task[] = await taskRes.json();
+      console.log("[TASK ASSIGNMENT] Respuesta del backend (tareas actualizadas):", updatedFromServer);
 
       updatedFromServer.forEach(u => {
         updateTaskInProject(projectId, u.id, u);
@@ -378,6 +383,10 @@ export default function TaskAssignmentContent() {
                     const assignedMember = task.assignee_id
                       ? sprint.team_members.find(m => m.id === task.assignee_id)
                       : null;
+
+                    // Obtener el título de la user story de forma segura
+                    const userStoryTitle = userStory?.userStory?.title ?? "Sin título";
+                    const userStoryPoints = userStory?.userStory?.points ?? 0;
                       
                     return (
                       <div
@@ -399,7 +408,7 @@ export default function TaskAssignmentContent() {
                             
                             {userStory && (
                               <span className="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded-full">
-                                SP: {userStory.storyPoints || 0}
+                                SP: {userStoryPoints}
                               </span>
                             )}
                           </div>
@@ -407,7 +416,7 @@ export default function TaskAssignmentContent() {
                         
                         {userStory && (
                           <p className="text-sm text-gray-500 mb-2">
-                            <span className="font-medium">User Story:</span> {userStory.userStory.title}
+                            <span className="font-medium">User Story:</span> {userStoryTitle}
                           </p>
                         )}
                         
@@ -498,22 +507,20 @@ export default function TaskAssignmentContent() {
                     key={member.id}
                     onClick={() => {
                       // Assign task to this member
-                      setTasks(tasks.map(t =>
+                      const updatedTasks = tasks.map(t =>
                         t.id === taskToAssign.id
                           ? {
                               ...t,
                               assignee_id: member.id,
-                              assignee: [
-                                {
-                                  users: [member.id, member.id],
-                                  fullName: member.name
-                                }
-                              ]
+                              // NO agregues el campo assignee aquí, déjalo que lo maneje el backend
                             }
                           : t
-                      ))
-                      setAssignModalOpen(false)
-                      setTaskToAssign(null)
+                      );
+                      console.log("Asignando tarea:", taskToAssign.id, "a miembro:", member.id, member.name);
+                      console.log("Tareas después de asignar:", updatedTasks);
+                      setTasks(updatedTasks);
+                      setAssignModalOpen(false);
+                      setTaskToAssign(null);
                     }}
                     className={`p-3 rounded-lg border cursor-pointer transition-colors hover:border-[#4a2b4a]/50 ${
                       member.usedCapacity >= 100
