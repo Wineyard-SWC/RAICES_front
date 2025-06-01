@@ -8,16 +8,41 @@ import { getProjectUserStories } from "@/utils/getProjectUserStories";
 import { getProjectTasks } from "@/utils/getProjectTasks";
 import { Task } from "@/types/task";
 import { BasicTask } from "@/types/task";
-import { useKanban } from "@/contexts/unifieddashboardcontext";
+import { useAvatar } from "@/contexts/AvatarContext";
+import { UserRolesProvider } from "@/contexts/userRolesContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
+async function enrichMemberWithAvatar(
+  member: SprintMember, 
+  fetchAvatar: (userId: string) => Promise<string | null>
+): Promise<SprintMember> {
+  try {
+    const avatarUrl = await fetchAvatar(member.id);
+    return {
+      ...member,
+      avatar: avatarUrl || member.avatar || null
+    };
+  } catch (error) {
+    console.error(`Error fetching avatar for member ${member.id}:`, error);
+    return member;
+  }
+}
 
+async function enrichMembersWithAvatars(
+  members: SprintMember[], 
+  fetchAvatar: (userId: string) => Promise<string | null>
+): Promise<SprintMember[]> {
+  const enrichedMembers = await Promise.all(
+    members.map(member => enrichMemberWithAvatar(member, fetchAvatar))
+  );
+  return enrichedMembers;
+}
 
-
-
-
-async function fetchProjectOwner(projectId: string): Promise<SprintMember|null> {
+async function fetchProjectOwner(
+  projectId: string,
+  fetchAvatar: (userId: string) => Promise<string | null> 
+): Promise<SprintMember|null> {
   try {
     const res = await fetch(`${API_URL}/project_users/project/${projectId}`);
     if (!res.ok) {
@@ -26,7 +51,7 @@ async function fetchProjectOwner(projectId: string): Promise<SprintMember|null> 
     }
     const list = await res.json();
     
-    console.log("Project users for owner detection:", list); // Para debug
+    // console.log("Project users for owner detection:", list); // Para debug
     
     if (!Array.isArray(list) || list.length === 0) return null;
 
@@ -34,14 +59,16 @@ async function fetchProjectOwner(projectId: string): Promise<SprintMember|null> 
     
     console.log("Selected owner:", raw); // Para debug
     
-    return {
-      id: String(raw.id || raw.user_id || raw.userId || ''),
+    const baseMember: SprintMember = {
+      id: String(raw.userRef || ''),
       name: raw.name || raw.username || raw.email || "Owner",
       role: raw.role || "Owner", 
       avatar: raw.photoURL || raw.avatar || raw.profile_picture,
       capacity: 40, 
-      allocated: 0,
+      allocated: 0
     };
+
+    return await enrichMemberWithAvatar(baseMember, fetchAvatar);
   } catch (error) {
     console.error("Error in fetchProjectOwner:", error);
     return null;
@@ -84,11 +111,12 @@ export function useSprintPlanningLogic() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string|null>(null);
   const [openSB, setOpenSB] = useState(true);
+  const { fetchAvatar } = useAvatar();
   
   const makeLocalSprint = async (): Promise<Sprint> => {
     const now = new Date().toISOString();
     const in2w = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
-    const owner = await fetchProjectOwner(projectId);
+    const owner = await fetchProjectOwner(projectId, fetchAvatar);
     
     return {
       id: `temp-${Date.now()}`,
@@ -193,18 +221,21 @@ export function useSprintPlanningLogic() {
           if (!sprintRes.ok) throw new Error("Sprint not found");
           const raw: Sprint = await sprintRes.json();
 
-          const owner = await fetchProjectOwner(projectId);
+          const owner = await fetchProjectOwner(projectId, fetchAvatar); 
           console.log("Owner found:", owner);
+          console.log("[SPRINT TEAM MEMBERS]", raw.team_members);
 
           // FIX: Asegurar que team_members siempre sea un array
           if (!Array.isArray(raw.team_members)) {
             raw.team_members = [];
           }
 
+          const enrichedMembers = await enrichMembersWithAvatars(raw.team_members, fetchAvatar);
+
           if (owner) {
-            const existingMember = raw.team_members.find(m => m.id === owner.id);
+            const existingMember = enrichedMembers.find(m => m.id === owner.id);
             if (!existingMember) {
-              raw.team_members = [...raw.team_members, owner];
+              enrichedMembers.push(owner);
             }
           }
 
@@ -235,7 +266,7 @@ export function useSprintPlanningLogic() {
 
           setSprint({ 
             ...raw,  
-            team_members: raw.team_members,
+            team_members: enrichedMembers,
             user_stories: hydratedStories
           });
 
@@ -292,24 +323,82 @@ export function useSprintPlanningLogic() {
     };
 
     load();
-  }, [projectId, sprintId]);
+  }, [projectId, sprintId, fetchAvatar]);
 
 
   const handleSaveSprint = async () => {
     if (!sprint) return;
 
+    // 1️⃣ Actualizar tasks en el backend antes de guardar el sprint (solo si no es temporal)
+    try {
+      const tasksToUpdate = tasks
+        .filter(t =>
+          sprint.user_stories.some(us => us.selected && us.tasks.includes(t.id))
+        )
+        .map(t => {
+          // Extraer el assigneeId correctamente
+          const assigneeId = Array.isArray(t.assignee_id) 
+            ? t.assignee_id[0]?.[0] || t.assignee_id[0] // Si es [["id", "name"]] toma "id", si es ["id"] toma "id"
+            : t.assignee_id;
+            
+          // Buscar el miembro usando el assigneeId extraído
+          const member = sprint.team_members.find(m => m.id === assigneeId);
+          
+          console.log("Procesando tarea:", t.id, "assignee_id original:", t.assignee_id, "assigneeId extraído:", assigneeId, "member encontrado:", member);
+          
+          return {
+            id: t.id,
+            title: t.title || "",
+            description: t.description || "",
+            user_story_id: t.user_story_id || "",
+            priority: t.priority || "Medium",
+            status_khanban: t.status_khanban || "To Do",
+            story_points: t.story_points ?? 0,
+            // Incluir assignee si hay assigneeId y member
+            ...(assigneeId && member
+              ? { assignee: [[assigneeId, member.name]] }
+              : {})
+          };
+        });
+
+      console.log("[SPRINT PLANNING] Tareas a actualizar (payload):", tasksToUpdate);
+
+      if (tasksToUpdate.length > 0) {
+        const taskRes = await fetch(`${API_URL}/projects/${projectId}/tasks/batch`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(tasksToUpdate)
+        });
+        if (!taskRes.ok) {
+          const taskErrorText = await taskRes.text();
+          console.error("Error updating tasks:", taskErrorText);
+          throw new Error(`Tasks update failed: ${taskRes.status} - ${taskErrorText}`);
+        }
+        const updatedFromServer: Task[] = await taskRes.json();
+        updatedFromServer.forEach(u => {
+          taskContext.updateTaskInProject(projectId, u.id, u);
+        });
+        console.log("[SPRINT PLANNING] Respuesta del backend (tareas actualizadas):", updatedFromServer);
+        // console.log("Tasks updated before saving sprint");
+      }
+    } catch (err) {
+      console.error("Error updating tasks before saving sprint:", err);
+      // Puedes decidir si quieres continuar o abortar el guardado del sprint
+    }
+
+    // 2️⃣ Guardar el sprint como antes
     // Primero, calcular los assignees únicos por user story
     const userStoriesWithAssignees = sprint.user_stories
       .filter((us) => us.selected)
       .map((us) => {
         const rawCriteria = normalizeAcceptanceCriteria(us.userStory);
         const structuredCriteria = ensureAcceptanceCriteriaStructure(rawCriteria);
-        
+
         // Obtener todas las tareas de esta user story
         const storyTasks = tasks.filter(t => 
           us.tasks.includes(t.id) && t.assignee && t.assignee.length > 0
         );
-        
+
         // Extraer assignees únicos de las tareas
         const uniqueAssignees = new Map<string, [string, string]>();
         storyTasks.forEach(task => {
@@ -321,12 +410,12 @@ export function useSprintPlanningLogic() {
             });
           }
         });
-        
+
         // Convertir a formato del backend para user stories
         const assigneeList = Array.from(uniqueAssignees.values()).map(users => ({
           users: users
         }));
-        
+
         return {
           id: us.id,
           title: us.userStory?.title || "Sin título",
@@ -358,13 +447,17 @@ export function useSprintPlanningLogic() {
     setLoading(true);
 
     try {
-      const url = sprintId
-        ? `${API_URL}/projects/${projectId}/sprints/${sprintId}`
-        : `${API_URL}/projects/${projectId}/sprints`;
+      const isTempSprint = sprintId.startsWith("temp-");
 
-      console.log("Guardando sprint con assignees:", sprintId, payload);
+      const url = isTempSprint
+        ? `${API_URL}/projects/${projectId}/sprints`
+        : `${API_URL}/projects/${projectId}/sprints/${sprintId}`;
+
+      const method = isTempSprint ? "POST" : "PATCH";
+
+      // console.log("Guardando sprint con assignees:", sprintId, payload);
       const res = await fetch(url, {
-        method: sprintId ? "PATCH" : "POST",
+        method: method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
@@ -374,9 +467,8 @@ export function useSprintPlanningLogic() {
         console.error("Server response:", errorText);
         throw new Error(`Save failed: ${res.status} - ${errorText}`);
       }
-      
-      const saved: Sprint = await res.json();
 
+      const saved: Sprint = await res.json();
 
       setSprint(saved);
       
@@ -409,16 +501,19 @@ export function useSprintPlanningLogic() {
     });
   };
 
-  const handleTeamMemberAdd = (member: SprintMember) => {
+  const handleTeamMemberAdd = async (member: SprintMember) => {
     if (!sprint) return;
     
     // FIX: Asegurar que team_members existe antes de usar some
     const currentMembers = sprint.team_members || [];
     if (currentMembers.some(mem => mem.id === member.id)) return;
+
+    console.log("Adding team member:", member);
+    const enrichedMember = await enrichMemberWithAvatar(member, fetchAvatar);
     
     setSprint({
       ...sprint,
-      team_members: [...currentMembers, member],
+      team_members: [...currentMembers, enrichedMember],
     });
   };
 

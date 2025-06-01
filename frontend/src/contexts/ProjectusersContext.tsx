@@ -28,6 +28,11 @@ type UsersByProjectId = Record<string, {
   lastFetched: number;
 }>
 
+interface AllUsersCache {
+  users: ProjectUser[];
+  lastFetched: number;
+}
+
 // Tiempo de caché por defecto (30 minutos)
 const DEFAULT_CACHE_MAX_AGE = 30 * 60 * 1000;
 
@@ -41,6 +46,8 @@ interface ProjectUsersContextType {
   getUserById: (projectId: string, userId: string) => ProjectUser | undefined;
   clearProjectCache: (projectId: string) => void;
   clearAllCache: () => void;
+  getAllUsers: () => Promise<ProjectUser[]>;
+  getAllUsersFromCache: () => ProjectUser[];
 }
 
 // Crear el contexto
@@ -49,6 +56,7 @@ const ProjectUsersContext = createContext<ProjectUsersContextType | undefined>(u
 // Proveedor del contexto
 export const ProjectUsersProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [usersByProject, setUsersByProject] = useState<UsersByProjectId>({});
+  const [allUsersCache, setAllUsersCache] = useState<AllUsersCache | null>(null);
   const [loadingState, setLoadingState] = useState<Record<string, boolean>>({});
   const [errorState, setErrorState] = useState<Record<string, string | null>>({});
   const { userRoles } = useUserRoles();
@@ -73,6 +81,79 @@ export const ProjectUsersProvider: React.FC<{ children: ReactNode }> = ({ childr
     const users = usersByProject[projectId]?.users || [];
     return users.find(user => user.userRef === userId);
   }, [usersByProject]);
+
+  // Función para obtener todos los usuarios desde la caché
+  const getAllUsersFromCache = useCallback((): ProjectUser[] => {
+    return allUsersCache?.users || [];
+  }, [allUsersCache]);
+
+  // Función para cargar todos los usuarios
+  const getAllUsers = useCallback(async (): Promise<ProjectUser[]> => {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) throw new Error('Authentication token not found');
+
+      // Verificar si tenemos datos en caché recientes
+      if (allUsersCache && (Date.now() - allUsersCache.lastFetched < DEFAULT_CACHE_MAX_AGE)) {
+        return allUsersCache.users;
+      }
+
+      setLoadingState(prev => ({ ...prev, 'all_users': true }));
+      setErrorState(prev => ({ ...prev, 'all_users': null }));
+
+      // 1. Obtener todos los usuarios básicos
+      const response = await fetch(`${API_URL}/users`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch users: ${response.status}`);
+      }
+
+      const users: ProjectUser[] = await response.json();
+      
+      // 2. Enriquecer cada usuario con datos adicionales
+      const enrichedUsers = await Promise.all(users.map(async (user) => {
+        try {
+          // Obtener datos adicionales del usuario
+          const userDataResponse = await fetch(`${AVATAR_API_URL}/users/${user.id}`, {
+            headers: {
+              'application': 'json',
+            }
+          });
+          
+          if (userDataResponse.ok) {
+            const userData = await userDataResponse.json();
+            return {
+              ...user,
+              avatarUrl: userData.avatar_url,
+              gender: userData.gender,
+              bitmask: 0 // No tenemos rol en este contexto
+            };
+          }
+          return user;
+        } catch (error) {
+          console.warn(`Error enriching user ${user.id}:`, error);
+          return user;
+        }
+      }));
+      // Actualizar caché
+      setAllUsersCache({
+        users: enrichedUsers,
+        lastFetched: Date.now()
+      });
+
+      return enrichedUsers;
+    } catch (error) {
+      console.error("Error loading all users:", error);
+      setErrorState(prev => ({ ...prev, 'all_users': error instanceof Error ? error.message : "Failed to load users" }));
+      return allUsersCache?.users || [];
+    } finally {
+      setLoadingState(prev => ({ ...prev, 'all_users': false }));
+    }
+  }, [allUsersCache]);
 
   // Función para cargar usuarios y enriquecerlos con bitmask y datos adicionales
   const loadProjectUsers = useCallback(async (projectId: string): Promise<ProjectUser[]> => {
@@ -113,12 +194,12 @@ export const ProjectUsersProvider: React.FC<{ children: ReactNode }> = ({ childr
           if (userDataResponse.ok) {
             const userData = await userDataResponse.json();
 
-            console.log(`Datos obtenidos JSON para ${user.name}:`, userData);
+            // console.log(`Datos obtenidos JSON para ${user.name}:`, userData);
 
             avatarUrl = userData.avatar_url;
             gender = userData.gender;
             
-            console.log(`Datos adicionales obtenidos para ${user.name}:`, { avatarUrl, gender });
+            // console.log(`Datos adicionales obtenidos para ${user.name}:`, { avatarUrl, gender });
           } else {
             console.warn(`No se pudieron obtener datos adicionales para el usuario ${user.userRef}`);
           }
@@ -183,26 +264,26 @@ export const ProjectUsersProvider: React.FC<{ children: ReactNode }> = ({ childr
     const now = Date.now();
     
     // Mejorar el logging para depuración
-    console.log(`Verificando caché para proyecto ${projectId}:`);
-    console.log(`- Datos en caché:`, cachedData ? 'Sí' : 'No');
+    // console.log(`Verificando caché para proyecto ${projectId}:`);
+    // console.log(`- Datos en caché:`, cachedData ? 'Sí' : 'No');
     
     if (cachedData?.users.length > 0) {
       const cacheAge = now - cachedData.lastFetched;
-      console.log(`- Edad de la caché: ${(cacheAge/1000).toFixed(1)}s (máx: ${(maxAgeMs/1000).toFixed(1)}s)`);
+      // console.log(`- Edad de la caché: ${(cacheAge/1000).toFixed(1)}s (máx: ${(maxAgeMs/1000).toFixed(1)}s)`);
       
       // Si tenemos datos en caché y no están expirados, los devolvemos
       if (cacheAge < maxAgeMs) {
-        console.log(`- Usando datos en caché (${cachedData.users.length} usuarios)`);
+        // console.log(`- Usando datos en caché (${cachedData.users.length} usuarios)`);
         return cachedData.users;
       }
-      console.log(`- Caché expirada, refrescando datos`);
+      // console.log(`- Caché expirada, refrescando datos`);
     } else {
       console.log(`- No hay datos en caché, cargando por primera vez`);
     }
     
     // Evitar solicitudes duplicadas para el mismo projectId
     if (loadingState[projectId]) {
-      console.log(`- Ya hay una solicitud en curso para este proyecto, esperando...`);
+      // console.log(`- Ya hay una solicitud en curso para este proyecto, esperando...`);
       // Esperar a que la solicitud existente termine
       const maxWait = 5000; // 5 segundos máximo de espera
       const startWait = Date.now();
@@ -221,7 +302,7 @@ export const ProjectUsersProvider: React.FC<{ children: ReactNode }> = ({ childr
     setErrorState(prev => ({ ...prev, [projectId]: null }));
 
     try {
-      console.log(`- Iniciando carga de datos para proyecto ${projectId}`);
+      // console.log(`- Iniciando carga de datos para proyecto ${projectId}`);
       const fetchedUsers = await loadProjectUsers(projectId);
       
       setUsersByProject(prev => ({
@@ -232,7 +313,7 @@ export const ProjectUsersProvider: React.FC<{ children: ReactNode }> = ({ childr
         }
       }));
       
-      console.log(`- Datos cargados: ${fetchedUsers.length} usuarios`);
+      // console.log(`- Datos cargados: ${fetchedUsers.length} usuarios`);
       return fetchedUsers;
     } catch (err) {
       console.error(`Error fetching users for project ${projectId}:`, err);
@@ -311,7 +392,9 @@ export const ProjectUsersProvider: React.FC<{ children: ReactNode }> = ({ childr
       refreshUsers,
       getUserById,
       clearProjectCache,
-      clearAllCache
+      clearAllCache,
+      getAllUsers,
+      getAllUsersFromCache
     }}>
       {children}
     </ProjectUsersContext.Provider>

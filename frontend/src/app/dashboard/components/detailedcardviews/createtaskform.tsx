@@ -225,32 +225,6 @@ const CreateTaskForm = ({ onSave, onCancel, userstories, availableUsers = [], av
           ))}
         </select>
       </div>
-
-      {/* Assignees */}
-      <div className="bg-white p-4 rounded-lg shadow-sm">
-        <label className="block text-lg font-semibold text-[#4A2B4A] mb-2">Assignees</label>
-        
-        {/* Current assignees */}
-        {formData.assignee.length > 0 && (
-          <div className="mb-3 space-y-2">
-            {formData.assignee.map((assignee, index) => (
-              <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded-md">
-                <span className="text-lg">{assignee.users[1]}</span>
-                <Button
-                  type="button"
-                  onClick={() => handleRemoveAssignee(assignee.users[0])}
-                  variant="ghost"
-                  size="sm"
-                  className="text-red-500 hover:text-red-700"
-                >
-                  <Trash className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
-        </div>
-
         <div className="bg-white p-4 rounded-lg shadow-sm">
           <label className="block text-lg font-semibold text-[#4A2B4A] mb-2">Assignees</label>
           {/* Current assignees */}
