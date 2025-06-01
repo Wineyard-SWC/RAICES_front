@@ -8,29 +8,52 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
 import Navbar from "@/components/NavBar"
 import ProfileTab from "./ProfileTab"
 import RolesTab from "./RolesTab"
+import { useSession } from "next-auth/react"
+import { print } from '@/utils/debugLogger'
 
 export default function SettingsContent() {
   const [activeTab, setActiveTab] = useState("profile")
   const [loading, setLoading] = useState(true)
   const router = useRouter()
+  const { data: session, status } = useSession()
 
-  // Verificar si el usuario está autenticado
+  // Verificar si el usuario está autenticado usando NextAuth
   useEffect(() => {
-    const userId = localStorage.getItem("userId")
-    if (!userId) {
+    // If session is still loading, don't do anything yet
+    if (status === "loading") return
+
+    // If no session (not authenticated), redirect to login
+    if (!session) {
+      print("No session found, redirecting to login")
       router.push("/login")
-    } else {
-      setLoading(false)
+      return
     }
-  }, [router])
+    
+    // If we have a session, update userId in your context if needed
+    if (session.user?.uid) {
+      // If you still need userId in localStorage for backward compatibility
+      // This can be removed once all components use session instead
+      if (!localStorage.getItem("userId")) {
+        localStorage.setItem("userId", session.user.uid)
+      }
+    }
+    
+    // User is authenticated, stop loading
+    setLoading(false)
+  }, [session, status, router])
 
   // Manejar el botón de regreso
   const handleGoBack = () => {
     router.back()
   }
 
-  if (loading) {
-    return null
+  // Show loading state while checking session
+  if (loading || status === "loading") {
+    return (
+      <div className="min-h-screen bg-[#ebe5eb]/30 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-[#4a2b4a] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    )
   }
 
   return (

@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAvatar } from '@/contexts/AvatarContext';
 import { CheckCircle, ArrowLeft } from 'lucide-react';
 import { useUpdateAvatar } from '../avatar_creator/hooks/useUpdateAvatar';
+import { print } from '@/utils/debugLogger';
 
 // Estilo para el iframe del editor
 const editorStyle = { width: '100%', height: '100vh', border: 'none' };
@@ -59,32 +60,37 @@ function AvatarEditorContent() {
 
   // Manejador para cuando el avatar es exportado
   const handleAvatarExported = async (event: AvatarExportedEvent) => {
-    const newAvatarUrl = event.data.url;
+    // Add the morphTargets parameter to the avatar URL
+    const baseUrl = event.data.url;
+    const newAvatarUrl = `${baseUrl}?morphTargets=ARKit,Oculus Visemes`;
     
     try {
       // Intentar obtener información de género desde los metadatos
       let updatedGender = gender; // Por defecto mantener el género actual
       
       try {
-        const metadataUrl = newAvatarUrl.replace('.glb', '.json');
+        // Update to use the enhanced URL's base for metadata
+        const metadataUrl = baseUrl.replace('.glb', '.json');
         const response = await fetch(metadataUrl);
         if (response.ok) {
           const metadata = await response.json();
           if (metadata && metadata.outfitGender) {
             updatedGender = metadata.outfitGender === "male" ? "masculine" : "feminine";
           }
+
+          updatedGender = metadata.outfitGender;
         }
       } catch (e) {
         console.warn('Error fetching avatar metadata:', e);
         // Continuar con el género actual si hay error
       }
       
-      // Actualizar en la base de datos
+      // Actualizar en la base de datos con la URL mejorada
       await updateAvatarAndGender(userId, newAvatarUrl, updatedGender);
       
-      // Actualizar en el contexto
+      // Actualizar en el contexto con la URL mejorada
       updateAvatarUrl(newAvatarUrl, updatedGender);
-      
+
       // Mostrar confirmación
       setEditComplete(true);
       
@@ -127,7 +133,7 @@ function AvatarEditorContent() {
       {/* Header con botón de regreso */}
       <div className="absolute top-0 left-0 right-0 bg-[#4A2B4A] text-white z-10 p-4 flex items-center">
         <button
-          onClick={() => router.push('/settings?tab=profile')}
+          onClick={() => router.replace('/settings?tab=profile')}
           className="flex items-center space-x-2 hover:text-purple-200 transition-colors"
         >
           <ArrowLeft size={20} />

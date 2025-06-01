@@ -29,6 +29,8 @@ export default function ProfileTab() {
       fetchAvatar(userId).catch(err => {
         console.error("Error cargando avatar:", err);
       });
+    }else {
+      console.log("Avatar ya disponible o no se requiere carga:", avatarUrl);
     }
   }, [userId, avatarUrl, fetchAvatar]);
 
