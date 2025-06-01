@@ -9,6 +9,7 @@ import { getProjectTasks } from "@/utils/getProjectTasks";
 import { Task } from "@/types/task";
 import { BasicTask } from "@/types/task";
 import { useAvatar } from "@/contexts/AvatarContext";
+import { UserRolesProvider } from "@/contexts/userRolesContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
@@ -17,12 +18,7 @@ async function enrichMemberWithAvatar(
   fetchAvatar: (userId: string) => Promise<string | null>
 ): Promise<SprintMember> {
   try {
-  
-    const userIdToFetch = member.userRef ? member.userRef : member.id;
-    
-    // console.log(`Fetching avatar for ${member.name} (${member.role}): using ID ${userIdToFetch} ---> ${member.userRef}`);
-    
-    const avatarUrl = await fetchAvatar(userIdToFetch);
+    const avatarUrl = await fetchAvatar(member.id);
     return {
       ...member,
       avatar: avatarUrl || member.avatar || null
@@ -55,7 +51,7 @@ async function fetchProjectOwner(
     }
     const list = await res.json();
     
-    console.log("Project users for owner detection:", list); // Para debug
+    // console.log("Project users for owner detection:", list); // Para debug
     
     if (!Array.isArray(list) || list.length === 0) return null;
 
@@ -64,13 +60,12 @@ async function fetchProjectOwner(
     console.log("Selected owner:", raw); // Para debug
     
     const baseMember: SprintMember = {
-      id: String(raw.id || raw.user_id || raw.userId || ''),
+      id: String(raw.userRef || ''),
       name: raw.name || raw.username || raw.email || "Owner",
       role: raw.role || "Owner", 
       avatar: raw.photoURL || raw.avatar || raw.profile_picture,
       capacity: 40, 
-      allocated: 0,
-      userRef: raw.userRef || null
+      allocated: 0
     };
 
     return await enrichMemberWithAvatar(baseMember, fetchAvatar);
@@ -228,6 +223,7 @@ export function useSprintPlanningLogic() {
 
           const owner = await fetchProjectOwner(projectId, fetchAvatar); 
           console.log("Owner found:", owner);
+          console.log("[SPRINT TEAM MEMBERS]", raw.team_members);
 
           // FIX: Asegurar que team_members siempre sea un array
           if (!Array.isArray(raw.team_members)) {
@@ -333,18 +329,76 @@ export function useSprintPlanningLogic() {
   const handleSaveSprint = async () => {
     if (!sprint) return;
 
+    // 1️⃣ Actualizar tasks en el backend antes de guardar el sprint (solo si no es temporal)
+    try {
+      const tasksToUpdate = tasks
+        .filter(t =>
+          sprint.user_stories.some(us => us.selected && us.tasks.includes(t.id))
+        )
+        .map(t => {
+          // Extraer el assigneeId correctamente
+          const assigneeId = Array.isArray(t.assignee_id) 
+            ? t.assignee_id[0]?.[0] || t.assignee_id[0] // Si es [["id", "name"]] toma "id", si es ["id"] toma "id"
+            : t.assignee_id;
+            
+          // Buscar el miembro usando el assigneeId extraído
+          const member = sprint.team_members.find(m => m.id === assigneeId);
+          
+          console.log("Procesando tarea:", t.id, "assignee_id original:", t.assignee_id, "assigneeId extraído:", assigneeId, "member encontrado:", member);
+          
+          return {
+            id: t.id,
+            title: t.title || "",
+            description: t.description || "",
+            user_story_id: t.user_story_id || "",
+            priority: t.priority || "Medium",
+            status_khanban: t.status_khanban || "To Do",
+            story_points: t.story_points ?? 0,
+            // Incluir assignee si hay assigneeId y member
+            ...(assigneeId && member
+              ? { assignee: [[assigneeId, member.name]] }
+              : {})
+          };
+        });
+
+      console.log("[SPRINT PLANNING] Tareas a actualizar (payload):", tasksToUpdate);
+
+      if (tasksToUpdate.length > 0) {
+        const taskRes = await fetch(`${API_URL}/projects/${projectId}/tasks/batch`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(tasksToUpdate)
+        });
+        if (!taskRes.ok) {
+          const taskErrorText = await taskRes.text();
+          console.error("Error updating tasks:", taskErrorText);
+          throw new Error(`Tasks update failed: ${taskRes.status} - ${taskErrorText}`);
+        }
+        const updatedFromServer: Task[] = await taskRes.json();
+        updatedFromServer.forEach(u => {
+          taskContext.updateTaskInProject(projectId, u.id, u);
+        });
+        console.log("[SPRINT PLANNING] Respuesta del backend (tareas actualizadas):", updatedFromServer);
+        // console.log("Tasks updated before saving sprint");
+      }
+    } catch (err) {
+      console.error("Error updating tasks before saving sprint:", err);
+      // Puedes decidir si quieres continuar o abortar el guardado del sprint
+    }
+
+    // 2️⃣ Guardar el sprint como antes
     // Primero, calcular los assignees únicos por user story
     const userStoriesWithAssignees = sprint.user_stories
       .filter((us) => us.selected)
       .map((us) => {
         const rawCriteria = normalizeAcceptanceCriteria(us.userStory);
         const structuredCriteria = ensureAcceptanceCriteriaStructure(rawCriteria);
-        
+
         // Obtener todas las tareas de esta user story
         const storyTasks = tasks.filter(t => 
           us.tasks.includes(t.id) && t.assignee && t.assignee.length > 0
         );
-        
+
         // Extraer assignees únicos de las tareas
         const uniqueAssignees = new Map<string, [string, string]>();
         storyTasks.forEach(task => {
@@ -356,12 +410,12 @@ export function useSprintPlanningLogic() {
             });
           }
         });
-        
+
         // Convertir a formato del backend para user stories
         const assigneeList = Array.from(uniqueAssignees.values()).map(users => ({
           users: users
         }));
-        
+
         return {
           id: us.id,
           title: us.userStory?.title || "Sin título",
@@ -393,13 +447,17 @@ export function useSprintPlanningLogic() {
     setLoading(true);
 
     try {
-      const url = sprintId
-        ? `${API_URL}/projects/${projectId}/sprints/${sprintId}`
-        : `${API_URL}/projects/${projectId}/sprints`;
+      const isTempSprint = sprintId.startsWith("temp-");
 
-      console.log("Guardando sprint con assignees:", sprintId, payload);
+      const url = isTempSprint
+        ? `${API_URL}/projects/${projectId}/sprints`
+        : `${API_URL}/projects/${projectId}/sprints/${sprintId}`;
+
+      const method = isTempSprint ? "POST" : "PATCH";
+
+      // console.log("Guardando sprint con assignees:", sprintId, payload);
       const res = await fetch(url, {
-        method: sprintId ? "PATCH" : "POST",
+        method: method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
@@ -409,9 +467,8 @@ export function useSprintPlanningLogic() {
         console.error("Server response:", errorText);
         throw new Error(`Save failed: ${res.status} - ${errorText}`);
       }
-      
-      const saved: Sprint = await res.json();
 
+      const saved: Sprint = await res.json();
 
       setSprint(saved);
       

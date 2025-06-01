@@ -33,6 +33,9 @@ export default function SprintPlanningContent() {
 
   const currenttasks = getTasksForProject(projectId!);
 
+  console.log("Sprint actual:", sprint);
+  console.log("Tareas actuales:", currenttasks);
+
   if (loading) return <DefaultLoading text="sprint" />;
   
   if (error || !sprint) return (
