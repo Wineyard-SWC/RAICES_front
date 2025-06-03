@@ -1,41 +1,55 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { X, AlertTriangle } from "lucide-react"
-import { useDeleteProject } from "@/hooks/useDeleteProject"
+import { useState } from "react";
+import { X, AlertTriangle } from "lucide-react";
+import { useDeleteProject } from "@/hooks/useDeleteProject";
+import { useDeleteProjectUsers } from "@/hooks/useDeleteProjectUsers";
 
 interface DeleteProjectModalProps {
-  isOpen: boolean
-  onClose: () => void
-  projectId: string
-  projectTitle: string
+  isOpen: boolean;
+  onClose: () => void;
+  projectId: string;
+  projectTitle: string;
 }
 
 const DeleteProjectModal = ({ isOpen, onClose, projectId, projectTitle }: DeleteProjectModalProps) => {
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [successMessage, setSuccessMessage] = useState("")
-  const { deleteProject, error } = useDeleteProject()
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const { deleteProject, error: deleteProjectError } = useDeleteProject();
+  const { deleteProjectUsers, error: deleteRelationsError } = useDeleteProjectUsers();
 
   const handleDelete = async () => {
-    setIsDeleting(true)
+    setIsDeleting(true);
     try {
-      const success = await deleteProject(projectId)
-      if (success) {
-        setSuccessMessage("Project deleted successfully")
+      // console.log("[DELETE PROJECT MODAL] Deleting project-user relations for project:", projectId);
+
+      // Eliminar las relaciones de project_users
+      const relationsDeleted = await deleteProjectUsers(projectId);
+      if (!relationsDeleted) {
+        console.error("Failed to delete project-user relations");
+        return;
+      }
+
+      // console.log("[DELETE PROJECT MODAL] Relations deleted successfully. Proceeding to delete project.");
+
+      // Eliminar el proyecto
+      const projectDeleted = await deleteProject(projectId);
+      if (projectDeleted) {
+        setSuccessMessage("Project deleted successfully");
         setTimeout(() => {
-          onClose()
+          onClose();
           // Refresh the page to update the project list
-          window.location.reload()
-        }, 1500)
+          window.location.reload();
+        }, 1500);
       }
     } catch (error) {
-      console.error("Error deleting project:", error)
+      console.error("Error deleting project:", error);
     } finally {
-      setIsDeleting(false)
+      setIsDeleting(false);
     }
-  }
+  };
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={onClose}>
@@ -57,7 +71,8 @@ const DeleteProjectModal = ({ isOpen, onClose, projectId, projectTitle }: Delete
             You are about to delete the project <strong>"{projectTitle}"</strong>. This action cannot be undone and all associated data will be deleted.
           </p>
 
-          {error && <p className="text-red-500 mb-4">{error}</p>}
+          {deleteProjectError && <p className="text-red-500 mb-4">{deleteProjectError}</p>}
+          {deleteRelationsError && <p className="text-red-500 mb-4">{deleteRelationsError}</p>}
           {successMessage && <p className="text-green-600 mb-4">{successMessage}</p>}
 
           <div className="mt-6 flex justify-end space-x-4">
@@ -79,7 +94,7 @@ const DeleteProjectModal = ({ isOpen, onClose, projectId, projectTitle }: Delete
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default DeleteProjectModal
+export default DeleteProjectModal;

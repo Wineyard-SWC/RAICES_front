@@ -23,8 +23,8 @@ export const useCreateProjectUsers = () => {
     setError(null);
 
     try {
-      console.log("[CREATE PROJECT USERS] Starting creation for projectId:", projectId);
-      console.log("[CREATE PROJECT USERS] Users to create relations for:", users);
+    //   console.log("[CREATE PROJECT USERS] Starting creation for projectId:", projectId);
+    //   console.log("[CREATE PROJECT USERS] Users to create relations for:", users);
 
       const promises = users.map((user) =>
         fetch(`${API_URL}/project_users`, {
@@ -43,20 +43,20 @@ export const useCreateProjectUsers = () => {
 
       const responses = await Promise.all(promises);
 
-      console.log("[CREATE PROJECT USERS] Responses from server:", responses);
+    //   console.log("[CREATE PROJECT USERS] Responses from server:", responses);
 
       const failedResponses = responses.filter((res) => !res.ok);
       if (failedResponses.length > 0) {
-        console.error("[CREATE PROJECT USERS] Failed responses:", failedResponses);
+        console.error("Failed responses:", failedResponses);
         throw new Error(
           `Failed to create ${failedResponses.length} project-user relations`
         );
       }
 
-      console.log("[CREATE PROJECT USERS] All relations created successfully.");
+    //   console.log("[CREATE PROJECT USERS] All relations created successfully.");
       return true;
     } catch (err) {
-      console.error("[CREATE PROJECT USERS] Error creating project-user relations:", err);
+      console.error("Error creating project-user relations:", err);
       setError(err instanceof Error ? err.message : "Unknown error");
       return false;
     } finally {

@@ -39,10 +39,10 @@ const JoinProjectModal = ({ isOpen, onClose, onSuccess }: JoinProjectModalProps)
           setOwnerAvatarUrl(url);
         })
         .catch(error => {
-          console.error(`[JoinProjectModal] Error fetching avatar for owner ${owner.id}:`, error);
+          console.error(`Error fetching avatar for owner ${owner.id}:`, error);
         });
     } else {
-      console.log('[JoinProjectModal] No owner ID available yet');
+      console.log('No owner ID available yet');
     }
   }, [owner, fetchAvatar]);
   

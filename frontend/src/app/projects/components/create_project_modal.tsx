@@ -133,13 +133,13 @@ const CreateProjectModal = ({
         members: selectedUsers.map((user) => user.id),
       };
 
-      console.log("[CREATE PROJECT MODAL] Project data to create:", projectData);
+      // console.log("[CREATE PROJECT MODAL] Project data to create:", projectData);
 
       // Llamar a onCreateProject y obtener el projectId
       const projectId = await onCreateProject(projectData);
 
       if (projectId) {
-        console.log("[CREATE PROJECT MODAL] Project created with ID:", projectId);
+        // console.log("[CREATE PROJECT MODAL] Project created with ID:", projectId);
 
         // Crear relaciones con los usuarios seleccionados
         const usersWithRoles = selectedUsers.map((user) => ({
@@ -147,17 +147,17 @@ const CreateProjectModal = ({
           role: "Developer", // Ajusta el rol según sea necesario
         }));
 
-        console.log("[CREATE PROJECT MODAL] Users to create relations for:", usersWithRoles);
+        // console.log("[CREATE PROJECT MODAL] Users to create relations for:", usersWithRoles);
 
         const success = await createProjectUsers(projectId, usersWithRoles);
 
         if (!success) {
-          console.error("[CREATE PROJECT MODAL] Failed to create project-user relations");
+          console.error("Failed to create project-user relations");
         } else {
-          console.log("[CREATE PROJECT MODAL] All project-user relations created successfully.");
+          console.log("All project-user relations created successfully.");
         }
       } else {
-        console.error("[CREATE PROJECT MODAL] Failed to create project or get projectId.");
+        console.error("Failed to create project or get projectId.");
       }
 
       // Resetear el formulario
