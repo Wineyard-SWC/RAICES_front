@@ -153,7 +153,7 @@ const RoadmapItemSelector: React.FC<RoadmapItemSelectorProps> = ({
 
   return (
       <div className="fixed inset-0 rounded-xl bg-black/30 bg-opacity-50 z-50 flex items-center justify-center">
-        <div className={`bg-white rounded-xl shadow-2xl w-full max-h-[90vh] flex flex-col mx-4 transition-all duration-300 ${
+        <div className={`bg-white rounded-xl shadow-2xl w-full h-[90vh] max-h-[90vh] flex flex-col mx-4 transition-all duration-300 ${
           previewItem ? 'max-w-7xl' : 'max-w-7xl'
         }`}>
         {/* Header */}
@@ -346,7 +346,7 @@ const RoadmapItemSelector: React.FC<RoadmapItemSelectorProps> = ({
               </div>
 
               {/* Preview Content */}
-              <div className="flex-1 p-4 overflow-y-auto">
+              <div className="flex-1 p-4 overflow-y-auto max-h-[50vh] h-[50vh]">
                 <div className="flex justify-center">
                   <RoadmapTreePreview userStory={previewItem as UserStory} allAvailableItems={availableItems} />
                 </div>

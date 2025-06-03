@@ -21,8 +21,13 @@ import { useSuggestedRoadmap } from "./hooks/useSuggestedRoadmaps";
 import { useSuggestedRoadmapsList } from "./hooks/useSuggestedRoadmapsList";
 import { useRoadmapManagementLogic } from "./hooks/useRoadmapManagementLogic";
 
-import { RoadmapItem } from "@/types/roadmap";
+import { RoadmapItem, RoadmapPhase, SavedRoadmap } from "@/types/roadmap";
 import { SuggestedPhase } from "./hooks/interfaces/useSuggestedRoadmapsProps";
+
+import { roadmapPageStyles as styles } from "./styles/roadmapPageStyles";
+import { isBug, isUserStory } from "@/types/taskkanban";
+import { UserStory } from "@/types/userstory";
+import { Bug } from "@/types/bug";
 
 export default function CustomRoadmapPage() {
   const router = useRouter();
@@ -31,6 +36,7 @@ export default function CustomRoadmapPage() {
   const [currentBugs,setCurrentBugs] = useState<RoadmapItem[]>([])
   const [currentUserStories,setCurrentUserStories] = useState<RoadmapItem[]>([])
   const [hasRefreshed,setHasRefreshed] = useState(false)
+  const [addingToExisting, setAddingToExisting] = useState(false);
   const { getTasksForProject } = useTasks();
   const { getBugsForProject } = useBugs();
   const { getUserStoriesForProject } = useUserStories();
@@ -116,17 +122,133 @@ export default function CustomRoadmapPage() {
     showSuggestedRoadmaps();
   };
 
-  const handleUseSelectedPhases = (selectedPhases: SuggestedPhase[]) => {
-    console.log('Creating roadmap with selected phases:', selectedPhases);
+  const handleUseSelectedPhases = (
+    selectedPhases: SuggestedPhase[], 
+    selectedItems: { id: string; title: string }[]
+  ) => {
+
+
+    const convertToRoadmapPhase = (phase: SuggestedPhase, index: number): RoadmapPhase => {
+     
+      const phaseItemUUIDs = phase.user_stories.map(us => {
+        const foundUserStory = currentUserStories.find(userStory => userStory.id === us.id);
+        
+        if (foundUserStory && isUserStory(foundUserStory)) {
+          return foundUserStory.uuid;
+        }  
+
+        return us.id; 
+      
+      });
+
+
+      return {
+        id: crypto.randomUUID(),
+        name: phase.name,
+        description: phase.description || '',
+        color: "#6B7280", 
+        position: { x: 0, y: 0 },
+        items: phaseItemUUIDs, 
+        itemCount: phaseItemUUIDs.length,
+      };
+    };
+
+    const selectedItemsWithUUIDs = selectedItems.map(item => {
+      const foundUserStory = currentUserStories.find(us => us.id === item.id);
+      
+      if (foundUserStory && isUserStory(foundUserStory)) {
+        return {
+          id: foundUserStory.uuid, 
+          title: item.title
+        };
+      }
+      return item;
+    });
+
+    const selectedRoadmapItems: RoadmapItem[] = [];
+  
+    selectedItemsWithUUIDs.forEach(item => {
+      
+      const foundItem = currentUserStories.find(us => us.id === item.id || us.id === item.id) ||
+                      currentTasks.find(task => task.id === item.id) ||
+                      currentBugs.find(bug => bug.id === item.id);
+      
+      if (foundItem) {
+        selectedRoadmapItems.push(foundItem);
+        
+        if (
+          isUserStory(foundItem) && 
+          foundItem.task_list && 
+          Array.isArray(foundItem.task_list)
+        ) 
+        {
+          
+          foundItem.task_list.forEach(taskId => {
+            const relatedTask = currentTasks.find(task => task.id === taskId);
+            if (relatedTask) {
+              selectedRoadmapItems.push(relatedTask);
+            } 
+          });
+
+          const relatedBugs = currentBugs.filter((bug: RoadmapItem) => {
+              if (isBug(bug))
+              {
+                const storyRelated = bug.userStoryRelated;
+                return storyRelated === foundItem.id || 
+                       storyRelated === foundItem.uuid;
+              }
+              else{
+                return false;
+              }
+          });      
+
+          if (relatedBugs.length > 0){
+            relatedBugs.forEach(bug => {
+              selectedRoadmapItems.push(bug);
+             
+            });
+          }
+        }
+      }
+    });
+
+    const convertedPhases: RoadmapPhase[] = selectedPhases.map((phase, index) => 
+      convertToRoadmapPhase(phase, index)
+    );
+
+
+    if (addingToExisting && currentRoadmap) {
+      
+      const updatedItems = [...currentRoadmap.items, ...selectedRoadmapItems];
+      const updatedPhases = [...currentRoadmap.phases, ...convertedPhases];
+
+      handleSaveRoadmap(updatedItems, currentRoadmap.connections, updatedPhases);
+    } 
+    else 
+    {
+      const roadmapName = `AI Suggested Roadmap - ${new Date().toLocaleDateString()}`;
+      const roadmapDescription = `Roadmap generated from ${selectedPhases.length} AI-suggested phases`;
+
+      setNewRoadmapName(roadmapName);
+      setNewRoadmapDescription(roadmapDescription);
+
+      setTimeout(() => {
+        handleCreateNewRoadmap(selectedItems, convertedPhases);
+      }, 0);
+    }
+
     
-    const roadmapName = `AI Suggested Roadmap - ${new Date().toLocaleDateString()}`;
-    const roadmapDescription = `Roadmap generated from ${selectedPhases.length} AI-suggested phases`;
-    
-    setNewRoadmapName(roadmapName);
-    setNewRoadmapDescription(roadmapDescription);
-    handleCreateNewRoadmap();
-    
+    setAddingToExisting(false); 
   };
+
+  useEffect(() => {
+    if (currentRoadmap) {
+      console.log('🎨 Canvas debería mostrar:');
+      console.log('- Roadmap items:', currentRoadmap.items);
+      console.log('- Roadmap phases:', currentRoadmap.phases);
+      console.log('- Available data para canvas:', availableData);
+    }
+  }, [currentRoadmap, availableData]);
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
@@ -151,112 +273,147 @@ export default function CustomRoadmapPage() {
   }
 
   return (
-    <>
-      <Navbar projectSelected={true} />
+  <>
+    <Navbar projectSelected={true} />
+    
+    <div className={styles.container}>
       
-      <div className="min-h-screen bg-[#f5f0f1]">
-        
-        {/* Roadmap Selector Modal */}
-        {showRoadmapSelector && (
-          <RoadmapSelectorModal
-            savedRoadmaps={savedRoadmaps}
-            onClose={() => setShowRoadmapSelector(false)}
-            onSelect={handleLoadRoadmap}
+      {/* Roadmap Selector Modal */}
+      {showRoadmapSelector && (
+        <RoadmapSelectorModal
+          savedRoadmaps={savedRoadmaps}
+          onClose={() => setShowRoadmapSelector(false)}
+          onSelect={handleLoadRoadmap}
+        />
+      )}
+
+      {/* New Roadmap Dialog */}
+      {showNewRoadmapDialog && (
+        <NewRoadmapDialog
+          name={newRoadmapName}
+          description={newRoadmapDescription}
+          onNameChange={setNewRoadmapName}
+          onDescriptionChange={setNewRoadmapDescription}
+          onClose={() => setShowNewRoadmapDialog(false)}
+          onCreate={handleCreateNewRoadmap}
+        />
+      )}
+
+      {/* Collapsible Top Bar */}
+      {showTopBar && currentRoadmap && (
+        <RoadmapTopBar
+          roadmap={currentRoadmap}
+          onNew={() => setShowNewRoadmapDialog(true)}
+          onLoad={() => setShowRoadmapSelector(true)}
+          onExport={handleExportRoadmap}
+          onDuplicate={handleDuplicateRoadmap}
+          onHide={() => setShowTopBar(false)}
+          onGoBack={handleGoBackToStart}
+        />
+      )}
+
+      {/* Restore Top Bar Button */}
+      {!showTopBar && (
+        <button
+          onClick={() => setShowTopBar(true)}
+          className={styles.TopBarWrapper}
+        >
+          Show Header
+        </button>
+      )}
+
+      {/* Canvas Section */}
+      <div className={styles.canvasWrapper}>
+        {currentRoadmap ? (
+          <CustomRoadmapCanvas 
+            ref={canvasRef}
+            availableData={availableData}
+            onSave={handleSaveRoadmap}
+            currentRoadmap={currentRoadmap}
+            key={currentRoadmap.id}
           />
-        )}
-
-        {/* New Roadmap Dialog */}
-        {showNewRoadmapDialog && (
-          <NewRoadmapDialog
-            name={newRoadmapName}
-            description={newRoadmapDescription}
-            onNameChange={setNewRoadmapName}
-            onDescriptionChange={setNewRoadmapDescription}
-            onClose={() => setShowNewRoadmapDialog(false)}
-            onCreate={handleCreateNewRoadmap}
-          />
-        )}
-
-        {/* Collapsible Top Bar */}
-        {showTopBar && currentRoadmap && (
-          <RoadmapTopBar
-            roadmap={currentRoadmap}
-            onNew={() => setShowNewRoadmapDialog(true)}
-            onLoad={() => setShowRoadmapSelector(true)}
-            onExport={handleExportRoadmap}
-            onDuplicate={handleDuplicateRoadmap}
-            onHide={() => setShowTopBar(false)}
-            onGoBack={handleGoBackToStart}
-          />
-        )}
-
-        {/* Restore Top Bar Button */}
-        {!showTopBar && (
-          <button
-            onClick={() => setShowTopBar(true)}
-            className="absolute top-20 right-4 z-10 bg-white shadow-lg border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
-          >
-            Show Header
-          </button>
-        )}
-
-        {/* Canvas Section */}
-        <div className="w-full mx-auto p-4">
-          {currentRoadmap ? (
-            <CustomRoadmapCanvas 
-              ref={canvasRef}
-              availableData={availableData}
-              onSave={handleSaveRoadmap}
-            />
-          ) : (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-              <div className="max-w-md mx-auto">
-                <div className="text-6xl mb-4">🗺️</div>
-                <h3 className="text-2xl font-semibold text-gray-800 mb-2">
-                  Start Your Custom Roadmap
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  Create a new roadmap or load an existing one to start visualizing 
-                  and planning your project in a structured way.
-                </p>
-                <div className="flex gap-3 justify-center">
-                  <button 
-                    onClick={() => setShowNewRoadmapDialog(true)}
-                    className="px-4 py-2 text-[#694969] rounded-lg border border-black shadow shadow-mb hover:bg-[#694969] hover:text-white transition-colors"
-                  >
-                    Create New Roadmap
-                  </button>
-                  <button 
-                    onClick={() => setShowRoadmapSelector(true)}
-                    className="px-4 py-2 text-[#694969] rounded-lg border border-black shadow shadow-mb hover:bg-[#694969] hover:text-white transition-colors"
-                  >
-                    Load Existing
-                  </button>
-                  {/* Generate Suggested Roadmap Button */}
-                  <button
-                    onClick={handleGenerateSuggestions }
-                    disabled={loadingGenerativeError || currentUserStories.length === 0}
-                    className={`px-4 py-2 rounded-lg border transition-colors font-medium flex items-center gap-2 shadow-sm ${
-                      loadingGenerativeError || currentUserStories.length === 0
-                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed border-gray-300'
-                        : 'text-[#694969] border-black hover:bg-[#694969] hover:text-white'
-                    }`}
-                  >
-                    {loadingGenerativeError ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        Suggest Roadmap
-                      </>
-                    )}
-                  </button>
-                </div>
+        ) : (
+          <div className={styles.emptyStateWrapper}>
+            <div className="w-full mx-auto">
+              <div className={styles.icon}>🗺️</div>
+              <h3 className={styles.title}>
+                Start Your Custom Roadmap
+              </h3>
+              <p className={styles.subtitle}>
+                Create a new roadmap or load an existing one to start visualizing 
+                and planning your project in a structured way.
+              </p>
+              <div className={styles.buttonRow}>
+                <button 
+                  onClick={() => setShowNewRoadmapDialog(true)}
+                  className={styles.button}
+                >
+                  Create New Roadmap
+                </button>
+                <button 
+                  onClick={() => setShowRoadmapSelector(true)}
+                  className={styles.button}                
+                >
+                  Load Existing
+                </button>
+                {/* Generate Suggested Roadmap Button */}
+                <button
+                  onClick={handleGenerateSuggestions}
+                  disabled={loadingGenerativeError || currentUserStories.length === 0}
+                  className={`${styles.suggestButton} ${
+                    loadingGenerativeError || currentUserStories.length === 0
+                      ? styles.suggestButtonDisabled
+                      : styles.suggestButtonEnabled
+                  }`}
+                >
+                  {loadingGenerativeError ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      Suggest Roadmap
+                    </>
+                  )}
+                </button>
               </div>
+              
+              {/* Opciones para roadmap existente vs nuevo - Solo mostrar si hay roadmaps cargados */}
+              {savedRoadmaps.length > 0 && (
+                <div className={styles.suggestionOptions}>
+                  <h4 className={styles.suggestionOptionsTitle}>
+                    Suggestion Options
+                  </h4>
+                  <div className={styles.suggestionOptionsRow}>
+                    <label className={styles.suggestionOptionsLabel}>
+                      <input
+                        type="radio"
+                        name="roadmapOption"
+                        checked={!addingToExisting}
+                        onChange={() => setAddingToExisting(false)}
+                        className="text-black"
+                      />
+                      Create new roadmap
+                    </label>
+                    <label className={styles.suggestionOptionsLabel}>
+                      <input
+                        type="radio"
+                        name="roadmapOption"
+                        checked={addingToExisting}
+                        onChange={() => setAddingToExisting(true)}
+                        className="text-black"
+                      />
+                      Add to existing roadmap
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {/* Lista de roadmaps sugeridos */}
               {showSuggestions && (
-                 <SuggestedRoadmapsList
+                <div className="mt-4">
+                <SuggestedRoadmapsList
                   suggestedRoadmaps={suggestedRoadmaps}
                   onClose={hideSuggestedRoadmaps}
                   onSelectPhases={handleUseSelectedPhases}
@@ -264,13 +421,23 @@ export default function CustomRoadmapPage() {
                   error={generativeRoadmapError}
                   isMinimized={isMinimized}
                   onMinimize={minimizeSuggestions}
-                  onMaximize={maximizeSuggestions}/>
+                  onMaximize={maximizeSuggestions}
+                />
+                <div className="mt-4 text-center">
+                  <button
+                    onClick={hideSuggestedRoadmaps}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Close Suggestions
+                  </button>
+                </div>
+              </div>
               )}
-      
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
-    </>
-  );
+    </div>
+  </>
+);
 }

@@ -26,7 +26,7 @@ export default function SuggestedPhaseCard({
             type="checkbox"
             checked={isSelected}
             onChange={onToggle}
-            className="mt-1 h-5 w-5 text-[#694969] rounded border-gray-300 focus:ring-[#694969]"
+            className="mt-1 h-5 w-5 text-[#694969] rounded border-gray-300 accent-[#694969] focus:ring-[#694969]"
           />
           
           <div className="flex-1 min-w-0">

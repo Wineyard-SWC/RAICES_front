@@ -27,15 +27,17 @@ import useCustomRoadmapLogic from '../hooks/useRoadmapLogic';
 import RoadmapItemSelector from './roadmapitemselector';
 import type { RoadmapPhase,RoadmapItem, RoadmapConnection } from '@/types/roadmap';
 import { getItemId } from '@/types/roadmap';
+import { SavedRoadmap } from '@/types/roadmap';
 
 
 type CustomRoadmapCanvasProps = {
   availableData: RoadmapItem[];
   onSave: (items: RoadmapItem[], connections: RoadmapConnection[], phases: RoadmapPhase[]) => Promise<void>;
+  currentRoadmap?: SavedRoadmap;
 };
 
 const CustomRoadmapCanvas = forwardRef<HTMLDivElement, CustomRoadmapCanvasProps>(
-  ({ availableData, onSave }, ref) => {
+  ({ availableData, onSave ,currentRoadmap }, ref) => {
   const [showItemSelector, setShowItemSelector] = useState(false);
   const [showPhaseCreator, setShowPhaseCreator] = useState(false);
   const [newPhaseName, setNewPhaseName] = useState('');
@@ -44,6 +46,9 @@ const CustomRoadmapCanvas = forwardRef<HTMLDivElement, CustomRoadmapCanvasProps>
   const [showMiniMap, setShowMiniMap] = useState(true);
   const [selectedPhaseId, setSelectedPhaseId] = useState('')
   const [filterByPhase, setFilterByPhase] = useState(false);
+
+  const initialData = currentRoadmap ? currentRoadmap.items : [];
+  const initialPhases = currentRoadmap ? currentRoadmap.phases : [];
 
   const {
     nodes,
@@ -78,7 +83,9 @@ const CustomRoadmapCanvas = forwardRef<HTMLDivElement, CustomRoadmapCanvasProps>
     availableData,
     onSave,
     filterByPhase,
-    selectedPhaseId
+    selectedPhaseId,
+    initialItems: initialData,      
+    initialPhases: initialPhases,
   });
 
   useEffect(() => {
@@ -99,7 +106,7 @@ const CustomRoadmapCanvas = forwardRef<HTMLDivElement, CustomRoadmapCanvasProps>
 
     const filtered = nodes.filter(node => {
       if (node.data?.type === 'phase') {
-        return true;
+        return node.data.id === selectedPhaseId;;
       }
       
       const selectedPhase = roadmapPhases.find(p => p.id === selectedPhaseId);
@@ -148,7 +155,17 @@ const CustomRoadmapCanvas = forwardRef<HTMLDivElement, CustomRoadmapCanvasProps>
       setSelectedPhaseId('');
       setFilterByPhase(false);
     } else {
-      setSelectedPhaseId(phaseId);
+      setSelectedPhaseId(phaseId)
+       setTimeout(() => {
+        if (reactFlowInstance.current) {
+          reactFlowInstance.current.fitView({
+            padding: 0.15,
+            includeHiddenNodes: false,
+            maxZoom: 1.2,
+            duration: 800 
+          });
+        }
+      }, 100);;
     }
   };
 

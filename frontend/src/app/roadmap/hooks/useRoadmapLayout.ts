@@ -4,7 +4,12 @@ import { RoadmapPhase } from '@/types/roadmap';
 import { RoadmapItem } from '@/types/roadmap';
 import { getItemId } from '@/types/roadmap';
 
-export const useRoadmapLayout = (roadmapPhases: RoadmapPhase[], roadmapItems:RoadmapItem[]) => {
+export const useRoadmapLayout = (
+  roadmapPhases: RoadmapPhase[], 
+  roadmapItems:RoadmapItem[],
+  selectedPhaseId:string,
+  filterByPhase:boolean,
+) => {
   const [phaseLayoutManagers, setPhaseLayoutManagers] = useState<Map<string, TreeLayoutManager>>(new Map());
 
   const LAYOUT_CONSTANTS = {
@@ -95,13 +100,29 @@ export const useRoadmapLayout = (roadmapPhases: RoadmapPhase[], roadmapItems:Roa
   }, []);
   
   const adjustedRoadmapPhases = useMemo(() => {
-    return roadmapPhases.map((phase, index) => ({
-      ...phase,
-      position: {
-        x: 100 + (index * LAYOUT_CONSTANTS.PHASE_SPACING_X),
-        y: 50 
+    const result = roadmapPhases.map((phase, index) => {
+      let newPosition;
+
+      if (selectedPhaseId && phase.id === selectedPhaseId) {
+          newPosition = { x: 200, y: 50 };
+        
       }
-    }));
+      else {
+        newPosition = {
+          x: 100 + (index * LAYOUT_CONSTANTS.PHASE_SPACING_X),
+          y: 50 
+        };
+      }
+      
+      return {
+        ...phase,
+        position: newPosition
+      };
+
+    });
+
+    return result;
+
   }, [roadmapPhases, LAYOUT_CONSTANTS.PHASE_SPACING_X]);
   
 
@@ -122,7 +143,7 @@ export const useRoadmapLayout = (roadmapPhases: RoadmapPhase[], roadmapItems:Roa
     const newManagers = new Map<string, TreeLayoutManager>();
     newManagers.set('global', new TreeLayoutManager('global', { x: 100, y: 100 }));
     adjustedRoadmapPhases.forEach(phase => {
-      newManagers.set(phase.id, new TreeLayoutManager(phase.id, phase.position));
+      newManagers.set(phase.id, new TreeLayoutManager(phase.id, { x: 100, y: 100 }));
     });
     setPhaseLayoutManagers(newManagers);
   }, [adjustedRoadmapPhases]);

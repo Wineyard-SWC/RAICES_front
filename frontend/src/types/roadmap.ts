@@ -81,6 +81,11 @@ export interface TaskCardProps {
   isConnectable?: boolean;
 }
 
+export interface PhaseCardProps {
+  data: NodeData;
+  isConnectable?: boolean;
+}
+
 //Interface para el componente encargado de mostrar el panel de control del roadmap
 export interface ControlPanelProps {
   onAddNode: (type: 'user-story' | 'task' | 'bug') => void;

@@ -1,21 +1,24 @@
+import { PhaseCardProps, RoadmapPhase } from '@/types/roadmap';
 import React from 'react';
 
-interface PhaseCardProps {
-  data: {
-    id: string;
-    title: string;
-    description?: string;
-    color: string;
-    itemCount: number;
-    type: 'phase';
-  };
-  isConnectable: boolean;
-  hasConnections: boolean;
-}
 
-const PhaseCard: React.FC<PhaseCardProps> = ({ data, isConnectable, hasConnections = false }) => {
-  const { title, description, color, itemCount } = data;
-  const actualItemCount = itemCount ?? 0;
+
+const PhaseCard: React.FC<PhaseCardProps> = ({ data, isConnectable = false }) => {
+  const { type, title, originalData, isCollapsed, hasCollapsibleChildren, hasConnections  } = data;
+  let actualItemCount = 0;
+  let color = "#6B7280"; 
+  let description = "";
+  let id = "";
+
+  if (type === 'phase' && originalData) {
+    const phaseData = originalData as RoadmapPhase;
+    
+    id = phaseData.id;
+    description = phaseData.description || "";
+    color = phaseData.color || "#6B7280";
+    actualItemCount = phaseData.items ? phaseData.items.length : 0;
+  }
+ 
 
   return (
     <div className="relative">
@@ -42,14 +45,12 @@ const PhaseCard: React.FC<PhaseCardProps> = ({ data, isConnectable, hasConnectio
           
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xl font-bold">{title}</h3>
-              <div className="bg-white bg-opacity-20 rounded-full px-3 py-1">
-                <span className="text-sm font-semibold">{actualItemCount}</span>
-              </div>
+              <h3 className="text-xl text-black font-bold">{title}</h3>
+              
             </div>
             
             {description && (
-              <p className="text-sm opacity-90 leading-relaxed">
+              <p className="text-sm text-black opacity-90 leading-relaxed">
                 {description}
               </p>
             )}
@@ -69,7 +70,7 @@ const PhaseCard: React.FC<PhaseCardProps> = ({ data, isConnectable, hasConnectio
                 className="h-2 rounded-full transition-all duration-500"
                 style={{ 
                   backgroundColor: color,
-                  width: itemCount > 0 ? '100%' : '0%'
+                  width: actualItemCount > 0 ? '100%' : '0%'
                 }}
               ></div>
             </div>

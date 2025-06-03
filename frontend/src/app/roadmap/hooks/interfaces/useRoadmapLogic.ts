@@ -7,6 +7,8 @@ export interface UseCustomRoadmapLogicProps {
   onSave?: (items: RoadmapItem[], connections: RoadmapConnection[], phases: RoadmapPhase[]) => Promise<void>;
   filterByPhase?: boolean;
   selectedPhaseId?:string;
+  initialItems?:RoadmapItem[],     
+  initialPhases?:RoadmapPhase[] ,
 }
 
 export interface UseCustomRoadmapLogicReturn {

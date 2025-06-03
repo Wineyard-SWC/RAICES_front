@@ -40,7 +40,7 @@ export interface SuggestedRoadmapsActionsProps {
 
 export interface SuggestedRoadmapsListProps extends SuggestedRoadmapsBasicProps {
   suggestedRoadmaps: SuggestedPhase[];
-  onSelectPhases: (selectedPhases: SuggestedPhase[]) => void;
+  onSelectPhases: (selectedPhases: SuggestedPhase[], selectedItems: { id: string; title: string }[]) => void;
   loading: boolean;
   error: string | null;
 }

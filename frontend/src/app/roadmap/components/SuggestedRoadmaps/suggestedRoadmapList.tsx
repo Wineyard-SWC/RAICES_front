@@ -39,8 +39,16 @@ export default function SuggestedRoadmapsList({
   };
 
   const handleUseSelected = () => {
-    const selected = Array.from(selectedPhases).map(index => suggestedRoadmaps[index]);
-    onSelectPhases(selected);
+    const selected = Array.from(selectedPhases).map(index => {
+      return suggestedRoadmaps[index];
+    });
+    
+    const selectedItems = selected.flatMap(phase => {
+      return phase.user_stories;
+    });
+
+    onSelectPhases(selected, selectedItems);
+    setSelectedPhases(new Set());
   };
 
   const handleClearSuggestions = () => {

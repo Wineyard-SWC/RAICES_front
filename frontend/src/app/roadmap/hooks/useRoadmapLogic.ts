@@ -15,7 +15,9 @@ export const useCustomRoadmapLogic = ({
   availableData = [], 
   onSave,
   filterByPhase = false,
-  selectedPhaseId = ''
+  selectedPhaseId = '',
+  initialItems = [],     
+  initialPhases = [],
 }: UseCustomRoadmapLogicProps): UseCustomRoadmapLogicReturn => {
   
   const nodeTypes = {
@@ -37,7 +39,7 @@ export const useCustomRoadmapLogic = ({
     changes,
     setChanges,
     savedPositionsRef,
-  } = useRoadmapState(availableData);
+  } = useRoadmapState(availableData,initialItems,initialPhases);
 
   const { 
     phaseLayoutManagers, 
@@ -46,7 +48,7 @@ export const useCustomRoadmapLogic = ({
     createUnifiedLayout,
     createPhaseLayout,
     createAutoLayout 
-  } = useRoadmapLayout(roadmapPhases, roadmapItems);
+  } = useRoadmapLayout(roadmapPhases, roadmapItems, selectedPhaseId, filterByPhase);
 
 
   const {
