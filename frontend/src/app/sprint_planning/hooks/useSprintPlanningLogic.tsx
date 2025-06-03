@@ -12,63 +12,79 @@ import { useAvatar } from "@/contexts/AvatarContext";
 import { UserRolesProvider } from "@/contexts/userRolesContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL!;
+const AVATAR_API = process.env.NEXT_PUBLIC_AVATAR_API!;
 
-async function enrichMemberWithAvatar(
-  member: SprintMember, 
-  fetchAvatar: (userId: string) => Promise<string | null>
-): Promise<SprintMember> {
+async function fetchAvatar(userId: string): Promise<string | null> {
+  if (!userId) return null;
+
+  try {
+    console.log(`🔍 Fetching avatar for user: ${userId}`);
+    const response = await fetch(`${AVATAR_API}/users/${userId}`);
+
+    if (response.status === 404) {
+      console.log(`❌ Avatar not found for user: ${userId}`);
+      return null;
+    }
+
+    if (!response.ok) {
+      throw new Error(`Error fetching avatar: ${response.statusText}`);
+    }
+
+    const userData = await response.json();
+    const avatarUrl = userData.avatar_url || userData.avatarUrl || null;
+
+    console.log(`✅ Avatar fetched for user: ${userId}`, avatarUrl);
+    return avatarUrl;
+  } catch (err) {
+    console.error(`❌ Error fetching avatar for user: ${userId}`, err);
+    return null;
+  }
+}
+
+async function enrichMemberWithAvatar(member: SprintMember): Promise<SprintMember> {
   try {
     const avatarUrl = await fetchAvatar(member.id);
     return {
       ...member,
-      avatar: avatarUrl || member.avatar || null
+      avatar: avatarUrl || member.avatar || null,
     };
   } catch (error) {
-    console.error(`Error fetching avatar for member ${member.id}:`, error);
+    console.error(`Error enriching member ${member.id}:`, error);
     return member;
   }
 }
 
-async function enrichMembersWithAvatars(
-  members: SprintMember[], 
-  fetchAvatar: (userId: string) => Promise<string | null>
-): Promise<SprintMember[]> {
+async function enrichMembersWithAvatars(members: SprintMember[]): Promise<SprintMember[]> {
   const enrichedMembers = await Promise.all(
-    members.map(member => enrichMemberWithAvatar(member, fetchAvatar))
+    members.map((member) => enrichMemberWithAvatar(member))
   );
   return enrichedMembers;
 }
 
-async function fetchProjectOwner(
-  projectId: string,
-  fetchAvatar: (userId: string) => Promise<string | null> 
-): Promise<SprintMember|null> {
+async function fetchProjectOwner(projectId: string): Promise<SprintMember | null> {
   try {
     const res = await fetch(`${API_URL}/project_users/project/${projectId}`);
     if (!res.ok) {
       console.error("Error fetching project users:", res.status);
       return null;
     }
+
     const list = await res.json();
-    
-    // console.log("Project users for owner detection:", list); // Para debug
-    
     if (!Array.isArray(list) || list.length === 0) return null;
 
-    const raw = list.find((u:any) => (u.role || "").toLowerCase() === "owner") || list[0];
-    
-    console.log("Selected owner:", raw); // Para debug
-    
+    const raw = list.find((u: any) => (u.role || "").toLowerCase() === "owner") || list[0];
+    const avatarUrl = await fetchAvatar(raw.userRef || raw.id || raw.user_id || raw.userId);
+
     const baseMember: SprintMember = {
-      id: String(raw.userRef || ''),
+      id: String(raw.userRef || raw.id || raw.user_id || raw.userId || ""),
       name: raw.name || raw.username || raw.email || "Owner",
-      role: raw.role || "Owner", 
-      avatar: raw.photoURL || raw.avatar || raw.profile_picture,
-      capacity: 40, 
-      allocated: 0
+      role: raw.role || "Owner",
+      avatar: avatarUrl || raw.photoURL || raw.avatar || raw.profile_picture,
+      capacity: 40,
+      allocated: 0,
     };
 
-    return await enrichMemberWithAvatar(baseMember, fetchAvatar);
+    return baseMember;
   } catch (error) {
     console.error("Error in fetchProjectOwner:", error);
     return null;
@@ -111,12 +127,11 @@ export function useSprintPlanningLogic() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string|null>(null);
   const [openSB, setOpenSB] = useState(true);
-  const { fetchAvatar } = useAvatar();
   
   const makeLocalSprint = async (): Promise<Sprint> => {
     const now = new Date().toISOString();
     const in2w = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
-    const owner = await fetchProjectOwner(projectId, fetchAvatar);
+    const owner = await fetchProjectOwner(projectId);
     
     return {
       id: `temp-${Date.now()}`,
