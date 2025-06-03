@@ -67,6 +67,7 @@ const TeamsView = () => {
       teams.forEach((team) => {
         initialTabs[team.id] = "overview";
       });
+      // console.log("[TEAM VIEW] Initializing tabs:", initialTabs);
       setActiveTab(initialTabs);
       isTabsInitialized.current = true;
     }
@@ -124,6 +125,7 @@ const TeamsView = () => {
   };
 
   const toggleTab = (teamId: string, tab: string) => {
+    // console.log(`[TEAM VIEW] Toggling tab for team ${teamId}: ${tab}`);
     setActiveTab((prev) => ({
       ...prev,
       [teamId]: tab,
@@ -140,7 +142,7 @@ const TeamsView = () => {
 
   const handleEditTeam = (team: any) => {
     if (team.isInitial) {
-      console.log("The initial team cannot be edited.");
+      // console.log("The initial team cannot be edited.");
       return;
     }
 
@@ -152,7 +154,7 @@ const TeamsView = () => {
 
   const handleDeleteTeam = (team: any) => {
     if (team.isInitial) {
-      console.log("The initial team cannot be deleted.");
+      // console.log("The initial team cannot be deleted.");
       return;
     }
 
@@ -186,7 +188,7 @@ const TeamsView = () => {
         // Consultar al backend si ya existe un equipo inicial
         const fetchedTeams = await fetchTeams(projectId);
         const initialTeamExists = fetchedTeams.some((team) => team.isInitial === true);
-        console.log("[TEAM VIEW] Initial team exists:", initialTeamExists);
+        // console.log("[TEAM VIEW] Initial team exists:", initialTeamExists);
 
         if (!initialTeamExists) {
           const initialTeam = {
@@ -199,15 +201,15 @@ const TeamsView = () => {
           const members = projectUsers.map((user) => user.userRef);
 
           try {
-            console.log("[TEAM VIEW] Creating initial team...");
+            // console.log("[TEAM VIEW] Creating initial team...");
             await createTeam(initialTeam, members);
-            console.log("[TEAM VIEW] Initial team created successfully");
+            // console.log("[TEAM VIEW] Initial team created successfully");
             setInitialTeamCreated(true);
           } catch (err) {
             console.error("Error creating initial team:", err);
           }
         } else {
-          console.log("[TEAM VIEW] Initial team already exists");
+          // console.log("[TEAM VIEW] Initial team already exists");
           setInitialTeamCreated(true);
         }
       }
@@ -363,11 +365,11 @@ const TeamsView = () => {
               className={`bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow ${
                 team.isInitial ? "border-2 border-[#4a2b4a]" : ""
               }`}
-              onClick={() => !team.isInitial && navigateToTeamDetails(team.id)}
+              onClick={() => navigateToTeamDetails(team.id)}
             >
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-semibold">
-                  {team.isInitial ? "🌟 " : ""}Team - {team.name}
+                  Team - {team.name}
                 </h2>
                 {canManageTeams && !team.isInitial && (
                   <div className="flex space-x-2">
@@ -446,7 +448,7 @@ const TeamsView = () => {
                   Members
                 </button>
               </div>
-              {activeTab[team.id] === "overview" && (
+              {(activeTab[team.id] === "overview" || !activeTab[team.id]) && (
                 <>
                   <p className="text-sm text-gray-600 mb-6">{team.description}</p>
                   <div className="flex justify-between items-center">

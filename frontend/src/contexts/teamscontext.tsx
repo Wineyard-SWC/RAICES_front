@@ -43,7 +43,8 @@ type TeamsContextType = {
   getTeamMetrics: (teamId: string, projectId: string) => Promise<void>;
   createTeam: (team: { name: string; description: string; projectId: string; isInitial?: boolean }, members: string[]) => Promise<void>;
   updateTeam: (teamId: string, team: { name?: string; description?: string; members?: string[] }, projectId: string) => Promise<void>;
-  deleteTeam: (teamId: string, projectId: string) => Promise<void>;
+  deleteTeam: (teamId: string, projectId: string) => Promise<void>; 
+  setTeams: React.Dispatch<React.SetStateAction<Team[]>>; 
 };
 
 const TeamsContext = createContext<TeamsContextType | undefined>(undefined);
@@ -221,6 +222,7 @@ export const TeamsProvider = ({ children }: { children: React.ReactNode }) => {
         createTeam,
         updateTeam,
         deleteTeam,
+        setTeams,
       }}
     >
       {children}
