@@ -10,6 +10,8 @@ import { Task } from "@/types/task";
 import { BasicTask } from "@/types/task";
 import { useAvatar } from "@/contexts/AvatarContext";
 import { UserRolesProvider } from "@/contexts/userRolesContext";
+import { getProjectSprints } from "@/utils/getProjectSprints";
+import { validateSprintDates } from "@/utils/validateSprintDates";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 const AVATAR_API = process.env.NEXT_PUBLIC_AVATAR_API!;
@@ -209,6 +211,11 @@ export function useSprintPlanningLogic() {
       try {
         setLoading(true);
         
+        console.log("🔍 [DEBUG] Starting load process");
+        console.log("🔍 [DEBUG] projectId:", projectId);
+        console.log("🔍 [DEBUG] sprintId:", sprintId);
+        console.log("🔍 [DEBUG] Current sprint in context:", sprint);
+        
         let projectTasks: Task[] = [];
         try {
           projectTasks = await taskContext.loadTasksIfNeeded(
@@ -222,30 +229,81 @@ export function useSprintPlanningLogic() {
         }
         
         setTasks(projectTasks);
+        console.log("🔍 [DEBUG] Tasks loaded:", projectTasks.length);
 
-        // Si ya hay un sprint en el contexto y es el mismo que estamos buscando, usarlo
-        if (sprint && sprint.id === sprintId) {
-          console.log("Using existing sprint from context:", sprint.id);
+        if (sprint && 
+            sprint.id === sprintId && 
+            sprint.project_id === projectId) {
+          console.log("🔍 [DEBUG] Using existing sprint from context:", sprint.id);
+          console.log("🔍 [DEBUG] Sprint user stories:", sprint.user_stories?.length);
+          
+          if (!sprint.user_stories || sprint.user_stories.length === 0) {
+            console.log("🔍 [DEBUG] Sprint exists but no user stories, loading them...");
+            
+            let stories: any[] = [];
+            try {
+              stories = await userStoryContext.loadUserStoriesIfNeeded(
+                projectId,
+                getProjectUserStories,
+                30 * 60 * 1000        
+              );
+            } catch (err) {
+              stories = await getProjectUserStories(projectId);
+            }
+            
+            const mappedUserStories = stories.map(st => {
+              const acceptance_criteria = normalizeAcceptanceCriteria(st);
+              const structuredCriteria = ensureAcceptanceCriteriaStructure(acceptance_criteria);
+              
+              const relatedTaskIds = projectTasks
+                .filter(t => t.user_story_id === st.uuid)
+                .map(t => t.id);
+                      
+              return {
+                id: st.uuid,
+                userStory: { 
+                  ...st, 
+                  acceptance_criteria: structuredCriteria
+                },
+                selected: false,
+                tasks: relatedTaskIds,
+              };
+            });
+            
+            // 🔥 ACTUALIZAR solo las user stories, manteniendo el resto del sprint
+            setSprint({
+              ...sprint,
+              user_stories: mappedUserStories,
+            });
+            
+            console.log("🔍 [DEBUG] User stories added to existing sprint");
+          }
+          
           setLoading(false);
           return;
         }
 
+        console.log("🔍 [DEBUG] Sprint condition check:");
+        console.log("🔍 [DEBUG] - sprintId exists?", !!sprintId);
+        console.log("🔍 [DEBUG] - sprintId starts with temp?", sprintId.startsWith("temp-"));
+        console.log("🔍 [DEBUG] - Context sprint matches?", sprint?.id === sprintId);
+
         if (sprintId && !sprintId.startsWith("temp-")) {
+          console.log("🔍 [DEBUG] Loading existing sprint from API");
           const sprintRes = await fetch(`${API_URL}/projects/${projectId}/sprints/${sprintId}`);
           
           if (!sprintRes.ok) throw new Error("Sprint not found");
           const raw: Sprint = await sprintRes.json();
 
-          const owner = await fetchProjectOwner(projectId, fetchAvatar); 
-          console.log("Owner found:", owner);
-          console.log("[SPRINT TEAM MEMBERS]", raw.team_members);
+          const owner = await fetchProjectOwner(projectId); 
+          console.log("🔍 [DEBUG] Owner found:", owner);
+          console.log("🔍 [DEBUG] [SPRINT TEAM MEMBERS]", raw.team_members);
 
-          // FIX: Asegurar que team_members siempre sea un array
           if (!Array.isArray(raw.team_members)) {
             raw.team_members = [];
           }
 
-          const enrichedMembers = await enrichMembersWithAvatars(raw.team_members, fetchAvatar);
+          const enrichedMembers = await enrichMembersWithAvatars(raw.team_members);
 
           if (owner) {
             const existingMember = enrichedMembers.find(m => m.id === owner.id);
@@ -254,30 +312,46 @@ export function useSprintPlanningLogic() {
             }
           }
 
-          const hydratedStories: SprintUserStory[] = raw.user_stories.map((us: any) => {
-            if (us.userStory && typeof us.userStory === "object") {
-              return us as SprintUserStory;
-            }
+          let allProjectStories: any[] = [];
+          try {
+            allProjectStories = await userStoryContext.loadUserStoriesIfNeeded(
+              projectId,
+              getProjectUserStories,
+              30 * 60 * 1000        
+            );
+          } catch (err) {
+            allProjectStories = await getProjectUserStories(projectId);
+          }
+          
+          console.log("🔍 [DEBUG] All project stories loaded for existing sprint:", allProjectStories.length);
 
-            const fullTaskIds = Array.isArray(us.tasks)
-              ? us.tasks.filter((taskId: string) => 
-                  projectTasks.some(pt => pt.id === taskId)
-                )
-              : [];
+          const sprintStoryMap = new Map();
+          raw.user_stories.forEach(us => {
+            sprintStoryMap.set(us.id, us);
+          });
 
-            const acceptance_criteria = normalizeAcceptanceCriteria(us);
+          const hydratedStories: SprintUserStory[] = allProjectStories.map((st) => {
+            const existingSprintStory = sprintStoryMap.get(st.uuid);
+            
+            const acceptance_criteria = normalizeAcceptanceCriteria(st);
             const structuredCriteria = ensureAcceptanceCriteriaStructure(acceptance_criteria);
+            
+            const relatedTaskIds = projectTasks
+              .filter(t => t.user_story_id === st.uuid)
+              .map(t => t.id);
 
             return {
-              id: us.id,
-              userStory: {
-                ...us,
+              id: st.uuid,
+              userStory: { 
+                ...st, 
                 acceptance_criteria: structuredCriteria
               },
-              tasks: fullTaskIds,
-              selected: !!us.selected
+              selected: existingSprintStory ? !!existingSprintStory.selected : false,
+              tasks: relatedTaskIds,
             } as SprintUserStory;
           });
+
+          console.log("🔍 [DEBUG] Hydrated stories for existing sprint:", hydratedStories.length);
 
           setSprint({ 
             ...raw,  
@@ -285,11 +359,11 @@ export function useSprintPlanningLogic() {
             user_stories: hydratedStories
           });
 
-        }
-        else if (!sprint || sprint.project_id !== projectId) {
-          // Solo crear un nuevo sprint si no hay uno en el contexto o es de otro proyecto
+        } else {
+          // 🔥 FIX: Siempre crear un nuevo sprint cuando no hay sprintId o es temporal
+          console.log("🔍 [DEBUG] Creating new sprint or loading user stories");
           const newSprint = await makeLocalSprint();
-          setSprint(newSprint);
+          console.log("🔍 [DEBUG] New sprint created:", newSprint.id);
 
           let stories: any[] = [];
           try {
@@ -302,6 +376,8 @@ export function useSprintPlanningLogic() {
             stories = await getProjectUserStories(projectId);
           }
           
+          console.log("🔍 [DEBUG] User stories loaded:", stories.length);
+          
           const mappedUserStories = stories.map(st => {
             const acceptance_criteria = normalizeAcceptanceCriteria(st);
             const structuredCriteria = ensureAcceptanceCriteriaStructure(acceptance_criteria);
@@ -309,7 +385,7 @@ export function useSprintPlanningLogic() {
             const relatedTaskIds = projectTasks
               .filter(t => t.user_story_id === st.uuid)
               .map(t => t.id);
-                        
+                  
             return {
               id: st.uuid,
               userStory: { 
@@ -321,30 +397,62 @@ export function useSprintPlanningLogic() {
             };
           });
           
-          // Solo actualizar las user stories si es necesario
-          if (!sprint || sprint.project_id !== projectId) {
-            setSprint({
-              ...newSprint,
-              user_stories: mappedUserStories,
-            });
-          }
+          console.log("🔍 [DEBUG] Mapped user stories:", mappedUserStories.length);
+          
+          // 🔥 FIX: Siempre establecer el nuevo sprint con user stories
+          const finalSprint = {
+            ...newSprint,
+            user_stories: mappedUserStories,
+          };
+          
+          console.log("🔍 [DEBUG] Setting new sprint:", finalSprint.id);
+          setSprint(finalSprint);
+          console.log("🔍 [DEBUG] Sprint updated with user stories");
         }
 
       } catch (e: any) {
+        console.error("❌ [DEBUG] Error in load process:", e);
         setError(e.message);
       } finally {
         setLoading(false);
+        console.log("🔍 [DEBUG] Load process finished");
       }
     };
 
     load();
-  }, [projectId, sprintId, fetchAvatar]);
+  }, [projectId, sprintId]); // 🔥 FIX: Remover fetchAvatar de las dependencias
 
 
   const handleSaveSprint = async () => {
-    if (!sprint) return;
+    if (!sprint) return
 
-    // 1️⃣ Actualizar tasks en el backend antes de guardar el sprint (solo si no es temporal)
+    // 1️⃣ Validar fechas antes de guardar (validación más estricta)
+    const validation = await validateSprintDates(
+      sprint.start_date,
+      sprint.end_date,
+      projectId,
+      sprint.id
+    )
+    
+    if (!validation.isValid) {
+      setError(`Cannot save sprint: ${validation.message}`)
+      return null
+    }
+
+    // Validación adicional para sprints temporales
+    if (sprint.id.startsWith("temp-")) {
+      const startDate = new Date(sprint.start_date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (startDate < today) {
+        setError("Cannot create sprint with past start date. Please select today or a future date.");
+        return null;
+      }
+    }
+
+    // 2️⃣ Continuar con el resto de la lógica de guardado
+    // 2️⃣ Actualizar tareas y luego guardar sprint
     try {
       const tasksToUpdate = tasks
         .filter(t =>
