@@ -10,6 +10,8 @@ import { Task } from "@/types/task";
 import { BasicTask } from "@/types/task";
 import { useAvatar } from "@/contexts/AvatarContext";
 import { UserRolesProvider } from "@/contexts/userRolesContext";
+import { getProjectSprints } from "@/utils/getProjectSprints";
+import { validateSprintDates } from "@/utils/validateSprintDates";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 const AVATAR_API = process.env.NEXT_PUBLIC_AVATAR_API!;
@@ -342,9 +344,35 @@ export function useSprintPlanningLogic() {
 
 
   const handleSaveSprint = async () => {
-    if (!sprint) return;
+    if (!sprint) return
 
-    // 1️⃣ Actualizar tasks en el backend antes de guardar el sprint (solo si no es temporal)
+    // 1️⃣ Validar fechas antes de guardar (validación más estricta)
+    const validation = await validateSprintDates(
+      sprint.start_date,
+      sprint.end_date,
+      projectId,
+      sprint.id
+    )
+    
+    if (!validation.isValid) {
+      setError(`Cannot save sprint: ${validation.message}`)
+      return null
+    }
+
+    // Validación adicional para sprints temporales
+    if (sprint.id.startsWith("temp-")) {
+      const startDate = new Date(sprint.start_date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (startDate < today) {
+        setError("Cannot create sprint with past start date. Please select today or a future date.");
+        return null;
+      }
+    }
+
+    // 2️⃣ Continuar con el resto de la lógica de guardado
+    // 2️⃣ Actualizar tareas y luego guardar sprint
     try {
       const tasksToUpdate = tasks
         .filter(t =>
