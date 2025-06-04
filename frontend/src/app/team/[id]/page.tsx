@@ -15,14 +15,16 @@
  * - Authentication is handled via userId in localStorage
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/NavBar";
 import TeamDetailsView from "../components/teamdetailsview";
 
-export default function TeamDetailsPage({ params }: { params: { id: string } }) {
+export default function TeamDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+
+  const { id } = use(params);
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
@@ -40,7 +42,7 @@ export default function TeamDetailsPage({ params }: { params: { id: string } }) 
   return (
     <>
       <Navbar projectSelected={true} />
-      <TeamDetailsView teamId={params.id} />
+      <TeamDetailsView teamId={id} />
     </>
   );
 }

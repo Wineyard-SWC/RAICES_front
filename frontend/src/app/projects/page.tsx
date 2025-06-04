@@ -99,15 +99,23 @@ export default function ProjectsPage() {
     setProjects(filtered)
   }
 
-  const handleCreateProject = async (projectData: any) => {
+  const handleCreateProject = async (projectData: any): Promise<string | null> => {
     try {
-      const newProject = await createProject(projectData)
-      if (newProject) {
-        // Actualizar la lista de proyectos (opcional, también se actualizará en el siguiente fetch)
-        setProjects([...projects, newProject])
+      console.log("[PAGE] Creating project with data:", projectData);
+      const projectId = await createProject(projectData); // Devuelve el ID del proyecto
+      if (projectId) {
+        console.log("[PAGE] Project created with ID:", projectId);
+        setProjects((prevProjects) => [
+          ...prevProjects,
+          { ...projectData, id: projectId },
+        ]);
+      } else {
+        console.error("[PAGE] Failed to create project or get projectId.");
       }
+      return projectId;
     } catch (error) {
-      console.error("Error al crear el proyecto:", error)
+      console.error("[PAGE] Error creating project:", error);
+      return null;
     }
   }
 

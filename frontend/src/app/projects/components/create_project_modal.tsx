@@ -7,11 +7,12 @@ import { useUsers } from "@/hooks/useUsers";
 import type { User as UserType } from "@/hooks/useUsers";
 import { useProjectUsers } from "@/contexts/ProjectusersContext"
 import AvatarProfileIcon from "@/components/Avatar/AvatarDisplay"
+import { useCreateProjectUsers } from "@/hooks/useCreateProjectUsers";
 
 interface CreateProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateProject: (projectData: any) => Promise<void>;
+  onCreateProject: (projectData: any) => Promise<string | null>;
 }
 
 const CreateProjectModal = ({
@@ -31,6 +32,8 @@ const CreateProjectModal = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { users, loading, searchUsers } = useUsers();
   const { getAllUsers, getAllUsersFromCache } = useProjectUsers();
+  const { createProjectUsers, loading: creatingRelations } =
+    useCreateProjectUsers();
 
   // Cargar todos los usuarios al montar el componente
   useEffect(() => {
@@ -126,14 +129,38 @@ const CreateProjectModal = ({
         tasksCompleted: 0,
         totalTasks: 0,
         team: title.substring(0, 3).toUpperCase() + "-TEAM",
-        teamSize: 1, // +1 to include the creator
-        //teamSize: selectedUsers.length + 1, // +1 to include the creator
+        teamSize: selectedUsers.length + 1, // +1 para incluir al creador
         members: selectedUsers.map((user) => user.id),
       };
 
-      await onCreateProject(projectData);
+      // console.log("[CREATE PROJECT MODAL] Project data to create:", projectData);
 
-      // Reset the form
+      // Llamar a onCreateProject y obtener el projectId
+      const projectId = await onCreateProject(projectData);
+
+      if (projectId) {
+        // console.log("[CREATE PROJECT MODAL] Project created with ID:", projectId);
+
+        // Crear relaciones con los usuarios seleccionados
+        const usersWithRoles = selectedUsers.map((user) => ({
+          id: user.id,
+          role: "Developer", // Ajusta el rol según sea necesario
+        }));
+
+        // console.log("[CREATE PROJECT MODAL] Users to create relations for:", usersWithRoles);
+
+        const success = await createProjectUsers(projectId, usersWithRoles);
+
+        if (!success) {
+          console.error("Failed to create project-user relations");
+        } else {
+          console.log("All project-user relations created successfully.");
+        }
+      } else {
+        console.error("Failed to create project or get projectId.");
+      }
+
+      // Resetear el formulario
       setTitle("");
       setDescription("");
       setStatus("Active");
@@ -141,7 +168,7 @@ const CreateProjectModal = ({
       setSelectedUsers([]);
       onClose();
     } catch (error) {
-      console.error("Error creating project:", error);
+      console.error("[CREATE PROJECT MODAL] Error creating project:", error);
     } finally {
       setIsSubmitting(false);
     }
