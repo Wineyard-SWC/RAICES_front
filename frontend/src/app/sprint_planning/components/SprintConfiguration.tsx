@@ -24,7 +24,7 @@ export default function SprintConfiguration({ sprint, onUpdate }: SprintConfigur
     return d.toISOString().split("T")[0];
   });
   
-  // Estados para validación - FIX: Asegurar que message siempre sea string
+  // Estados para validación 
   const [projectSprints, setProjectSprints] = useState<ProjectSprintDates[]>([]);
   const [dateValidation, setDateValidation] = useState<{ isValid: boolean; message: string }>({ 
     isValid: true, 
@@ -53,7 +53,6 @@ export default function SprintConfiguration({ sprint, onUpdate }: SprintConfigur
         sprint.id
       );
       
-      // FIX: Asegurar que message siempre sea string
       setDateValidation({
         isValid: validation.isValid,
         message: validation.message || ""
@@ -75,37 +74,6 @@ export default function SprintConfiguration({ sprint, onUpdate }: SprintConfigur
     return undefined;
   };
 
-  // Función para generar fechas bloqueadas para el calendario HTML
-  const getBlockedDatesForCalendar = (): string => {
-    const blocked: string[] = [];
-    
-    // 1. Bloquear fechas pasadas para sprints temporales
-    if (sprint.id.startsWith("temp-")) {
-      const today = new Date();
-      for (let i = 1; i <= 365; i++) {
-        const pastDate = new Date(today);
-        pastDate.setDate(today.getDate() - i);
-        blocked.push(pastDate.toISOString().split("T")[0]);
-      }
-    }
-    
-    // 2. Bloquear fechas ocupadas por otros sprints
-    projectSprints.forEach(existingSprint => {
-      if (existingSprint.id === sprint.id) return; // Saltar el sprint actual
-      
-      const start = new Date(existingSprint.start_date);
-      const end = new Date(existingSprint.end_date);
-      
-      // Generar todas las fechas entre start y end
-      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-        blocked.push(d.toISOString().split("T")[0]);
-      }
-    });
-    
-    // Convertir a string para usar en el atributo disabled del input
-    return blocked.join(',');
-  };
-
   const handleSubmit = async () => {
     const validation = await validateSprintDates(
       startDate,
@@ -114,7 +82,6 @@ export default function SprintConfiguration({ sprint, onUpdate }: SprintConfigur
       sprint.id
     );
     
-    // FIX: Asegurar que message siempre sea string
     setDateValidation({
       isValid: validation.isValid,
       message: validation.message || ""
@@ -143,7 +110,6 @@ export default function SprintConfiguration({ sprint, onUpdate }: SprintConfigur
     // Validar inmediatamente
     const validation = await validateSprintDates(newStart, newEndDate, sprint.project_id, sprint.id);
     
-    // FIX: Asegurar que message siempre sea string
     setDateValidation({
       isValid: validation.isValid,
       message: validation.message || ""
@@ -166,7 +132,6 @@ export default function SprintConfiguration({ sprint, onUpdate }: SprintConfigur
     // Validar inmediatamente
     const validation = await validateSprintDates(startDate, newEnd, sprint.project_id, sprint.id);
     
-    // FIX: Asegurar que message siempre sea string
     setDateValidation({
       isValid: validation.isValid,
       message: validation.message || ""
@@ -195,7 +160,6 @@ export default function SprintConfiguration({ sprint, onUpdate }: SprintConfigur
     // Validar inmediatamente
     const validation = await validateSprintDates(startDate, newEndDate, sprint.project_id, sprint.id);
     
-    // FIX: Asegurar que message siempre sea string
     setDateValidation({
       isValid: validation.isValid,
       message: validation.message || ""
@@ -230,7 +194,6 @@ export default function SprintConfiguration({ sprint, onUpdate }: SprintConfigur
     }
   };
 
-  // REMOVED: isDateBlocked function since it's not being used and browsers handle date blocking differently
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-6 mb-6">
@@ -270,7 +233,7 @@ export default function SprintConfiguration({ sprint, onUpdate }: SprintConfigur
         <div>
           <label className="mb-1 flex items-center gap-2 text-sm font-medium text-gray-700">
             Start Date
-            {/* Tooltip discreto */}
+            {/* Tooltip  */}
             <div className="relative group">
               <div className="w-4 h-4 rounded-full bg-gray-300 text-white text-xs flex items-center justify-center cursor-help font-bold">
                 ?
