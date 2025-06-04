@@ -37,12 +37,17 @@ export function BurndownChart({ data, height = 250, totalSP = 0 }: BurndownChart
             <XAxis 
               dataKey="day" 
               tick={{ fontSize: 12 }}
-              label={{ value: 'Sprint Days', position: 'insideBottomRight', offset: -5 }}
             />
             <YAxis 
               domain={[0, totalSP]} 
               tickCount={6}
-              label={{ value: 'Story Points', angle: -90, position: 'insideMiddle' }}
+              tick={{ fontSize: 12 }}
+              label={{ 
+                value: 'Story Points', 
+                angle: -90, 
+                position: 'insideLeft', 
+                style: { textAnchor: 'middle' },
+              }}
             />
             <Tooltip 
               formatter={(value) => [`${value} SP`]}
