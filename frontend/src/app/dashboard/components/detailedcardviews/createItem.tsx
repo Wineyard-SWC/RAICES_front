@@ -177,7 +177,7 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
         else
         {
             const newBug: BugType = {
-                id: itemData.bugId || uuidv4(),
+                id: itemData.id || uuidv4(),
                 title: itemData.title,
                 description: itemData.description,
                 type: itemData.type || "Other" ,
@@ -186,14 +186,17 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
                 status_khanban: itemData.status_khanban || "Backlog",
                 bug_status:itemData.bug_status || "New",
                 projectId:projectId!,
+                taskRelated: itemData.taskRelated || undefined,
+                userStoryRelated: itemData.userStoryRelated || undefined,
+                sprintId: itemData.sprintId || undefined,
                 reportedBy:itemData.reportedBy || {"users": [userInfo[0],userInfo[1]]},
-                assignee:itemData.assignee || [],
+                assignee:itemData.assignees || [],
                 createdAt: itemData.createdAt || now,
                 modifiedAt: itemData.modifiedAt || now,
                 stepsToReproduce:itemData.stepsToReproduce || [],
                 visibleToCustomers:itemData.visibleToCustomers || false,
                 affectedComponents: itemData.affectedComponents?.length > 0 ? itemData.affectedComponents : undefined,
-                environment: Object.values(itemData.environment).some((val: any) => val?.trim() !== "")
+                environment: itemData.environment && Object.values(itemData.environment).some((val: any) => val?.trim() !== "")
                 ? {
                     browser: itemData.environment?.browser || undefined,
                     os: itemData.environment?.os || undefined,
@@ -297,8 +300,15 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
             onCancel={() => setSelectedType(null)}
             projectId={projectId}
             availableTasks={onlytasks}
-            availableUserStories={onlystories}
-            //availableUsers={availableUsers}
+            availableUserStories={onlystories.map(story => ({
+              uuid: story.uuid,  // Usar uuid en lugar de id
+              title: story.title
+            }))}
+            availableUsers={availableUsers}
+            availableSprints={availableSprints.map(sprint => ({
+              id: sprint.id,
+              name: sprint.name
+            }))}
           />
         );
       default:
