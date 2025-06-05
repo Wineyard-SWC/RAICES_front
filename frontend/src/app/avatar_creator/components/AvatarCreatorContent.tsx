@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useAvatar } from '@/contexts/AvatarContext';
 import WelcomeAnimation from '../../avatar_test/components/welcome-animation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { metadata } from '@/app/layout';
 
 const config: AvatarCreatorConfig = {
   clearCache: true,
@@ -75,15 +76,17 @@ export default function AvatarCreatorContent() {
         config={config}
         style={style}
         onAvatarExported={async (event: AvatarExportedEvent) => {
-          const url = event.data.url;
-          setAvatarUrl(url);
+          // Add the morphTargets parameter to include ARKit blendshapes
+          const baseUrl = event.data.url;
+          const enhancedUrl = `${baseUrl}?morphTargets=ARKit,Oculus Visemes`;
+          setAvatarUrl(enhancedUrl);
           
           // Variable local para guardar el género detectado
           let detectedGender = "masculine"; // Valor por defecto
           
           // Intentar obtener el género desde los metadatos
           try {
-            const metadataUrl = url.replace('.glb', '.json');
+            const metadataUrl = enhancedUrl.replace('.glb', '.json');
             const response = await fetch(metadataUrl);
             if (response.ok) {
               const metadata = await response.json();
@@ -91,12 +94,14 @@ export default function AvatarCreatorContent() {
                 // Normalizar el género para nuestra aplicación
                 detectedGender = metadata.outfitGender === "male" ? "masculine" : "feminine";
               }
+
+              detectedGender = metadata.outfitGender;
             }
           } catch (e) {
             console.error('Error fetching avatar metadata:', e);
             // Continuar con el género por defecto si hay error
           }
-          
+     
           // Actualizar el estado con el género detectado
           setSelectedGender(detectedGender);
           
@@ -106,10 +111,10 @@ export default function AvatarCreatorContent() {
             // Solo actualizar la base de datos si tenemos un userId
             if (storedUserId) {
               // Actualizar base de datos (esto puede ser asíncrono y no bloqueante)
-              await updateAvatarAndGender(storedUserId, url, detectedGender);
+              await updateAvatarAndGender(storedUserId, enhancedUrl, detectedGender);
               
               // Actualizar contexto (esto también es asíncrono)
-              updateAvatarUrl(url, detectedGender);
+              updateAvatarUrl(enhancedUrl, detectedGender);
             }
           } catch (e) {
             console.error('Error updating profile:', e);

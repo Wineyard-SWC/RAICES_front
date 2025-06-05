@@ -5,8 +5,8 @@ import { isBug, TaskOrStory, isUserStory } from "@/types/taskkanban";
 import { useUser } from "@/contexts/usercontext";
 import { useKanban } from "@/contexts/unifieddashboardcontext";
 import { useMemo } from "react";
-import { Dialog,DialogPanel } from "@headlessui/react";
-import { useUserPermissions } from "@/contexts/UserPermissions"; // Importar el hook de permisos
+import { Dialog, DialogPanel } from "@headlessui/react";
+import { useUserPermissions } from "@/contexts/UserPermissions";
 
 import TaskViewForm from "../detailedcardviews/taskviewform";
 import TaskEditForm from "../detailedcardviews/taskvieweditform";
@@ -29,10 +29,11 @@ interface TaskSidebarProps {
 
 const TaskSidebar = ({ isOpen, onClose, task }: TaskSidebarProps) => {
   const [isEditMode, setIsEditMode] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const { userId, userData } = useUser();
-  const { currentProjectId,tasks, updateTask, updateStory, updateBug } = useKanban();
-  const {getUserStoriesForProject} = useUserStories()
-  const {getTasksForProject} = useTasks()
+  const { currentProjectId, tasks, updateTask, updateStory, updateBug } = useKanban();
+  const { getUserStoriesForProject } = useUserStories();
+  const { getTasksForProject } = useTasks();
   
   // Obtener la función hasPermission del contexto
   const { hasPermission } = useUserPermissions();
@@ -40,8 +41,8 @@ const TaskSidebar = ({ isOpen, onClose, task }: TaskSidebarProps) => {
   // Verificar si el usuario tiene el permiso para editar items
   const canManageItems = hasPermission(PERMISSION_REQ_MANAGE);
 
-  const onlystories = getUserStoriesForProject(currentProjectId!)
-  const onlytasks = getTasksForProject(currentProjectId!)
+  const onlystories = getUserStoriesForProject(currentProjectId!);
+  const onlytasks = getTasksForProject(currentProjectId!);
   
   // Get latest task data from tasks state
   const currentTask = useMemo(() => {
@@ -56,6 +57,7 @@ const TaskSidebar = ({ isOpen, onClose, task }: TaskSidebarProps) => {
 
   useEffect(() => {
     setIsEditMode(false);
+    setValidationErrors({}); // Clear validation errors when task changes
   }, [task]);
 
   useEffect(() => {
@@ -67,8 +69,47 @@ const TaskSidebar = ({ isOpen, onClose, task }: TaskSidebarProps) => {
 
   if (!isOpen || !currentTask) return null;
 
+  const validateForm = (formData: any) => {
+    const errors: Record<string, string> = {};
+    
+    // Common validations for all item types
+    if (!formData.title?.trim()) {
+      errors.title = "Title is required";
+    }
+    
+    if (!formData.description?.trim()) {
+      errors.description = "Description is required";
+    }
+    
+    // Type-specific validations
+    if (isUserStory(currentTask)) {
+      // Add user story specific validations
+      if (!formData.acceptanceCriteria || formData.acceptanceCriteria.length === 0) {
+        errors.acceptanceCriteria = "At least one acceptance criteria is required";
+      }
+    } else if (isBug(currentTask)) {
+      // Add bug specific validations
+      if (!formData.severity) {
+        errors.severity = "Severity is required";
+      }
+      if (!formData.bug_status) {
+        errors.bugStatus = "Bug status is required";
+      }
+    }
+    
+    return errors;
+  };
+
   const handleSave = async (updatedFields: any) => {
     try {
+      // Validate form data before saving
+      const errors = validateForm(updatedFields);
+      
+      if (Object.keys(errors).length > 0) {
+        setValidationErrors(errors);
+        return; // Don't proceed with save if there are validation errors
+      }
+      
       if (isUserStory(currentTask)) {
         await updateStory(currentTask.id, updatedFields);
       } else if (isBug(currentTask)) {
@@ -77,6 +118,7 @@ const TaskSidebar = ({ isOpen, onClose, task }: TaskSidebarProps) => {
         await updateTask(currentTask.id, updatedFields);
       }
       setIsEditMode(false);
+      setValidationErrors({}); // Clear any previous errors on successful save
     } catch (error) {
       console.error('Error updating task:', error);
     }
@@ -94,33 +136,36 @@ const TaskSidebar = ({ isOpen, onClose, task }: TaskSidebarProps) => {
         return <UserStoryEditForm 
           task={currentTask} 
           onSave={handleSave}
-          onCancel={()=>{}} 
+          onCancel={() => setIsEditMode(false)} 
           availableEpics={[]}
           availableSprints={[]}
           availableUsers={[]}
-          
+          validationErrors={validationErrors}
         />;
       } else if (isBug(currentTask)) {
         return <BugEditForm 
           task={currentTask} 
           onSave={handleSave}
-          onCancel={()=>{}}
+          onCancel={() => setIsEditMode(false)}
           availableSprints={[]}
           availableTasks={onlytasks}
           availableUserStories={onlystories}
           availableUsers={[]}
-         />;
+          validationErrors={validationErrors}
+        />;
       } else {
         return <TaskEditForm 
           task={currentTask} 
           onSave={handleSave}  
-          onCancel={()=>{}}
+          onCancel={() => setIsEditMode(false)}
           availableSprints={[]}
           availableUsers={[]}
           userstories={onlystories}
+          validationErrors={validationErrors}
         />;
       }
     } else {
+      // View modes remain unchanged
       if (isUserStory(currentTask)) {
         return <UserStoryViewForm task={currentTask} />;
       } else if (isBug(currentTask)) {
@@ -140,8 +185,10 @@ const TaskSidebar = ({ isOpen, onClose, task }: TaskSidebarProps) => {
       {/* Sidebar Drawer Panel */}
       <div className="fixed inset-y-0 right-0 flex max-w-full pointer-events-none">
         <DialogPanel
-          className="pointer-events-auto w-[33vw] h-full bg-[#F5F0F1] shadow-xl flex flex-col transition-transform duration-300"
-          style={{ marginTop: '77px', height: 'calc(100vh - 77px)' }}
+          className="pointer-events-auto w-[33vw] h-screen bg-[#F5F0F1] shadow-xl flex flex-col transition-transform duration-300"
+          style={{ 
+            height: '100vh' // Cambiado a 100vh para cubrir toda la altura de la ventana
+          }}
         >
           {/* Header */}
           <div className="sticky top-0 bg-[#F5F0F1] z-10 px-6 pt-6 pb-4 border-b border-gray-200">
@@ -157,7 +204,10 @@ const TaskSidebar = ({ isOpen, onClose, task }: TaskSidebarProps) => {
                   <Button
                     variant="outline"
                     size="lg"
-                    onClick={() => setIsEditMode(!isEditMode)}
+                    onClick={() => {
+                      setIsEditMode(!isEditMode);
+                      if (!isEditMode) setValidationErrors({});
+                    }}
                     className="bg-[#4A2B4A] text-white border-none hover:bg-white hover:text-[#4A2B4A] hover:border-[#4A2B4A] transition-all duration-200"
                   >
                     {isEditMode ? (
@@ -192,11 +242,11 @@ const TaskSidebar = ({ isOpen, onClose, task }: TaskSidebarProps) => {
                 userData={userData}
                 onUpdateComments={async (comments) => {
                   if (isUserStory(currentTask)) {
-                    await updateStory(currentTask.id, { comments })
+                    await updateStory(currentTask.id, { comments });
                   } else if (isBug(currentTask)) {
-                    await updateBug(currentTask.id, { comments })
+                    await updateBug(currentTask.id, { comments });
                   } else {
-                    await updateTask(currentTask.id, { comments })
+                    await updateTask(currentTask.id, { comments });
                   }
                 }}
               />
@@ -205,7 +255,7 @@ const TaskSidebar = ({ isOpen, onClose, task }: TaskSidebarProps) => {
         </DialogPanel>
       </div>
     </Dialog>
-  )
-}
+  );
+};
 
 export default TaskSidebar;

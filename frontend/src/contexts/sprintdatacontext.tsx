@@ -156,7 +156,7 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
       })
 
       const data = await response.json()
-      console.log(data)
+      console.log('VELOCITY DATA:', JSON.parse(JSON.stringify(data)))
       setVelocityData(data)
     } catch (error) {
       console.error("Error fetching velocity data:", error)
@@ -173,6 +173,7 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
       const url = `${apiURL}/api/sprints/comparison?projectId=${project_id}`
       const response = await fetch(url)
       const data = await response.json()
+      console.log('SPRINT COMPARISON DATA:', JSON.parse(JSON.stringify(data)))  
       setSprintComparison(data)
     } catch (error) {
       console.error("Error fetching sprint comparison:", error)

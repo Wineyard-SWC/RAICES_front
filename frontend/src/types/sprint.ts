@@ -8,6 +8,7 @@ export interface SprintMember {
   avatar?: string
   capacity: number
   allocated: number
+  userRef?: string
 }
 
 export interface SprintUserStory {
@@ -33,4 +34,13 @@ export interface Sprint {
 
 export type SprintFormData = Omit<Sprint, "id" | "created_at" | "updated_at" | "user_stories" | "team_members"> & {
   id?: string
+}
+
+
+export interface ProjectSprintDates {
+  id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  status: "planning" | "active" | "completed" | "cancelled";
 }

@@ -11,6 +11,7 @@ interface TaskEditFormProps {
   userstories?: UserStory[];
   availableUsers?: Array<{ id: string; name: string }>;
   availableSprints?: Array<{ id: string; name: string }>;
+  validationErrors?: Record<string, string>; // Add this prop
 }
 
 const TaskEditForm = ({ task, onSave, onCancel, userstories, availableUsers = [], availableSprints = []  }: TaskEditFormProps) => {

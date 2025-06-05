@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 
 interface AvatarContextType {
   avatarUrl: string | null;
@@ -22,14 +22,13 @@ export function AvatarProvider({ children }: { children: ReactNode }) {
   
   const AVATAR_API = process.env.NEXT_PUBLIC_AVATAR_API!;
 
-  const fetchAvatar = async (userId: string): Promise<string | null> => {
+  const fetchAvatar = useCallback(async (userId: string): Promise<string | null> => {
     if (!userId) return null;
     
     setIsLoading(true);
     setError(null);
     
     try {
-      console.log(`Intentando cargar avatar para usuario ${userId}`);
       const response = await fetch(`${AVATAR_API}/users/${userId}`);
       
       if (response.status === 404) {
@@ -51,12 +50,11 @@ export function AvatarProvider({ children }: { children: ReactNode }) {
       return userData.avatar_url;
     } catch (err) {
       console.error('Error fetching avatar:', err);
-      // No establecer error en el estado para no afectar la UI
       return null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [AVATAR_API]); 
 
   const updateAvatarUrl = (url: string, newGender: string | null = null) => {
     setAvatarUrl(url);

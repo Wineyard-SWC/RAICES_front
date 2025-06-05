@@ -230,18 +230,407 @@
 // }
 
 
+////////////////////////////////////////////////// ANIMACION MAXIMOOOOOOOOOOOOOOOOOOOOOO ////////////////////
+
+// 'use client';
+
+// import { useState, useRef, useEffect, Suspense } from "react";
+// import { Canvas } from "@react-three/fiber";
+// import { useGLTF, useAnimations, OrbitControls } from "@react-three/drei";
+// import * as THREE from "three";
+// import { Button } from "@/components/ui/button";
+
+// function AnimatedModel({ modelUrl, animationUrl, playAnimation }: { 
+//   modelUrl: string; 
+//   animationUrl: string;
+//   playAnimation: boolean;
+// }) {
+//   const group = useRef<THREE.Group>(null!);
+//   const { scene } = useGLTF(modelUrl);
+//   const { animations } = useGLTF(animationUrl);
+//   const { actions, names } = useAnimations(animations, group);
+//   const [currentAction, setCurrentAction] = useState<THREE.AnimationAction | null>(null);
+
+//   // Effect to handle playing the animation
+//   useEffect(() => {
+//     if (names.length > 0) {
+//       const animName = names[0];
+//       const action = actions[animName];
+      
+//       if (action) {
+//         setCurrentAction(action);
+        
+//         if (playAnimation) {
+//           action.reset().fadeIn(0.5).play();
+//         }
+//       }
+//     }
+    
+//     // Cleanup
+//     return () => {
+//       if (currentAction) {
+//         currentAction.fadeOut(0.5);
+//       }
+//     };
+//   }, [actions, names, playAnimation]);
+
+//   return (
+//     <group ref={group}>
+//       <primitive object={scene} scale={1.5} position={[0, -1.5, 0]} />
+//     </group>
+//   );
+// }
+
+// export default function SimpleAnimationTest() {
+//   const [modelUrl, setModelUrl] = useState("https://models.readyplayer.me/682ed025b86b334033bb4bfb.glb");
+//   const [animationUrl, setAnimationUrl] = useState("/animation/avatarAnimations/kneeling.glb");
+//   const [playAnimation, setPlayAnimation] = useState(false);
+  
+//   const handlePlay = () => {
+//     // Reset animation flag first to ensure it replays even if the same animation
+//     setPlayAnimation(false);
+//     setTimeout(() => setPlayAnimation(true), 50);
+//   };
+
+//   return (
+//     <div className="flex flex-col min-h-screen p-6 bg-gradient-to-b from-purple-50 to-white">
+//       <h1 className="text-3xl font-bold text-purple-900 mb-6">Simple Animation Test</h1>
+      
+//       <div className="grid grid-cols-1 gap-6">
+//         {/* Controls */}
+//         <div className="bg-white p-6 rounded-lg shadow-md">
+//           <div className="mb-4">
+//             <label className="block text-sm font-medium text-gray-700 mb-1">
+//               Avatar URL
+//             </label>
+//             <input 
+//               type="text" 
+//               value={modelUrl}
+//               onChange={(e) => setModelUrl(e.target.value)}
+//               className="w-full p-2 border border-gray-300 rounded"
+//             />
+//           </div>
+          
+//           <div className="mb-4">
+//             <label className="block text-sm font-medium text-gray-700 mb-1">
+//               Animation URL
+//             </label>
+//             <input 
+//               type="text" 
+//               value={animationUrl}
+//               onChange={(e) => setAnimationUrl(e.target.value)}
+//               className="w-full p-2 border border-gray-300 rounded"
+//             />
+//           </div>
+          
+//           <Button 
+//             onClick={handlePlay} 
+//             className="w-full bg-purple-600 hover:bg-purple-700"
+//           >
+//             Play Animation
+//           </Button>
+//         </div>
+        
+//         {/* 3D Viewer */}
+//         <div className="bg-gray-100 rounded-lg overflow-hidden" style={{ height: "600px" }}>
+//           <Canvas camera={{ position: [0, 0, 3], fov: 50 }}>
+//             <ambientLight intensity={0.6} />
+//             <directionalLight position={[2, 5, 2]} intensity={1} />
+//             <Suspense fallback={null}>
+//               <AnimatedModel 
+//                 modelUrl={modelUrl} 
+//                 animationUrl={animationUrl} 
+//                 playAnimation={playAnimation} 
+//               />
+//             </Suspense>
+//             <OrbitControls />
+//           </Canvas>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+
+
+
+
+
+
 ///////////////// ANIMACIÓNS PRUEBAS ///////////////////////////////////////////////
+
+// 'use client';
+
+// import WelcomeAnimation from "./components/welcome-animation";
+
+// export default function Home() {
+//   return (
+//     <WelcomeAnimation
+//       avatarUrl="https://models.readyplayer.me/682ed025b86b334033bb4bfb.glb"
+//       onComplete={() => alert("¡Animación terminada!")}
+
+//     />
+//   );
+// }
+
+
+
+
+
+//////////////////////////////// PRUEBA DE EXPRESIONES FACIALEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEES////////////////////////////////////
 
 'use client';
 
-import WelcomeAnimation from "./components/welcome-animation";
+import { useState, useRef, useEffect, Suspense } from "react";
+import { Canvas } from "@react-three/fiber";
+import { useGLTF, OrbitControls } from "@react-three/drei";
+import * as THREE from "three";
+import { Button } from "@/components/ui/button";
 
-export default function Home() {
+// Predefined expressions with their blendshape values
+const EXPRESSIONS = {
+  neutral: {},
+  happy: { 
+    mouthSmileLeft: 0.7, 
+    mouthSmileRight: 0.7, 
+    cheekSquintLeft: 0.3, 
+    cheekSquintRight: 0.3,
+    eyeSquintLeft: 0.3,
+    eyeSquintRight: 0.3
+  },
+  bigSmile: {
+    mouthSmileLeft: 1.0,
+    mouthSmileRight: 1.0,
+    mouthOpen: 0.3,
+    eyeSquintLeft: 0.4,
+    eyeSquintRight: 0.4,
+    cheekSquintLeft: 0.6,
+    cheekSquintRight: 0.6
+  },
+  sad: {
+    browDownLeft: 0.5,
+    browDownRight: 0.5,
+    mouthFrownLeft: 0.6,
+    mouthFrownRight: 0.6,
+    mouthLowerDownLeft: 0.3,
+    mouthLowerDownRight: 0.3
+  },
+  angry: {
+    browDownLeft: 0.8,
+    browDownRight: 0.8,
+    eyeSquintLeft: 0.5,
+    eyeSquintRight: 0.5,
+    mouthFrownLeft: 0.7,
+    mouthFrownRight: 0.7,
+    noseSneerLeft: 0.4,
+    noseSneerRight: 0.4,
+    jawForward: 0.2
+  },
+  surprised: {
+    eyeWideLeft: 0.8,
+    eyeWideRight: 0.8,
+    browInnerUp: 0.6,
+    browOuterUpLeft: 0.6,
+    browOuterUpRight: 0.6,
+    mouthOpen: 0.7,
+    jawOpen: 0.5
+  },
+  wink: {
+    eyeBlinkLeft: 1.0,
+    mouthSmileRight: 0.5,
+    cheekSquintRight: 0.3
+  },
+  thinking: {
+    eyeLookUpRight: 0.7,
+    eyeLookUpLeft: 0.7,
+    browInnerUp: 0.5,
+    mouthPucker: 0.3,
+    jawLeft: 0.2
+  },
+  confused: {
+    browInnerUp: 0.6,
+    browOuterUpLeft: 0.4,
+    browDownRight: 0.4,
+    mouthLeft: 0.3,
+    jawOpen: 0.1
+  },
+  laughing: {
+    mouthOpen: 0.8,
+    jawOpen: 0.6,
+    mouthSmileLeft: 1.0,
+    mouthSmileRight: 1.0,
+    eyeSquintLeft: 0.7,
+    eyeSquintRight: 0.7,
+    cheekSquintLeft: 0.8,
+    cheekSquintRight: 0.8
+  },
+  disgust: {
+    noseSneerLeft: 0.7,
+    noseSneerRight: 0.7,
+    mouthFrownLeft: 0.5,
+    mouthFrownRight: 0.5,
+    browDownLeft: 0.5,
+    browDownRight: 0.5,
+    mouthLeft: 0.3
+  },
+  talking: {
+    jawOpen: 0.4,
+    mouthOpen: 0.6,
+    viseme_O: 0.7
+  },
+  tongueOut: {
+    tongueOut: 1.0,
+    mouthOpen: 0.6,
+    jawOpen: 0.5
+  }
+};
+
+function AvatarWithExpressions({ avatarUrl, expression }: { 
+  avatarUrl: string;
+  expression: string;
+}) {
+  const group = useRef<THREE.Group>(null!);
+  const { scene } = useGLTF(avatarUrl);
+  const [loaded, setLoaded] = useState(false);
+  
+  // Find the head mesh with morph targets
+  useEffect(() => {
+    if (!scene) return;
+    
+    // Reset all blendshapes first
+    scene.traverse((object) => {
+      if (object instanceof THREE.Mesh && object.morphTargetDictionary && object.morphTargetInfluences) {
+        for (let i = 0; i < object.morphTargetInfluences.length; i++) {
+          object.morphTargetInfluences[i] = 0;
+        }
+      }
+    });
+    
+    // Apply the selected expression
+    if (expression && EXPRESSIONS[expression]) {
+      scene.traverse((object) => {
+        if (object instanceof THREE.Mesh && object.morphTargetDictionary && object.morphTargetInfluences) {
+          for (const [blendshapeName, value] of Object.entries(EXPRESSIONS[expression])) {
+            const index = object.morphTargetDictionary[blendshapeName];
+            if (index !== undefined) {
+              object.morphTargetInfluences[index] = value;
+            }
+          }
+        }
+      });
+    }
+    
+    setLoaded(true);
+  }, [scene, expression]);
+
   return (
-    <WelcomeAnimation
-      avatarUrl="https://models.readyplayer.me/682ed025b86b334033bb4bfb.glb"
-      onComplete={() => alert("¡Animación terminada!")}
+    <group ref={group}>
+      <primitive object={scene} scale={3} position={[0, -5, 0]} />
+    </group>
+  );
+}
 
-    />
+// Component to list all available blendshapes in the model
+function BlendshapeDebugger({ avatarUrl }: { avatarUrl: string }) {
+  const { scene } = useGLTF(avatarUrl);
+  const [blendshapes, setBlendshapes] = useState<string[]>([]);
+  
+  useEffect(() => {
+    if (!scene) return;
+    
+    const foundBlendshapes = new Set<string>();
+    
+    scene.traverse((object) => {
+      if (object instanceof THREE.Mesh && object.morphTargetDictionary) {
+        Object.keys(object.morphTargetDictionary).forEach(key => {
+          foundBlendshapes.add(key);
+        });
+      }
+    });
+    
+    setBlendshapes(Array.from(foundBlendshapes).sort());
+  }, [scene]);
+  
+  return (
+    <div className="mt-4 p-4 bg-gray-100 rounded-lg max-h-60 overflow-y-auto">
+      <h3 className="font-medium text-gray-700 mb-2">Available Blendshapes ({blendshapes.length})</h3>
+      <div className="text-xs text-gray-600 grid grid-cols-2 sm:grid-cols-3 gap-1">
+        {blendshapes.map(name => (
+          <div key={name} className="bg-white p-1 rounded">{name}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// In your ExpressionTest component
+export default function ExpressionTest() {
+  const [avatarUrl, setAvatarUrl] = useState("https://models.readyplayer.me/6837b68957dc975dd3e11219.glb?morphTargets=ARKit,Oculus Visemes");
+  const [currentExpression, setCurrentExpression] = useState("neutral");
+  const [showBlendshapes, setShowBlendshapes] = useState(false);
+  
+  return (
+    <div className="flex flex-col min-h-screen p-6 bg-gradient-to-b from-purple-50 to-white">
+      <h1 className="text-3xl font-bold text-purple-900 mb-6">Avatar Expression Test</h1>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Controls */}
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Avatar URL
+            </label>
+            <input 
+              type="text" 
+              value={avatarUrl}
+              onChange={(e) => setAvatarUrl(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded"
+            />
+          </div>
+          
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Expression
+            </label>
+            <div className="grid grid-cols-2 gap-2 h-72 overflow-y-auto">
+              {Object.keys(EXPRESSIONS).map((exp) => (
+                <Button 
+                  key={exp}
+                  onClick={() => setCurrentExpression(exp)}
+                  variant={currentExpression === exp ? "default" : "outline"}
+                  className={currentExpression === exp ? "bg-purple-600 hover:bg-purple-700" : ""}
+                >
+                  {exp.charAt(0).toUpperCase() + exp.slice(1)}
+                </Button>
+              ))}
+            </div>
+          </div>
+          
+          <Button 
+            onClick={() => setShowBlendshapes(!showBlendshapes)} 
+            variant="outline"
+            className="w-full mt-4"
+          >
+            {showBlendshapes ? "Hide Blendshapes" : "Show Available Blendshapes"}
+          </Button>
+          
+          {showBlendshapes && <BlendshapeDebugger avatarUrl={avatarUrl} />}
+        </div>
+        
+        {/* 3D Viewer */}
+        <div className="md:col-span-2 bg-gray-100 rounded-lg overflow-hidden" style={{ height: "600px" }}>
+          <Canvas camera={{ position: [0, 0, 2.5], fov: 40 }}>
+            <ambientLight intensity={0.6} />
+            <directionalLight position={[2, 5, 2]} intensity={1} />
+            <Suspense fallback={null}>
+              <AvatarWithExpressions 
+                avatarUrl={avatarUrl} 
+                expression={currentExpression} 
+              />
+            </Suspense>
+            <OrbitControls />
+          </Canvas>
+        </div>
+      </div>
+    </div>
   );
 }
