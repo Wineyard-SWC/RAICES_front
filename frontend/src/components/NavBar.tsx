@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef , Suspense } from "react"
 import Link from "next/link"
 import { Bell, ChevronDown, Settings, LogOut, FolderOpen, Users } from "lucide-react"
 import Image from "next/image"
@@ -235,6 +235,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
   }
 
   return (
+    <Suspense fallback={<div>Loading Navbar...</div>}>
     <nav className="relative flex items-center justify-between px-4 py-2 border-b border-black bg-[#EBE5EB]/30">
       {/* Logo */}
       <div className="flex-shrink-0 h-[60px] flex items-center w-1/4">
@@ -476,6 +477,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
         </div>
       </div>
     </nav>
+    </Suspense>
   )
 }
 
