@@ -4,6 +4,7 @@ import { Task } from "@/types/task";
 import { getProjectSprints } from "@/utils/getProjectSprints";
 import { getProjectUserStories } from "@/utils/getProjectUserStories";
 import { getProjectTasks } from "@/utils/getProjectTasks";
+import { getProjectBugs } from "@/utils/getProjectBugs";
 
 export interface SprintMetric {
   sprintId: string;
@@ -17,6 +18,7 @@ export interface SprintMetric {
   teamSize: number;
   selectedStories: UserStory[];
   completedStories: UserStory[];
+  bugsCount: number;
   startDate: string;
   endDate: string;
 }
@@ -37,7 +39,16 @@ export async function getProjectSprintMetrics(projectId: string): Promise<Sprint
     // 3. Obtener todas las tareas del proyecto
     const allTasks = await getProjectTasks(projectId);
     
-    // 4. Calcular métricas para cada sprint
+    // 4. Obtener todos los bugs del proyecto
+    let allBugs = [];
+    try {
+      allBugs = await getProjectBugs(projectId);
+    } catch (error) {
+      console.warn("No se pudieron cargar los bugs del proyecto:", error);
+      allBugs = [];
+    }
+    
+    // 5. Calcular métricas para cada sprint
     const sprintMetrics = await Promise.all(
       sprints.map(async (sprint) => {
         // Extraer IDs de historias seleccionadas para este sprint
@@ -46,8 +57,13 @@ export async function getProjectSprintMetrics(projectId: string): Promise<Sprint
           .map(story => story.id);
         
         // Filtrar historias que pertenecen a este sprint
-        const selectedStories = allUserStories.filter(
-          story => sprintStoryIds.includes(story.id || story.uuid)
+        const selectedStories = allUserStories.filter(story => {
+          return sprintStoryIds.includes(story.id) || sprintStoryIds.includes(story.uuid);
+        });
+        
+        // Extraer TODOS los identificadores posibles de las historias seleccionadas
+        const selectedStoryIdentifiers = selectedStories.flatMap(story => 
+          [story.id, story.uuid].filter(Boolean)
         );
         
         // Historias completadas (Done)
@@ -56,9 +72,29 @@ export async function getProjectSprintMetrics(projectId: string): Promise<Sprint
         );
         
         // Filtrar tareas asociadas a este sprint
-        const sprintTasks = allTasks.filter(
-          task => task.sprint_id === sprint.id || sprintStoryIds.includes(task.user_story_id || '')
-        );
+        const sprintTasks = allTasks.filter(task => {
+          // Si la tarea tiene sprint_id directo
+          if (task.sprint_id === sprint.id) return true;
+          
+          // Si la tarea está relacionada con una user story del sprint
+          if (task.user_story_id && selectedStoryIdentifiers.includes(task.user_story_id)) return true;
+          
+          return false;
+        });
+        
+        // Filtrar bugs asociados a este sprint
+        const sprintBugs = allBugs.filter(bug => {
+          // Si el bug tiene sprint_id directamente
+          if (bug.sprint_id === sprint.id) return true;
+          
+          // Si el bug está relacionado con una user story del sprint
+          if (bug.user_story_id && selectedStoryIdentifiers.includes(bug.user_story_id)) return true;
+          
+          // Si el bug tiene una propiedad userStoryRelated
+          if (bug.userStoryRelated && selectedStoryIdentifiers.includes(bug.userStoryRelated)) return true;
+          
+          return false;
+        });
         
         // Tareas completadas
         const completedTasks = sprintTasks.filter(
@@ -118,6 +154,7 @@ export async function getProjectSprintMetrics(projectId: string): Promise<Sprint
           teamSize: sprint.team_members.length,
           selectedStories,
           completedStories,
+          bugsCount: sprintBugs.length,
           startDate: sprint.start_date,
           endDate: sprint.end_date
         };
