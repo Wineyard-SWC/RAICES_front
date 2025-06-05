@@ -28,9 +28,9 @@ export default function RoadmapTopBar({
           <div className="flex-1">
             <div className="flex items-center gap-4">
               <div>
-                <h1 className="text-xl font-bold text-gray-800">{roadmap.name}</h1>
+                <h1 className="text-xl font-bold text-gray-800 truncate overflow-hidden whitespace-nowrap max-w-[400px]">{roadmap.name}</h1>
                 {roadmap.description && (
-                  <p className="text-sm text-gray-600">{roadmap.description}</p>
+                  <p className="text-sm text-gray-600 truncate overflow-hidden whitespace-nowrap max-w-[400px]">{roadmap.description}</p>
                 )}
               </div>
               <div className="flex items-center gap-3 text-sm text-gray-500">

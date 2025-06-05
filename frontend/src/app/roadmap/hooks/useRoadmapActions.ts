@@ -141,7 +141,7 @@ export const useRoadmapActions = ({
       id: `phase-${Date.now()}`,
       name,
       description,
-      color: '#6B7280',
+      color: '#FFFFFF',
       position: { 
         x: roadmapPhases.length * 400 + 100, 
         y: 100 

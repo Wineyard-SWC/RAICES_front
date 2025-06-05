@@ -45,6 +45,22 @@ export interface SavedRoadmap {
   phases: RoadmapPhase[];
   createdAt: string;
   updatedAt: string;
+  projectId?: string;
+}
+
+export interface DatabaseRoadmap {
+  id: string;
+  name: string;
+  description?: string;
+  phases: RoadmapPhase[];   // Siempre presente (vacío si es copia no modificada)
+  
+  sourceRoadmapId?: string; // Si es copia, ID del original
+  isDuplicate: boolean;     // Es una copia
+  isModified: boolean;      // Se ha modificado la copia
+
+  createdAt: string;
+  updatedAt: string;
+  projectId: string;
 }
 
 export interface RoadmapPhase {

@@ -11,7 +11,7 @@ export function SuggestedRoadmapsLoading() {
           <Brain className="w-8 h-8 text-[#694969] mr-2" />
           <Loader2 className="w-8 h-8 text-[#694969] animate-spin" />
         </div>
-        <h3 className="text-lg font-semibold mb-2 text-black">Generating Roadmap Suggestions</h3>
+        <h3 className="text-lg font-semibold mb-2 text-black">Generating Dependency Map Suggestions</h3>
         <p className="text-gray-600">Analyzing your user stories to create strategic phases...</p>
       </div>
     </div>

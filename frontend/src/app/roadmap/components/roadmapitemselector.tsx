@@ -159,8 +159,8 @@ const RoadmapItemSelector: React.FC<RoadmapItemSelectorProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-[#f5f0f1] to-[#ebe5eb]">
           <div>
-          <h2 className="text-2xl font-bold text-[#4a2b4a]">Customize Roadmap</h2>
-          <p className="text-[#694969]">Select elements to include in your roadmap</p>
+          <h2 className="text-2xl font-bold text-[#4a2b4a]">Customize Dependency Map</h2>
+          <p className="text-[#694969]">Select elements to include in your Dependency Map</p>
           </div>
           <button 
           aria-label='exit'
@@ -224,7 +224,7 @@ const RoadmapItemSelector: React.FC<RoadmapItemSelectorProps> = ({
           <div className="flex items-center justify-between">
           <div className="flex items-center gap-6 text-sm text-[#694969]">
             <span>Available: <strong className="text-[#7d5c85]">{availableByType.length}</strong></span>
-            <span>In roadmap: <strong className="text-[#4a2b4a]">{currentRoadmapItems.length}</strong></span>
+            <span>In Dependency Map: <strong className="text-[#4a2b4a]">{currentRoadmapItems.length}</strong></span>
             <span>Total: <strong className="text-[#694969]">{roadmapItems.length}</strong></span>
           </div>
           
@@ -327,7 +327,7 @@ const RoadmapItemSelector: React.FC<RoadmapItemSelectorProps> = ({
         
         {/* Panel lateral de Preview */}
           {previewItem && getItemType(previewItem) === 'user-story' && (
-            <div className="border-l bg-white flex flex-col">
+            <div className="border-l bg-white flex flex-col h-full overflow-auto max-h-[90vh] ">
               {/* Preview Header */}
               <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-[#f5f0f1] to-[#ebe5eb]">
                 <div className="flex-1 min-w-0">
@@ -346,7 +346,7 @@ const RoadmapItemSelector: React.FC<RoadmapItemSelectorProps> = ({
               </div>
 
               {/* Preview Content */}
-              <div className="flex-1 p-4 overflow-y-auto max-h-[50vh] h-[50vh]">
+              <div className="flex-1 p-4 overflow-y-auto">
                 <div className="flex justify-center">
                   <RoadmapTreePreview userStory={previewItem as UserStory} allAvailableItems={availableItems} />
                 </div>

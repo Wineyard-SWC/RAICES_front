@@ -8,6 +8,8 @@ import { useTasks } from "@/contexts/taskcontext";
 import { useBugs } from "@/contexts/bugscontext";
 import { useUserStories } from "@/contexts/saveduserstoriescontext";
 import { useKanban } from "@/contexts/unifieddashboardcontext";
+import { useRoadmapSuggestions } from "@/contexts/roadmapSuggestedContext";
+
 import { Loader2 } from "lucide-react";
 //components/subcomponents
 import RoadmapTopBar from "./subcomponents/roadmaptopbar";
@@ -16,18 +18,18 @@ import NewRoadmapDialog from "./subcomponents/roadmapnewroadmapcreator";
 import CustomRoadmapCanvas from "./components/roadmapcanvas";
 import Navbar from "@/components/NavBar";
 import SuggestedRoadmapsList from "./components/SuggestedRoadmaps/suggestedRoadmapList";
+import RecentlyUsedRoadmaps from "./components/RecientlyUsedRoadmaps/recentlyUsedRoadmaps";
 
 import { useSuggestedRoadmap } from "./hooks/useSuggestedRoadmaps";
 import { useSuggestedRoadmapsList } from "./hooks/useSuggestedRoadmapsList";
 import { useRoadmapManagementLogic } from "./hooks/useRoadmapManagementLogic";
 
-import { RoadmapItem, RoadmapPhase, SavedRoadmap } from "@/types/roadmap";
+import { RoadmapItem, RoadmapPhase } from "@/types/roadmap";
 import { SuggestedPhase } from "./hooks/interfaces/useSuggestedRoadmapsProps";
 
 import { roadmapPageStyles as styles } from "./styles/roadmapPageStyles";
 import { isBug, isUserStory } from "@/types/taskkanban";
-import { UserStory } from "@/types/userstory";
-import { Bug } from "@/types/bug";
+
 
 export default function CustomRoadmapPage() {
   const router = useRouter();
@@ -41,6 +43,7 @@ export default function CustomRoadmapPage() {
   const { getBugsForProject } = useBugs();
   const { getUserStoriesForProject } = useUserStories();
   const { refreshKanban } = useKanban();
+  
 
   const {
     loading,
@@ -64,11 +67,14 @@ export default function CustomRoadmapPage() {
     handleDuplicateRoadmap,
     handleSaveRoadmap,
     loadSavedRoadmaps,
-    handleGoBackToStart
+    handleGoBackToStart,
+    handleEditRoadmap,
+    handleDeleteRoadmap
   } = useRoadmapManagementLogic({
     tasks: currentTasks,
     bugs: currentBugs,
-    userStories: currentUserStories
+    userStories: currentUserStories,
+    projectId
   });
 
   const { 
@@ -85,11 +91,11 @@ export default function CustomRoadmapPage() {
     hideSuggestedRoadmaps,
     minimizeSuggestions,
     maximizeSuggestions,
-    toggleMinimized,
-    handlePhaseSelection
   } = useSuggestedRoadmapsList();
 
-  
+  const {suggestions, setSuggestions} = useRoadmapSuggestions();
+  const hasSuggestions = suggestions && suggestions.length > 0;
+ 
   useEffect(() => {
       const initialTasks = getTasksForProject(projectId);
       const initialBugs = getBugsForProject(projectId);
@@ -116,9 +122,10 @@ export default function CustomRoadmapPage() {
     }
   }, [currentTasks, currentBugs, currentUserStories, projectId, hasRefreshed]);
 
-  const handleGenerateSuggestions  = () => {
+  const handleGenerateSuggestions  = async () => {
     const inputStories = currentUserStories.map(us => ({ id: us.id, title: us.title }));
-    generateSuggestedRoadmap(inputStories);
+    const phases = await generateSuggestedRoadmap(inputStories);
+    setSuggestions(phases);
     showSuggestedRoadmaps();
   };
 
@@ -146,7 +153,7 @@ export default function CustomRoadmapPage() {
         id: crypto.randomUUID(),
         name: phase.name,
         description: phase.description || '',
-        color: "#6B7280", 
+        color: "#FFFFFF", 
         position: { x: 0, y: 0 },
         items: phaseItemUUIDs, 
         itemCount: phaseItemUUIDs.length,
@@ -226,8 +233,8 @@ export default function CustomRoadmapPage() {
     } 
     else 
     {
-      const roadmapName = `AI Suggested Roadmap - ${new Date().toLocaleDateString()}`;
-      const roadmapDescription = `Roadmap generated from ${selectedPhases.length} AI-suggested phases`;
+      const roadmapName = `AI Suggested Dependency Map - ${new Date().toLocaleDateString()}`;
+      const roadmapDescription = `Dependency Map generated from ${selectedPhases.length} AI-suggested phases`;
 
       setNewRoadmapName(roadmapName);
       setNewRoadmapDescription(roadmapDescription);
@@ -241,25 +248,30 @@ export default function CustomRoadmapPage() {
     setAddingToExisting(false); 
   };
 
-  useEffect(() => {
-    if (currentRoadmap) {
-      console.log('🎨 Canvas debería mostrar:');
-      console.log('- Roadmap items:', currentRoadmap.items);
-      console.log('- Roadmap phases:', currentRoadmap.phases);
-      console.log('- Available data para canvas:', availableData);
+  useEffect(()=>{
+    if (suggestedRoadmaps && !suggestions){
+      setSuggestions(suggestedRoadmaps)
     }
-  }, [currentRoadmap, availableData]);
+  },[suggestions])
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
     if (!userId) {
       router.push("/login");
-    } else {
+    } 
+
+    if (availableData.length > 0 && projectId) {
       loadSavedRoadmaps();
     }
   }, [router]);
 
-  
+
+  useEffect(() => {
+    if (availableData.length > 0 && projectId && !loading) {
+      loadSavedRoadmaps();
+    }
+  }, [availableData.length, projectId]);
+    
 
   if (loading) {
     return (
@@ -284,6 +296,8 @@ export default function CustomRoadmapPage() {
           savedRoadmaps={savedRoadmaps}
           onClose={() => setShowRoadmapSelector(false)}
           onSelect={handleLoadRoadmap}
+          onEdit={handleEditRoadmap}
+          onDelete={handleDeleteRoadmap}
         />
       )}
 
@@ -334,105 +348,81 @@ export default function CustomRoadmapPage() {
           />
         ) : (
           <div className={styles.emptyStateWrapper}>
-            <div className="w-full mx-auto">
-              <div className={styles.icon}>🗺️</div>
-              <h3 className={styles.title}>
-                Start Your Custom Roadmap
-              </h3>
-              <p className={styles.subtitle}>
-                Create a new roadmap or load an existing one to start visualizing 
-                and planning your project in a structured way.
-              </p>
-              <div className={styles.buttonRow}>
-                <button 
-                  onClick={() => setShowNewRoadmapDialog(true)}
-                  className={styles.button}
-                >
-                  Create New Roadmap
-                </button>
-                <button 
-                  onClick={() => setShowRoadmapSelector(true)}
-                  className={styles.button}                
-                >
-                  Load Existing
-                </button>
-                {/* Generate Suggested Roadmap Button */}
-                <button
-                  onClick={handleGenerateSuggestions}
-                  disabled={loadingGenerativeError || currentUserStories.length === 0}
-                  className={`${styles.suggestButton} ${
-                    loadingGenerativeError || currentUserStories.length === 0
-                      ? styles.suggestButtonDisabled
-                      : styles.suggestButtonEnabled
-                  }`}
-                >
-                  {loadingGenerativeError ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      Suggest Roadmap
-                    </>
-                  )}
-                </button>
-              </div>
-              
-              {/* Opciones para roadmap existente vs nuevo - Solo mostrar si hay roadmaps cargados */}
-              {savedRoadmaps.length > 0 && (
-                <div className={styles.suggestionOptions}>
-                  <h4 className={styles.suggestionOptionsTitle}>
-                    Suggestion Options
-                  </h4>
-                  <div className={styles.suggestionOptionsRow}>
-                    <label className={styles.suggestionOptionsLabel}>
-                      <input
-                        type="radio"
-                        name="roadmapOption"
-                        checked={!addingToExisting}
-                        onChange={() => setAddingToExisting(false)}
-                        className="text-black"
-                      />
-                      Create new roadmap
-                    </label>
-                    <label className={styles.suggestionOptionsLabel}>
-                      <input
-                        type="radio"
-                        name="roadmapOption"
-                        checked={addingToExisting}
-                        onChange={() => setAddingToExisting(true)}
-                        className="text-black"
-                      />
-                      Add to existing roadmap
-                    </label>
-                  </div>
-                </div>
-              )}
-
-              {/* Lista de roadmaps sugeridos */}
-              {showSuggestions && (
-                <div className="mt-4">
-                <SuggestedRoadmapsList
-                  suggestedRoadmaps={suggestedRoadmaps}
-                  onClose={hideSuggestedRoadmaps}
-                  onSelectPhases={handleUseSelectedPhases}
-                  loading={loadingGenerativeError}
-                  error={generativeRoadmapError}
-                  isMinimized={isMinimized}
-                  onMinimize={minimizeSuggestions}
-                  onMaximize={maximizeSuggestions}
-                />
-                <div className="mt-4 text-center">
-                  <button
-                    onClick={hideSuggestedRoadmaps}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            <div className="w-full min-h-screen mx-auto pt-6 pb-6">
+              {/* Título y botones arriba */}
+              <div className="flex flex-col items-center mb-12">
+                <div className={styles.icon}>🗺️</div>
+                <h3 className={styles.title}>Start Your Custom Dependency Map</h3>
+                <p className={styles.subtitle}>
+                  Create a new Dependency Map or load an existing one to start visualizing 
+                  and planning your project in a structured way.
+                </p>
+                <div className={styles.buttonRow}>
+                  <button 
+                    onClick={() => setShowNewRoadmapDialog(true)}
+                    className={styles.button}
                   >
-                    Close Suggestions
+                    Create New Dependency Map
+                  </button>
+                  <button 
+                    onClick={() => setShowRoadmapSelector(true)}
+                    className={styles.button}                
+                  >
+                    Load Existing
+                  </button>
+                  <button
+                    onClick={handleGenerateSuggestions}
+                    disabled={loadingGenerativeError || currentUserStories.length === 0}
+                    className={`${styles.suggestButton} ${
+                      loadingGenerativeError || currentUserStories.length === 0
+                        ? styles.suggestButtonDisabled
+                        : styles.suggestButtonEnabled
+                    }`}
+                  >
+                    {loadingGenerativeError ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>Suggest Dependency Map</>
+                    )}
                   </button>
                 </div>
               </div>
-              )}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                <div className="col-span-1 ">
+                    <RecentlyUsedRoadmaps
+                      roadmaps={savedRoadmaps}
+                      onSelect={handleLoadRoadmap}
+                      maxToShow={5}
+                    />
+                </div>
+                <div className="shadow-lg col-span-1 md:col-span-2">
+                    {(showSuggestions || hasSuggestions) ? (
+                      <SuggestedRoadmapsList
+                        suggestedRoadmaps={
+                          (suggestions && suggestions.length > 0)
+                            ? suggestions
+                            : (suggestedRoadmaps && suggestedRoadmaps.length > 0)
+                              ? suggestedRoadmaps
+                              : []
+                        }
+                        onClose={hideSuggestedRoadmaps}
+                        onSelectPhases={handleUseSelectedPhases}
+                        loading={loadingGenerativeError}
+                        error={generativeRoadmapError}
+                        isMinimized={isMinimized}
+                        onMinimize={minimizeSuggestions}
+                        onMaximize={maximizeSuggestions}
+                      />
+                    ) : (
+                      <div className="text-gray-500 text-center py-8">
+                        No AI suggestions yet. Click "Suggest Dependency Map" to generate.
+                      </div>
+                    )}
+                </div>
+              </div>
             </div>
           </div>
         )}

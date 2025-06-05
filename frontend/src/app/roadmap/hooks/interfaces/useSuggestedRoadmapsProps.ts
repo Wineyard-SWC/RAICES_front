@@ -17,5 +17,5 @@ export interface UseSuggestedRoadmapResult {
   loading: boolean;
   error: string | null;
   suggestedRoadmaps: SuggestedPhase[];
-  generateSuggestedRoadmap: (stories: UserStoryInput[]) => Promise<void>;
+  generateSuggestedRoadmap: (stories: UserStoryInput[]) => SuggestedPhase[];
 }

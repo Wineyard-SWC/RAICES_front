@@ -80,26 +80,34 @@ export default function SuggestedRoadmapsList({
   }
 
   return (
-    <div className="mt-8 bg-white rounded-xl shadow-sm border border-gray-200">
+    <div className="bg-white rounded-xl shadow-sm border border-[#694969] flex flex-col h-full">
       <SuggestedRoadmapsHeader 
         onClose={onMinimize || handleClearSuggestions}
         onMinimize={onMinimize}
         showMinimizeButton={!!onMinimize}
       />
-      
-      <div className="p-6">
+
+      <div className="px-6 py-4">
         <SuggestedRoadmapsControls
           selectedCount={selectedPhases.size}
           totalCount={suggestedRoadmaps.length}
           onSelectAll={handleSelectAll}
         />
-        
-        <SuggestedPhaseGrid
-          phases={suggestedRoadmaps}
-          selectedPhases={selectedPhases}
-          onTogglePhase={togglePhase}
-        />
-        
+      </div>
+
+      
+
+      <div className="flex-1 px-6 py-4 ">
+        <div className="overflow-y-auto min-h-[300px] h-[300px]">
+          <SuggestedPhaseGrid
+            phases={suggestedRoadmaps}
+            selectedPhases={selectedPhases}
+            onTogglePhase={togglePhase}
+          />
+        </div>
+      </div>
+      
+      <div className="px-6 py-6">
         <SuggestedRoadmapsActions
           selectedCount={selectedPhases.size}
           onClear={handleClearSuggestions}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, RotateCcw } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { SuggestedRoadmapsActionsProps } from './interfaces/suggestedRoadmapsProps';
 
 export default function SuggestedRoadmapsActions({
@@ -11,9 +11,8 @@ export default function SuggestedRoadmapsActions({
     <div className="flex gap-3 justify-end pt-4 border-t border-gray-100">
       <button
         onClick={onClear}
-        className="flex items-center gap-2 px-4 py-2 text-[#694969] hover:text-black transition-colors rounded-lg hover:bg-gray-50"
+        className="flex items-center border border-gray-200  gap-2 px-4 py-2 text-[#694969] hover:text-black transition-colors rounded-lg hover:bg-gray-50"
       >
-        <RotateCcw className="w-4 h-4" />
         Clear Suggestions
       </button>
       <button
@@ -26,7 +25,7 @@ export default function SuggestedRoadmapsActions({
         }`}
       >
         <Plus className="w-4 h-4" />
-        Create Roadmap ({selectedCount} phases)
+        Create Dependency Map ({selectedCount} phases)
       </button>
     </div>
   );

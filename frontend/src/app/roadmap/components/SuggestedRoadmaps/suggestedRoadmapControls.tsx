@@ -10,7 +10,7 @@ export default function SuggestedRoadmapsControls({
   const isAllSelected = selectedCount === totalCount;
 
   return (
-    <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100">
+    <div className="flex items-center justify-between border-b border-gray-100">
       <div className="text-sm text-gray-600">
         <span className="font-medium text-black">{selectedCount}</span> of <span className="font-medium text-black">{totalCount}</span> phases selected
       </div>

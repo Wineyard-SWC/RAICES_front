@@ -1,17 +1,24 @@
 import { useState, useEffect, useRef } from "react";
+
 import jsPDF from "jspdf";
 import { toPng } from "html-to-image";
-import { SuggestedPhase } from "./interfaces/useSuggestedRoadmapsProps";
+
+import { saveOrUpdateRoadmap } from "../utils/endpointsDB/createRoadmap";
+import { useRoadmapSync } from "../utils/roadmapSync";
+
 import type { RoadmapPhase, SavedRoadmap, RoadmapItem, RoadmapConnection } from "@/types/roadmap";
 import type { UserStory } from "@/types/userstory";
-import { isBug, isTask, isUserStory } from "@/types/taskkanban";
-import { Task } from "@/types/task";
-import { Bug } from "@/types/bug";
+import type{ Task } from "@/types/task";
+import type { Bug } from "@/types/bug";
+import  { isBug, isTask, isUserStory } from "@/types/taskkanban";
 
-export function useRoadmapManagementLogic({ tasks, bugs, userStories }: {
+import { useRoadmaps } from "@/contexts/roadmapContext";
+
+export function useRoadmapManagementLogic({ tasks, bugs, userStories, projectId }: {
   tasks: RoadmapItem[],
   bugs: RoadmapItem[],
-  userStories: RoadmapItem[]
+  userStories: RoadmapItem[],
+  projectId?: string
 }) {
   const [loading, setLoading] = useState(true);
   const [availableData, setAvailableData] = useState<RoadmapItem[]>([]);
@@ -26,6 +33,17 @@ export function useRoadmapManagementLogic({ tasks, bugs, userStories }: {
   const [showTopBar, setShowTopBar] = useState(true);
 
   const canvasRef = useRef<HTMLDivElement>(null!);
+
+  const roadmapContext = useRoadmaps();
+
+
+  const syncManager = (projectId && availableData.length > 0) ? useRoadmapSync(
+    projectId,
+    availableData,
+    roadmapContext,
+    setSavedRoadmaps,
+    setCurrentRoadmap
+  ) : null;
 
   useEffect(() => {
     const allAvailableData = [
@@ -44,16 +62,38 @@ export function useRoadmapManagementLogic({ tasks, bugs, userStories }: {
     setLoading(false);
   }, [tasks, bugs, userStories]);
 
-  const loadSavedRoadmaps = () => {
-    const SavedRoadmaps: SavedRoadmap[] = [ ];
-    setSavedRoadmaps(SavedRoadmaps);
+  useEffect(() => {
+    if (projectId && availableData.length > 0) {
+      const roadmapsFromContext = roadmapContext.getRoadmapsForProject(projectId);
+      setSavedRoadmaps(roadmapsFromContext);
+    }
+  }, [projectId, availableData]);
+
+  const loadSavedRoadmaps = async () => {
+    if (!projectId || availableData.length === 0) {
+
+      setSavedRoadmaps([]);
+      return;
+    }
+
+    if (!syncManager) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await syncManager.refreshAndSync();
+    } catch (error) {
+      console.error("Error loading roadmaps:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleCreateNewRoadmap = (
+  const buildRoadmapContent = (
     initialItems: {id:string,title:string}[] = [],
     initialPhases: RoadmapPhase[] = []
   ) => {
-    
     let fullItems: RoadmapItem[] = []
 
     if (initialItems && initialItems.length > 0) {
@@ -205,37 +245,49 @@ export function useRoadmapManagementLogic({ tasks, bugs, userStories }: {
       
     }
 
-    const roadmapName = newRoadmapName.trim() || `Roadmap ${Date.now()}`;
+    return { fullItems, fullPhases };
+
+  }
+
+  const handleCreateNewRoadmap = async (
+    initialItems: {id:string,title:string}[] = [],
+    initialPhases: RoadmapPhase[] = []
+  ) => {
+    if (!projectId || !syncManager) return;
+
+    const { fullItems, fullPhases } = buildRoadmapContent(initialItems, initialPhases);
+    const roadmapName = newRoadmapName.trim() || `New Dependency Map-${savedRoadmaps.length + 1}`;
+    const roadmapDescription = newRoadmapDescription.trim() || `Dependency Map for project management`;
 
     const newRoadmap: SavedRoadmap = {
-      id: `roadmap-${Date.now()}`,
+      id: `Dependency Map-${Date.now()}`,
       name: roadmapName,
-      description: newRoadmapDescription.trim() || undefined,
+      description: roadmapDescription,
       items: fullItems,
       connections: [],
       phases: fullPhases,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      projectId: projectId
     };
 
-    setSavedRoadmaps(prev => [...prev, newRoadmap]);
-    setCurrentRoadmap(newRoadmap);
+    try {
+      await saveOrUpdateRoadmap(projectId, newRoadmap, true, false, undefined);
+      await syncManager.syncCurrentRoadmap(roadmapName);
+    } catch (error) {
+      syncManager.handleSyncError(error, newRoadmap, "create roadmap");
+    }
+
     setNewRoadmapName('');
     setNewRoadmapDescription('');
     setShowNewRoadmapDialog(false);
-    
   };
 
-  useEffect(() => {
-    console.log('🔍 Current roadmap changed:', currentRoadmap);
-  }, [currentRoadmap]);
-  
-
-  const handleUpdateExistingRoadmap = (
+  const handleUpdateExistingRoadmap = async (
     additionalItems: RoadmapItem[],
     additionalPhases: RoadmapPhase[]
   ) => {
-    if (!currentRoadmap) return;
+    if (!currentRoadmap || !projectId || !syncManager) return;
 
     const existingItemIds = currentRoadmap.items.map(item => item.id);
     const uniqueNewItems = additionalItems.filter(item => !existingItemIds.includes(item.id));
@@ -247,10 +299,12 @@ export function useRoadmapManagementLogic({ tasks, bugs, userStories }: {
       updatedAt: new Date().toISOString(),
     };
 
-    setSavedRoadmaps(prev =>
-      prev.map(r => r.id === updatedRoadmap.id ? updatedRoadmap : r)
-    );
-    setCurrentRoadmap(updatedRoadmap);
+    try {
+      await saveOrUpdateRoadmap(projectId, updatedRoadmap, false, false, undefined);
+      await syncManager.syncCurrentRoadmap(undefined, updatedRoadmap.id);
+    } catch (error) {
+      syncManager.handleSyncError(error, updatedRoadmap, "update roadmap");
+    }
   };
 
   const handleLoadRoadmap = (roadmap: SavedRoadmap) => {
@@ -263,67 +317,97 @@ export function useRoadmapManagementLogic({ tasks, bugs, userStories }: {
     connections: RoadmapConnection[],
     phases: RoadmapPhase[]
   ) => {
-    if (!currentRoadmap) return;
+   if (!currentRoadmap || !projectId || !syncManager) return;
 
     setSaving(true);
-    try {
-      const updatedRoadmap: SavedRoadmap = {
-        ...currentRoadmap,
-        items,
-        connections,
-        phases,
-        updatedAt: new Date().toISOString(),
-      };
+    
+    const updatedRoadmap: SavedRoadmap = {
+      ...currentRoadmap,
+      items,
+      connections,
+      phases,
+      updatedAt: new Date().toISOString(),
+    };
 
-      setSavedRoadmaps(prev =>
-        prev.map(r => r.id === updatedRoadmap.id ? updatedRoadmap : r)
-      );
-      setCurrentRoadmap(updatedRoadmap);
-    } catch (err) {
-      console.error("Error saving roadmap:", err);
+    try {
+      await saveOrUpdateRoadmap(projectId, updatedRoadmap, false, false, undefined);
+      await syncManager.syncCurrentRoadmap(undefined, updatedRoadmap.id);
+    } catch (error) {
+      syncManager.handleSyncError(error, updatedRoadmap, "save roadmap");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleExportRoadmap = async () => {
+  const handleExportRoadmap = async () => {     
     if (!canvasRef.current) return;
-
-    try {
-      const bounds = canvasRef.current.getBoundingClientRect();
-      const dataUrl = await toPng(canvasRef.current, { pixelRatio: 2, cacheBust: true });
-      const pdf = new jsPDF({
-        orientation: 'landscape',
-        unit: 'px',
-        format: [bounds.width, bounds.height],
-      });
+    
+    try {       
+      const bounds = canvasRef.current.getBoundingClientRect();       
+      const dataUrl = await toPng(canvasRef.current, { pixelRatio: 2, cacheBust: true });      
+            
+      const pdf = new jsPDF({orientation:'landscape',unit: 'px',format: [bounds.width, bounds.height],});
+            
       pdf.addImage(dataUrl, 'PNG', 0, 0, bounds.width, bounds.height);
-      pdf.save(`${currentRoadmap?.name || 'roadmap'}.pdf`);
-    } catch (err) {
-      console.error("Error exporting roadmap:", err);
-    }
+      
+      pdf.save(`${currentRoadmap?.name || 'Dependency Map'}.pdf`);
+
+    } 
+    catch (err) 
+    {       
+      console.error("Error exporting Dependency Map:", err);     
+    }   
   };
 
-  const handleDuplicateRoadmap = () => {
-    if (!currentRoadmap) return;
+  const handleDuplicateRoadmap = async () => {
+    if (!currentRoadmap || !projectId || !syncManager) return;
 
-    const duplicated = {
-      ...currentRoadmap,
-      id: `roadmap-${Date.now()}`,
-      name: `${currentRoadmap.name} (Copy)`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+    const duplicatedSavedRoadmap: SavedRoadmap = {
+       ...currentRoadmap,
+        id: `roadmap-${Date.now()}`,
+        name: `${currentRoadmap.name} (Copy)`,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
     };
-    setSavedRoadmaps(prev => [...prev, duplicated]);
-    setCurrentRoadmap(duplicated);
+
+    try {
+      await saveOrUpdateRoadmap(projectId, duplicatedSavedRoadmap, true, true, currentRoadmap.id);
+      await syncManager.syncCurrentRoadmap(duplicatedSavedRoadmap.name);
+    } catch (error) {
+      syncManager.handleSyncError(error, duplicatedSavedRoadmap, "duplicate roadmap");
+    }
   };
 
   const handleGoBackToStart = () => {
     setCurrentRoadmap(null);
   };
 
+  const handleDeleteRoadmap = async (roadmap: SavedRoadmap) => {
+    if (!projectId || !syncManager) return;
+    try {
+      await syncManager.deleteRoadmap(currentRoadmap!,roadmap.id);
+      await loadSavedRoadmaps();
+    } catch (error) {
+      console.error("Error deleting roadmap:", error);
+    }
+  };
+
+  const handleEditRoadmap = async (roadmap: SavedRoadmap, newName: string, newDescription: string) => {
+    if (!projectId || !syncManager) return;
+    const updatedRoadmap = { ...roadmap, name: newName, description: newDescription, updatedAt: new Date().toISOString() };
+    try {
+      await saveOrUpdateRoadmap(projectId, updatedRoadmap, false, false, undefined);
+      await loadSavedRoadmaps();
+    } catch (error) {
+      console.error("Error editing roadmap:", error);
+    }
+  };
+
+  const isLoadingRoadmaps = loading || (projectId ? roadmapContext.isLoading(projectId) : false);
+
+
   return {
-    loading,
+    loading:isLoadingRoadmaps,
     canvasRef,
     availableData,
     savedRoadmaps,
@@ -347,5 +431,7 @@ export function useRoadmapManagementLogic({ tasks, bugs, userStories }: {
     loadSavedRoadmaps,
     handleGoBackToStart,
     handleUpdateExistingRoadmap,
+    handleDeleteRoadmap,
+    handleEditRoadmap,
   };
 }

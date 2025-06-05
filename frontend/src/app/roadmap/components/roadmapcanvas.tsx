@@ -187,7 +187,7 @@ const CustomRoadmapCanvas = forwardRef<HTMLDivElement, CustomRoadmapCanvasProps>
   };
 
   return (
-    <div className="relative w-full h-[calc(100vh-120px)] bg-gradient-to-br from-[#f5f0f1] to-[#ebe5eb] rounded-xl shadow-sm border border-[#c7a0b8] overflow-hidden">
+    <div className="relative w-full h-[calc(100vh-120px)] bg-gradient-to-br from-[#f5f0f1] to-[#ebe5eb] rounded-xl shadow-sm border border-[#c7a0b8]">
       {/* Item Selector Modal */}
       <RoadmapItemSelector
         availableItems={availableItems}
@@ -205,7 +205,7 @@ const CustomRoadmapCanvas = forwardRef<HTMLDivElement, CustomRoadmapCanvasProps>
 
       {/* Phase Creator Modal */}
       {showPhaseCreator && (
-        <div className="fixed inset-0 bg-black/30 bg-opacity-50 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black/30 bg-opacity-50 z-50  flex items-center justify-center">
           <div className="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
             <h3 className="text-xl font-bold mb-4 text-[#4a2b4a]">Create New Phase</h3>
             <div className="space-y-4">
@@ -253,10 +253,10 @@ const CustomRoadmapCanvas = forwardRef<HTMLDivElement, CustomRoadmapCanvasProps>
       )}
 
       {/* Main Control Panel */}
-      <div className="absolute top-4 left-4 z-10">
+      <div className="absolute top-4 left-4 z-30">
         <div className={`bg-white rounded-xl shadow-lg border border-[#c7a0b8] transition-all duration-300 ${
           showMainControls ? 'p-4' : 'p-2'
-        }`}>
+        } max-h-[50vh] overflow-y-auto`}>
           {/* Header with toggle */}
           <div className="flex items-center justify-between mb-3">
             <h2 className={`font-bold text-[#4a2b4a] flex items-center gap-2 ${

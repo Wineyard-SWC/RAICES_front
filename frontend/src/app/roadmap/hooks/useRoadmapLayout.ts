@@ -100,29 +100,13 @@ export const useRoadmapLayout = (
   }, []);
   
   const adjustedRoadmapPhases = useMemo(() => {
-    const result = roadmapPhases.map((phase, index) => {
-      let newPosition;
-
-      if (selectedPhaseId && phase.id === selectedPhaseId) {
-          newPosition = { x: 200, y: 50 };
-        
+    return roadmapPhases.map((phase, index) => ({
+      ...phase,
+      position: {
+        x: 100 + (index * LAYOUT_CONSTANTS.PHASE_SPACING_X),
+        y: 50 
       }
-      else {
-        newPosition = {
-          x: 100 + (index * LAYOUT_CONSTANTS.PHASE_SPACING_X),
-          y: 50 
-        };
-      }
-      
-      return {
-        ...phase,
-        position: newPosition
-      };
-
-    });
-
-    return result;
-
+    }));
   }, [roadmapPhases, LAYOUT_CONSTANTS.PHASE_SPACING_X]);
   
 
@@ -143,7 +127,7 @@ export const useRoadmapLayout = (
     const newManagers = new Map<string, TreeLayoutManager>();
     newManagers.set('global', new TreeLayoutManager('global', { x: 100, y: 100 }));
     adjustedRoadmapPhases.forEach(phase => {
-      newManagers.set(phase.id, new TreeLayoutManager(phase.id, { x: 100, y: 100 }));
+      newManagers.set(phase.id, new TreeLayoutManager(phase.id, phase.position));
     });
     setPhaseLayoutManagers(newManagers);
   }, [adjustedRoadmapPhases]);

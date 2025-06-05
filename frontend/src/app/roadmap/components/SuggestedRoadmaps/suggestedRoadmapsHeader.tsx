@@ -9,14 +9,14 @@ export default function SuggestedRoadmapsHeader({
   showMinimizeButton = false 
 }: SuggestedRoadmapsHeaderProps) {
   return (
-    <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
+    <div className="px-6 py-4 border-b border-gray-900 bg-gradient-to-r from-gray-50 to-gray-100">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Sparkles className="w-6 h-6 text-[#694969]" />
           <div>
-            <h3 className="text-lg font-bold text-black">AI-Generated Roadmap Suggestions</h3>
+            <h3 className="text-lg font-bold text-black">AI-Generated Dependency Map Suggestions</h3>
             <p className="text-gray-600 text-sm mt-1">
-              Select the phases you want to include in your roadmap
+              Select the phases you want to include in your dependency map
             </p>
           </div>
         </div>

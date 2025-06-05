@@ -8,7 +8,7 @@ export const roadmapPageStyles = {
   subtitle: "text-gray-600 mb-6",
   buttonRow: "flex gap-3 justify-center w-full max-w-3xl mx-auto",
   button: "flex-1 px-4 py-2 text-[#694969] rounded-lg border border-black shadow shadow-mb hover:bg-[#694969] hover:text-white transition-colors",
-  suggestButton: "flex-1 px-4 py-2 rounded-lg border transition-colors font-medium flex items-center gap-2 shadow-sm",
+  suggestButton: "flex-1 px-4 py-2 rounded-lg border transition-colors font-medium flex items-center gap-3 shadow-sm justify-center",
   suggestButtonDisabled: "bg-gray-300 text-gray-500 cursor-not-allowed border-gray-300",
   suggestButtonEnabled: "text-[#694969] border-black hover:bg-[#694969] hover:text-white",
   suggestionOptions: "mt-4 p-4 bg-blue-50 rounded-lg border border-gray-200",

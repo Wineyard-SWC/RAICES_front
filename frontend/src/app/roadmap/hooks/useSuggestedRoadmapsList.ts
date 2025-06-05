@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { SuggestedPhase } from './interfaces/useSuggestedRoadmapsProps';
 
 export function useSuggestedRoadmapsList() {
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -27,13 +26,7 @@ export function useSuggestedRoadmapsList() {
     setIsMinimized(!isMinimized);
   };
 
-  const handlePhaseSelection = (
-    selectedPhases: SuggestedPhase[],
-    onCreateRoadmap: (phases: SuggestedPhase[]) => void
-  ) => {
-    onCreateRoadmap(selectedPhases);
-    hideSuggestedRoadmaps();
-  };
+
 
   return {
     showSuggestions,
@@ -43,6 +36,5 @@ export function useSuggestedRoadmapsList() {
     minimizeSuggestions,
     maximizeSuggestions,
     toggleMinimized,
-    handlePhaseSelection
   };
 }

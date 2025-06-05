@@ -7,11 +7,14 @@ getItemId,
 getItemType, 
 getItemTitle,
 extractRelationsFromItem, 
-NodeData
+NodeData,
+SavedRoadmap,
+DatabaseRoadmap
 } from '@/types/roadmap';
 import { getEdgeStyle } from '../styles/edge';
 import { isItemVisible } from './roadmapRelations';  
 import { TreeLayoutManager } from '../class/TreeLayoutManager';
+import { generateTreeConnections } from '../class/TreeLayoutManager';
 
 export const extractAllConnections = (items: RoadmapItem[]): RoadmapConnection[] => {
   const allConnections: RoadmapConnection[] = [];
@@ -187,3 +190,88 @@ export const convertConnectionsToEdges = (
       data: { connectionType: conn.type }
     }));
 };
+
+
+export function roadmapToDatabaseFormat(
+  roadmap: SavedRoadmap,
+  isDuplicate: boolean = false,
+  sourceRoadmapId?: string,
+): DatabaseRoadmap {
+  return {
+    id: roadmap.id,
+    name:roadmap.name,
+    description: roadmap.description,
+    phases: roadmap.phases,
+    sourceRoadmapId:sourceRoadmapId,
+    isDuplicate:isDuplicate,
+    isModified: isDuplicate ? false : true,
+    createdAt: roadmap.createdAt,
+    updatedAt:roadmap.updatedAt,
+    projectId: roadmap.projectId || ""
+  };
+}
+
+export async function databaseToRoadmap(
+  dbRoadmap: DatabaseRoadmap,
+  availableData: RoadmapItem[],
+  getRoadmapById?: (id: string) => Promise<DatabaseRoadmap | null>
+): Promise<SavedRoadmap> {
+  
+  let phases: RoadmapPhase[];
+  
+  if (dbRoadmap.isDuplicate && !dbRoadmap.isModified && dbRoadmap.sourceRoadmapId && getRoadmapById) {
+    const sourceRoadmap = await getRoadmapById(dbRoadmap.sourceRoadmapId);
+    phases = sourceRoadmap?.phases || dbRoadmap.phases;
+  } else {
+    phases = dbRoadmap.phases;
+  }
+  
+  const allItemIds = phases.flatMap(phase => phase.items);
+  const items = availableData.filter(item => 
+    allItemIds.includes(getItemId(item))
+  );
+  
+  const connections = reconstructConnections(items, phases);
+  
+  return {
+    id: dbRoadmap.id,
+    name: dbRoadmap.name,
+    description: dbRoadmap.description,
+    items,
+    connections,
+    phases,
+    createdAt: dbRoadmap.createdAt,
+    updatedAt: dbRoadmap.updatedAt,
+    projectId: dbRoadmap.projectId
+  };
+}
+
+function reconstructConnections(
+  items: RoadmapItem[],
+  phases: RoadmapPhase[]
+): RoadmapConnection[] {
+  const allConnections: RoadmapConnection[] = [];
+  
+  phases.forEach(phase => {
+    const phaseItems = items.filter(item => 
+      phase.items.includes(getItemId(item))
+    );
+    
+    if (phaseItems.length > 0) {
+      const treeConnections = generateTreeConnections(phaseItems);
+      
+      treeConnections.forEach(conn => {
+        allConnections.push({
+          id: `${conn.source}-${conn.target}`,
+          source: conn.source,
+          target: conn.target,
+          sourceHandle: 'bottom-source',
+          targetHandle: 'top-target',
+          type: conn.type
+        });
+      });
+    }
+  });
+  
+  return allConnections;
+}
