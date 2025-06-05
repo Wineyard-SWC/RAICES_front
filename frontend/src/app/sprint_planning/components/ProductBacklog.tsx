@@ -115,16 +115,80 @@ export default function ProductBacklog({ userStories, tasks, onToggleUserStory }
         <h3 className="text-md font-medium mb-2 text-[#4a2b4a]">User Stories</h3>
 
         <div className="space-y-3">
-          {filteredStories.map(sprintStory => (
-            <BacklogItemCard
-              key={sprintStory.id}
-              type="story"
-              item={sprintStory.userStory}     // ¡ya existe!
-              tasks={sprintStory.taskObjects}
-              isSelected={sprintStory.selected}
-              onAdd={() => onToggleUserStory(sprintStory.id)}
-            />
-          ))}
+          {filteredStories.length === 0 ? (
+            // 🔥 FIX: Mensaje cuando no hay user stories
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="rounded-full bg-gray-100 p-4 mb-4">
+                <svg 
+                  className="h-8 w-8 text-gray-400" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" 
+                  />
+                </svg>
+              </div>
+              {userStories.length === 0 ? (
+                // No hay user stories en absoluto
+                <>
+                  <h4 className="text-lg font-medium text-gray-700 mb-2">
+                    No User Stories Available
+                  </h4>
+                  <p className="text-sm text-gray-500 mb-1">
+                    Create user stories in your project backlog first
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    User stories help organize work into manageable pieces for your sprint
+                  </p>
+                </>
+              ) : (
+                // Hay user stories pero están filtradas
+                <>
+                  <h4 className="text-lg font-medium text-gray-700 mb-2">
+                    No Stories Match Your Filters
+                  </h4>
+                  <p className="text-sm text-gray-500 mb-3">
+                    Try adjusting your search term or priority filter
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSearchTerm("")}
+                      className="text-xs"
+                    >
+                      Clear Search
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPriority(null)}
+                      className="text-xs"
+                    >
+                      Clear Filter
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            // 🔥 FIX: Lista normal cuando hay stories
+            filteredStories.map(sprintStory => (
+              <BacklogItemCard
+                key={sprintStory.id}
+                type="story"
+                item={sprintStory.userStory}
+                tasks={sprintStory.taskObjects}
+                isSelected={sprintStory.selected}
+                onAdd={() => onToggleUserStory(sprintStory.id)}
+              />
+            ))
+          )}
         </div>
       </div>
     </div>
