@@ -26,6 +26,8 @@ import { KanbanProvider } from "@/contexts/unifieddashboardcontext"
 import { ProjectUsersProvider } from "@/contexts/ProjectusersContext"
 import { UserPermissionsProvider } from "@/contexts/UserPermissions"
 import { CalendarProvider } from "@/contexts/CalendarContext"
+import { RoadmapSuggestionsProvider } from "@/contexts/roadmapSuggestedContext"
+import { RoadmapProvider } from "@/contexts/roadmapContext"
 import { GenerativeAISessionProvider } from "@/contexts/generativeAISessionContext"
          
 interface ProvidersProps {
@@ -34,7 +36,6 @@ interface ProvidersProps {
 
 export function AllProviders({ children }: { children: React.ReactNode }) {
   return (
-    <SessionProvider>
       <GenerativeAISessionProvider>
         <UserProvider>
           <AvatarProvider>
@@ -59,8 +60,12 @@ export function AllProviders({ children }: { children: React.ReactNode }) {
                                                 <ProjectUsersProvider>
                                                   <UserPermissionsProvider>
                                                     <CalendarProvider>
-                                                      {children}
-                                                      <div id="modal-root" />
+                                                      <RoadmapSuggestionsProvider>
+                                                        <RoadmapProvider> 
+                                                          {children}
+                                                          <div id="modal-root" />
+                                                        </RoadmapProvider> 
+                                                      </RoadmapSuggestionsProvider>
                                                     </CalendarProvider>
                                                   </UserPermissionsProvider>
                                                 </ProjectUsersProvider>
@@ -85,6 +90,5 @@ export function AllProviders({ children }: { children: React.ReactNode }) {
           </AvatarProvider>
         </UserProvider>
       </GenerativeAISessionProvider>
-    </SessionProvider>
   )
 }

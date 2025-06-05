@@ -18,7 +18,7 @@ type NavbarProps = {
 }
 
 // Definimos las pestañas como constantes para evitar errores de tipeo
-const TABS = ["Dashboard", "Sprints", "Roadmap", "Team", "Generate"] as const
+const TABS = ["Dashboard", "Sprints", "Dependency Map", "Team", "Generate"] as const
 type TabType = (typeof TABS)[number]
 
 // Definir constantes de permisos
@@ -30,7 +30,7 @@ const PERMISSIONS = {
 const PATH_TO_TAB: Record<string, TabType> = {
   "/dashboard": "Dashboard",
   "/my-sprints": "Sprints",
-  "/roadmap": "Roadmap",
+  "/roadmap": "Dependency Map",
   "/team": "Team",
   "/generate": "Generate",
   "/gen_requirements": "Generate",
@@ -177,7 +177,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
           router.push(`/dashboard?projectId=${currentProjectId}`)
         }
         break
-      case "Roadmap":
+      case "Dependency Map":
         if (currentProjectId) {
           router.push(`/roadmap?projectId=${currentProjectId}`)
         }

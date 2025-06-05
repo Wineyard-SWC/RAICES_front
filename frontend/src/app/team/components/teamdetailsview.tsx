@@ -51,7 +51,7 @@ const TeamDetailsView = ({ teamId }: TeamDetailsViewProps) => {
   // Un solo useEffect que controla toda la carga de datos
   useEffect(() => {
     loadData();
-  }, [loadData]);
+  }, [teamId, projectId]);
 
   const handleGoBack = () => {
     router.push(`/team?projectId=${projectId}`);
