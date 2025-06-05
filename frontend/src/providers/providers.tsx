@@ -36,6 +36,7 @@ interface ProvidersProps {
 
 export function AllProviders({ children }: { children: React.ReactNode }) {
   return (
+    <SessionProvider>
       <GenerativeAISessionProvider>
         <UserProvider>
           <AvatarProvider>
@@ -90,5 +91,6 @@ export function AllProviders({ children }: { children: React.ReactNode }) {
           </AvatarProvider>
         </UserProvider>
       </GenerativeAISessionProvider>
+    </SessionProvider>
   )
 }
