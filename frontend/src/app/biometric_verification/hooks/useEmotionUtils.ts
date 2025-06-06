@@ -1,18 +1,18 @@
 "use client";
 
-// Mapeo de emociones a expresiones de avatar
+// ✅ MAPEO CORREGIDO - usar exactamente las mismas claves que en EXPRESSIONS
 const EMOTION_TO_EXPRESSION = {
-  'Relaxed': 'neutral',
-  'Happy': 'happy',
-  'Euphoric': 'bigSmile',
-  'Calm': 'neutral',
-  'Excited': 'surprised',
-  'Sad': 'sad',
-  'Stressed': 'angry',
-  'Neutral': 'neutral'
+  'Relaxed': 'Relaxed',     // ✅ Coincide con EXPRESSIONS
+  'Happy': 'Happy',         // ✅ Coincide con EXPRESSIONS
+  'Euphoric': 'Euphoric',   // ✅ Coincide con EXPRESSIONS
+  'Calm': 'Calm',           // ✅ Coincide con EXPRESSIONS
+  'Excited': 'Excited',     // ✅ Coincide con EXPRESSIONS
+  'Sad': 'Sad',             // ✅ Coincide con EXPRESSIONS
+  'Stressed': 'Stressed',   // ✅ Coincide con EXPRESSIONS
+  'Neutral': 'Neutral'      // ✅ Coincide con EXPRESSIONS
 };
 
-// Mapeo de emociones a emojis
+// Mapeo de emociones a emojis (este está bien)
 const EMOTION_EMOJIS = {
   'Relaxed': '😌',
   'Happy': '😁',
@@ -27,7 +27,7 @@ const EMOTION_EMOJIS = {
 export const useEmotionUtils = () => {
   
   const getEmotionExpression = (emotion: string): string => {
-    return EMOTION_TO_EXPRESSION[emotion] || 'neutral';
+    return EMOTION_TO_EXPRESSION[emotion] || 'Neutral'; // ✅ Fallback a 'Neutral' en lugar de 'neutral'
   };
 
   const getEmotionEmoji = (emotion: string): string => {
