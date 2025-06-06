@@ -219,13 +219,19 @@ export const TasksKanban = ({onNavigate, view, onTaskSelect }: TasksKanbanProps)
                       onDelete={canManageItems ? handleDelete : undefined}
                       onStatusUpdate={updateItemStatus}
                       onTaskSelect={onTaskSelect}
-                      maxHeight="35vh"
+                      maxHeight="100%"
+                      onScroll={(e) => handleScroll(e, columnId)}
+                      virtualizedContent={createVirtualizedContent(
+                        columnId, 
+                        kanbanData[columnId as keyof typeof kanbanData]
+                      )}
                     />
                   ))}
               </div>
             )
           ) : (
-            <div className="h-[70vh] flex gap-6 overflow-x-auto pb-2">
+            <div 
+            className="h-[75vh] flex gap-6 overflow-x-auto ">
               {Object.entries(columnStyles).map(([columnId, column]) => (
                 <KanbanColumn
                   key={columnId}

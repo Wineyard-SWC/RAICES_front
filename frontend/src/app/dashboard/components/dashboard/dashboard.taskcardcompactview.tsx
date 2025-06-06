@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { createPortal } from "react-dom"
 import {
   MoreVertical,
   MessageSquare,
@@ -14,6 +15,7 @@ import {
   Link,
   ChevronDown,
   ChevronUp,
+  X
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react"
@@ -47,7 +49,9 @@ export const TaskCardCompactView = ({
   const [showChangeStatusModal, setShowChangeStatusModal] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState(task.status_khanban as any);
   const menuRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const {tasks: kanbanTasks } = useKanban();
+  const [expandedPosition, setExpandedPosition] = useState({ top: 0, left: 0, width: 0 });
 
   const priorityColors = {
     Low: "bg-green-100 text-green-800 border-green-200",
@@ -68,21 +72,55 @@ export const TaskCardCompactView = ({
     return null
   }
   
-    const getTaskDetailsByIds = (ids: string[]): { id: string; title: string; status: string }[] => {
-      const details: { id: string; title: string; status: string }[] = []
-      for (const column of Object.values(kanbanTasks)) {
-        for (const item of column) {
-          if (!isUserStory(item) && ids.includes(item.id)) {
-            details.push({
-              id: item.id,
-              title: item.title,
-              status: item.status_khanban
-            })
-          }
+  const getTaskDetailsByIds = (ids: string[]): { id: string; title: string; status: string }[] => {
+    const details: { id: string; title: string; status: string }[] = []
+    for (const column of Object.values(kanbanTasks)) {
+      for (const item of column) {
+        if (!isUserStory(item) && ids.includes(item.id)) {
+          details.push({
+            id: item.id,
+            title: item.title,
+            status: item.status_khanban
+          })
         }
       }
-      return details
     }
+    return details
+  }
+
+  const calculateExpandedPosition = () => {
+    if (!cardRef.current) return;
+
+    const rect = cardRef.current.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const expandedWidth = 400; 
+    
+    let left = rect.left;
+    let top = rect.top;
+
+    if (left + expandedWidth > viewportWidth - 20) {
+      left = viewportWidth - expandedWidth - 20;
+    }
+    
+    if (top + 300 > viewportHeight - 20) { 
+      top = Math.max(20, viewportHeight - 320);
+    }
+
+    setExpandedPosition({
+      top: top + window.scrollY,
+      left: Math.max(20, left),
+      width: rect.width
+    });
+  };
+
+  const handleExpandToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!expanded) {
+      calculateExpandedPosition();
+    }
+    setExpanded(!expanded);
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -94,7 +132,7 @@ export const TaskCardCompactView = ({
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [menuOpen])
 
-  const handleCardClick = () => {
+  const handleCardClickexpand = () => {
     if (view === "dashboard") setShowChangeStatusModal(true)
     else if (view === "backlog" && onViewDetails) onViewDetails(task)
     else setShowChangeStatusModal(true)
@@ -137,8 +175,155 @@ export const TaskCardCompactView = ({
   const cardType = isUserStory(task) ? "UserStory" : isBug(task) ? "Bug" : "Task"
   const getPoints = () => (isUserStory(task) ? task.points : isBug(task) ? 0 : task.story_points)
 
+
+   const ExpandedCard = () => (
+    <div 
+      className="fixed bg-white rounded-lg shadow-2xl border border-gray-300 p-6 z-50 max-w-md"
+      style={{
+        top: `${expandedPosition.top}px`,
+        left: `${expandedPosition.left}px`,
+        minWidth: '400px',
+        maxHeight: '80vh',
+        overflowY: 'auto'
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Header con botón cerrar */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded-md text-sm font-medium bg-gray-100 text-gray-700">
+            {cardType === "UserStory" && <BookOpen className="h-3 w-3" />}
+            {cardType === "Bug" && <Bug className="h-3 w-3" />}
+            {cardType === "Task" && <CheckSquare className="h-3 w-3" />}
+            <span>{cardType}</span>
+          </div>
+          <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs font-medium border border-blue-200">
+            {getPoints()} pts
+          </span>
+          <span className={`px-2 py-0.5 rounded text-xs font-medium border ${priorityColors[task.priority]}`}>
+            {task.priority}
+          </span>
+        </div>
+        
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-6 w-6" 
+          onClick={() => setExpanded(false)}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Título */}
+      <h3 className="font-semibold text-gray-900 text-lg mb-3">{task.title}</h3>
+
+      {/* Descripción */}
+      <div className="mb-4">
+        <h4 className="text-sm font-medium text-gray-700 mb-2">Description:</h4>
+        <p className="text-md text-gray-600">{task.description || "No description provided."}</p>
+      </div>
+
+      {/* Assignees */}
+      <div className="mb-4">
+        <h4 className="text-sm font-medium text-gray-700 mb-2">Assigned to:</h4>
+        <div className="flex items-center gap-1 text-sm text-gray-600">
+          {(() => {
+            const assigneeName = getFirstAssigneeName();
+            if (assigneeName) {
+              return (
+                <>
+                  <Users className="h-3 w-3" />
+                  <span>{assigneeName}</span>
+                  {assignees.length > 1 && (
+                    <span className="ml-1 text-xs">+{assignees.length - 1} more</span>
+                  )}
+                </>
+              )
+            }
+            return <span className="text-gray-500 italic">Not assigned</span>
+          })()}
+        </div>
+      </div>
+
+      {/* Comments */}
+      {Array.isArray(task.comments) && task.comments.length > 0 && (
+        <div className="mb-4">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-medium text-gray-700">Comments:</h4>
+            <div className="flex items-center gap-1">
+              <MessageSquare className="h-3 w-3 text-gray-500" />
+              <span className="text-sm text-gray-700">{task.comments.length}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* User Story Link para Tasks y Bugs */}
+      {!isUserStory(task) && !isBug(task) && (
+        <div className="mb-4">
+          <div className="flex items-center gap-1.5">
+            <Link className="h-4 w-4 text-gray-500" />
+            <span className="text-sm font-medium text-gray-700">User Story:</span>
+            <em className="text-sm text-gray-600">{task.user_story_title || getUserStoryTitleByTaskId(task.id) || "Not linked"}</em>
+          </div>
+        </div>
+      )}
+
+      {/* Linked Tasks para User Stories */}
+      {isUserStory(task) && Array.isArray(task.task_list) && task.task_list.length > 0 && (
+        <div className="mb-4">
+          <div className="text-sm font-medium text-gray-700 flex items-center gap-1.5 mb-2">
+            <CheckSquare className="h-4 w-4 text-gray-500" /> Linked Tasks:
+          </div>
+          <ul className="space-y-2 text-sm">
+            {getTaskDetailsByIds(task.task_list).map((t) => (
+              <li key={t.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                <span className={t.status === "Done" ? "line-through text-gray-500" : "text-gray-700 flex-1"}>
+                  {t.title}
+                </span>
+                {t.status === "Done" && <CheckSquare className="h-4 w-4 text-green-600" />}
+                <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded">
+                  {t.status}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Action buttons */}
+      <div className="flex gap-2 pt-4 border-t border-gray-100">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => { setExpanded(false); onViewDetails?.(task); }}
+          className="flex-1"
+        >
+          <Eye className="h-4 w-4 mr-2" />
+          View Details
+        </Button>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => { setExpanded(false); setShowChangeStatusModal(true); }}
+          className="flex-1"
+        >
+          <CheckSquare className="h-4 w-4 mr-2" />
+          Change Status
+        </Button>
+      </div>
+    </div>
+  );
+
+
   return (
-    <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-3 hover:shadow-md hover:border-gray-300 cursor-pointer relative" onClick={handleCardClick}>
+    <>
+    <div 
+      ref={cardRef}
+      className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-3 hover:shadow-md hover:border-gray-300 cursor-pointer relative"
+      onClick={handleCardClickexpand}
+      >
       <div className="flex items-center justify-between w-full mb-3">
         {/* Tipo de tarjeta + puntos y prioridad */}
         <div className="flex items-center gap-2">
@@ -211,45 +396,19 @@ export const TaskCardCompactView = ({
           </Button>
         </div>
       </div>
+    </div>
 
-      {expanded && ( 
-        <div className="mt-4 pt-3 border-t border-gray-100 space-y-3">        
-          <p className="text-md text-gray-600 mb-3 line-clamp-2">{task.description}</p>
-
-          {Array.isArray(task.comments) && task.comments.length > 0 && (
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-500">Comments:</span>
-              <div className="flex items-center gap-1">
-                <MessageSquare className="h-3 w-3 text-gray-500" />
-                <span className="text-sm text-gray-700">{task.comments.length}</span>
-              </div>
-            </div>
-          )}
-          {!isUserStory(task) && !isBug(task) && (
-            <div className="flex items-center gap-1.5">
-              <Link className="h-4 w-4 text-gray-500" />
-              <span className="text-sm font-medium">User Story:</span>
-              <em className="text-sm text-black-700">{task.user_story_title || getUserStoryTitleByTaskId(task.id) || "—"}</em>
-            </div>
-          )}
-
-          {isUserStory(task) && Array.isArray(task.task_list) && task.task_list.length > 0 && (
-            <div className="mt-2">
-              <div className="text-sm font-medium flex items-center gap-1.5 mb-1">
-                <CheckSquare className="h-4 w-4 text-gray-500" /> Linked Tasks:
-              </div>
-              <ul className="space-y-1 text-sm text-gray-700 pl-1">
-                {getTaskDetailsByIds(task.task_list).map((t) => (
-                  <li key={t.id} className="flex items-center gap-2">
-                    <span className={t.status === "Done" ? "line-through text-gray-500" : ""}>{t.title}</span>
-                    {t.status === "Done" && <CheckSquare className="h-4 w-4 text-green-600" />}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
+      {expanded && typeof window !== 'undefined' && createPortal(
+        <>
+          <div 
+            className="fixed inset-0 bg-black/20 z-40"
+            onClick={() => setExpanded(false)}
+          />
+          <ExpandedCard />
+        </>,
+        document.body
       )}
+
 
       {showChangeStatusModal && (
         <Dialog open={showChangeStatusModal} onClose={() => setShowChangeStatusModal(false)} className="relative z-50">
@@ -276,6 +435,6 @@ export const TaskCardCompactView = ({
           </div>
         </Dialog>
       )}
-    </div>
+    </>
   )
 }

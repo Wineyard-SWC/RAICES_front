@@ -32,7 +32,8 @@ export const KanbanColumn = ({
         <div
           ref={provided.innerRef}
           {...provided.droppableProps}
-          className={getColumnClasses()}
+          className={`${getColumnClasses()} `}
+         
         >
           {/* Header de la columna */}
           <div className="flex items-center justify-between mb-3">
@@ -44,7 +45,7 @@ export const KanbanColumn = ({
 
           {/* Contenido de la columna */}
           <div
-            className={`h-full overflow-y-auto pr-1`}
+            className={`h-full overflow-y-auto overflow-x-hidden pr-1 `}
             style={{ maxHeight }}
             onScroll={onScroll}
           >
