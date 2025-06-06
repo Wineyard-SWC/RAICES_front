@@ -26,9 +26,11 @@ import { KanbanProvider } from "@/contexts/unifieddashboardcontext"
 import { ProjectUsersProvider } from "@/contexts/ProjectusersContext"
 import { UserPermissionsProvider } from "@/contexts/UserPermissions"
 import { CalendarProvider } from "@/contexts/CalendarContext"
+import { RoadmapSuggestionsProvider } from "@/contexts/roadmapSuggestedContext"
+import { RoadmapProvider } from "@/contexts/roadmapContext"
 import { GenerativeAISessionProvider } from "@/contexts/generativeAISessionContext"
-import { BiometricProvider } from "@/contexts/BiometricContext" // 👈 Importar BiometricProvider
-         
+import { BiometricProvider } from "@/contexts/BiometricContext"
+
 interface ProvidersProps {
   children: ReactNode
 }
@@ -41,7 +43,7 @@ export function AllProviders({ children }: { children: React.ReactNode }) {
           <AvatarProvider>
             <UserRolesProvider>
               <ProjectProvider>
-                <BiometricProvider> 
+                <BiometricProvider>
                   <RequirementProvider>
                     <EpicProvider>
                       <UserStoryProvider>
@@ -61,9 +63,12 @@ export function AllProviders({ children }: { children: React.ReactNode }) {
                                                   <ProjectUsersProvider>
                                                     <UserPermissionsProvider>
                                                       <CalendarProvider>
-                                                    
-                                                          {children}
-                                                          <div id="modal-root" />
+                                                        <RoadmapSuggestionsProvider>
+                                                          <RoadmapProvider>
+                                                            {children}
+                                                            <div id="modal-root" />
+                                                          </RoadmapProvider>
+                                                        </RoadmapSuggestionsProvider>
                                                       </CalendarProvider>
                                                     </UserPermissionsProvider>
                                                   </ProjectUsersProvider>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useSession } from "next-auth/react" // Add this import
+import { useSession } from "next-auth/react" 
 import Navbar from "@/components/NavBar"
 import DashboardMainPage from "./dashboard/dashboard.view"
 import ProductBacklogPage from "./productbacklog/productbacklog.view"

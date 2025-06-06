@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef , Suspense } from "react"
 import Link from "next/link"
 import { Bell, ChevronDown, Settings, LogOut, FolderOpen, Users } from "lucide-react"
 import Image from "next/image"
@@ -18,7 +18,7 @@ type NavbarProps = {
 }
 
 // Definimos las pestañas como constantes para evitar errores de tipeo
-const TABS = ["Dashboard", "Sprints", "Roadmap", "Team", "Generate"] as const
+const TABS = ["Dashboard", "Sprints", "Dependency Map", "Team", "Generate"] as const
 type TabType = (typeof TABS)[number]
 
 // Definir constantes de permisos
@@ -30,7 +30,7 @@ const PERMISSIONS = {
 const PATH_TO_TAB: Record<string, TabType> = {
   "/dashboard": "Dashboard",
   "/my-sprints": "Sprints",
-  "/roadmap": "Roadmap",
+  "/roadmap": "Dependency Map",
   "/team": "Team",
   "/generate": "Generate",
   "/gen_requirements": "Generate",
@@ -114,7 +114,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
     // Si estamos en una ruta que requiere un proyecto seleccionado pero no hay ninguno,
     // redirigimos a la página de proyectos
     // Reemplaza la línea 74 (aproximadamente)
-    if (!hasSelectedProject && pathname !== "/projects" && pathname !== "/" && pathname !== "/settings") {
+    if (!hasSelectedProject && pathname !== "/projects" && pathname !== "/" && pathname !== "/settings" && pathname !== "/virtual_office") {
       router.push("/projects")
     }
   }, [pathname, searchParams, router, canManageItems])
@@ -177,7 +177,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
           router.push(`/dashboard?projectId=${currentProjectId}`)
         }
         break
-      case "Roadmap":
+      case "Dependency Map":
         if (currentProjectId) {
           router.push(`/roadmap?projectId=${currentProjectId}`)
         }
@@ -235,6 +235,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
   }
 
   return (
+    <Suspense fallback={<div>Loading Navbar...</div>}>
     <nav className="relative flex items-center justify-between px-4 py-2 border-b border-black bg-[#EBE5EB]/30">
       {/* Logo */}
       <div className="flex-shrink-0 h-[60px] flex items-center w-1/4">
@@ -384,13 +385,23 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
         </div>
       </div>
 
-      {/* Notificaciones y Avatar */}
+      {/* Casa (Virtual Office) y Avatar */}
       <div className="flex items-center space-x-4 flex-shrink-0 w-1/4 justify-end">
-        <button className="relative">
-          <Bell className="h-6 w-6 text-[#4a2b4a]" />
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-            3
-          </span>
+        <button
+        className="relative"
+        onClick={() => router.push("/virtual_office")}
+        aria-label="Go to Virtual Office"
+        >
+          <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-6 w-6 text-[#4a2b4a]"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={1.5}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l9-9 9 9M4 10v10h16V10" />
+          </svg>
         </button>
 
         <div className="relative avatar-menu">
@@ -466,6 +477,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
         </div>
       </div>
     </nav>
+    </Suspense>
   )
 }
 
