@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Task } from "@/types/task";
 import { UserStory } from "@/types/userstory";
 import { Save, X, Plus, Trash } from "lucide-react";
+import { getAssigneeName,getAssigneeId } from "../../utils/secureAssigneeFormat";
 
 interface TaskEditFormProps {
   task: Task;
@@ -13,6 +14,7 @@ interface TaskEditFormProps {
   availableSprints?: Array<{ id: string; name: string }>;
   validationErrors?: Record<string, string>; // Add this prop
 }
+
 
 const TaskEditForm = ({ task, onSave, onCancel, userstories, availableUsers = [], availableSprints = []  }: TaskEditFormProps) => {
    const [formData, setFormData] = useState({
@@ -55,7 +57,7 @@ const TaskEditForm = ({ task, onSave, onCancel, userstories, availableUsers = []
   };
 
   const handleAddAssignee = () => {
-    if (newAssignee && !formData.assignee.some(a => a.users[0] === newAssignee)) {
+    if (newAssignee && !formData.assignee.some(a => getAssigneeId(a) === newAssignee)) {
       const user = availableUsers.find(u => u.id === newAssignee);
       if (user) {
         setFormData({
@@ -70,7 +72,7 @@ const TaskEditForm = ({ task, onSave, onCancel, userstories, availableUsers = []
   const handleRemoveAssignee = (userId: string) => {
     setFormData({
       ...formData,
-      assignee: formData.assignee.filter(a => a.users[0] !== userId),
+      assignee: formData.assignee.filter(a => getAssigneeId(a) !== userId),
     });
   };
 
@@ -230,10 +232,10 @@ const TaskEditForm = ({ task, onSave, onCancel, userstories, availableUsers = []
           <div className="mb-3 space-y-2">
             {formData.assignee.map((assignee, index) => (
               <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded-md">
-                <span className="text-lg">{assignee.users[1]}</span>
+                <span className="text-lg">{getAssigneeName(assignee)}</span>
                 <Button
                   type="button"
-                  onClick={() => handleRemoveAssignee(assignee.users[0])}
+                  onClick={() => handleRemoveAssignee(getAssigneeId(assignee))}
                   variant="ghost"
                   size="sm"
                   className="text-red-500 hover:text-red-700"
@@ -255,7 +257,7 @@ const TaskEditForm = ({ task, onSave, onCancel, userstories, availableUsers = []
           >
             <option value="">Select user to assign</option>
             {availableUsers
-              .filter(u => !formData.assignee.some(a => a.users[0] === u.id))
+              .filter(u => !formData.assignee.some(a => getAssigneeId(a) === u.id))
               .map(user => (
                 <option key={user.id} value={user.id}>
                   {user.name}
@@ -286,7 +288,7 @@ const TaskEditForm = ({ task, onSave, onCancel, userstories, availableUsers = []
         </Button>
         <Button
           onClick={handleSave}
-          className="flex-1 bg-green-600 text-white hover:bg-green-700"
+          className="flex-1 bg-[#694969] text-white hover:bg-green-700"
         >
           <Save className="h-4 w-4 mr-2" />
           Save Changes

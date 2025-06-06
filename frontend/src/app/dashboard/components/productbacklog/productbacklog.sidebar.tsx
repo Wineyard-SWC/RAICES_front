@@ -7,7 +7,8 @@ import { useKanban } from "@/contexts/unifieddashboardcontext";
 import { useMemo } from "react";
 import { Dialog, DialogPanel } from "@headlessui/react";
 import { useUserPermissions } from "@/contexts/UserPermissions";
-
+import { getProjectEpics } from "@/utils/getProjectEpics";
+import { getProjectSprints } from "@/utils/getProjectSprints";
 import TaskViewForm from "../detailedcardviews/taskviewform";
 import TaskEditForm from "../detailedcardviews/taskvieweditform";
 import UserStoryViewForm from "../detailedcardviews/userstoryviewform";
@@ -17,6 +18,7 @@ import BugEditForm from "../detailedcardviews/bugvieweditform";
 import CommentsSection from "../detailedcardviews/commentssection";
 import { useUserStories } from "@/contexts/saveduserstoriescontext";
 import { useTasks } from "@/contexts/taskcontext";
+import { Sprint } from "@/types/sprint";
 
 // Definir constante para el permiso REQ_MANAGE
 const PERMISSION_REQ_MANAGE = 1 << 2;
@@ -27,13 +29,30 @@ interface TaskSidebarProps {
   task: TaskOrStory | null;
 }
 
+interface ProjectUser {
+  id: string;
+  name: string;
+  role?: string;
+  email?: string;
+}
+
+// Epic interface (simplified for the form)
+interface EpicOption {
+  id: string;
+  name: string;
+}
+
 const TaskSidebar = ({ isOpen, onClose, task }: TaskSidebarProps) => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const { userId, userData } = useUser();
-  const { currentProjectId, tasks, updateTask, updateStory, updateBug } = useKanban();
-  const { getUserStoriesForProject } = useUserStories();
-  const { getTasksForProject } = useTasks();
+  const {userId, userData } = useUser();
+  const {currentProjectId, tasks, updateTask, updateStory, updateBug } = useKanban();
+  const {getUserStoriesForProject } = useUserStories();
+  const {getTasksForProject } = useTasks();
+  const [availableSprints, setAvailableSprints] = useState<Sprint[]>([]);
+  const [availableEpics, setAvailableEpics] = useState<EpicOption[]>([]);
+  const [availableUsers, setAvailableUsers] = useState<ProjectUser[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   
   // Obtener la función hasPermission del contexto
   const { hasPermission } = useUserPermissions();
@@ -66,6 +85,54 @@ const TaskSidebar = ({ isOpen, onClose, task }: TaskSidebarProps) => {
       setIsEditMode(false);
     }
   }, [canManageItems, task]);
+
+
+  useEffect(() => {
+      if (!currentProjectId || !isOpen) return;
+      
+      const fetchData = async () => {
+        setIsLoading(true);
+        try {
+          const sprints = await getProjectSprints(currentProjectId);
+          setAvailableSprints(sprints);
+          
+          const epics = await getProjectEpics(currentProjectId);
+          const formattedEpics = epics.map(epic => ({
+            id: epic.idTitle || epic.uuid,
+            name: epic.title || epic.idTitle
+          }));
+          setAvailableEpics(formattedEpics);
+          
+          const apiURL = process.env.NEXT_PUBLIC_API_URL;
+          const usersResponse = await fetch(`${apiURL}/project_users/project/${currentProjectId}`);
+          
+          if (!usersResponse.ok) {
+            console.warn("Failed to fetch project users, using empty list");
+            setAvailableUsers([]);
+            return;
+          }
+          
+          const users = await usersResponse.json();
+          const formattedUsers = users.map((user: any) => ({
+            id: user.userRef,
+            name: user.name || user.username || user.email || "User",
+            role: user.role || "Team Member",
+            email: user.email
+          }));
+          
+          setAvailableUsers(formattedUsers);
+        } catch (error) {
+          console.error("Error fetching data:", error);
+          setAvailableSprints([]);
+          setAvailableEpics([]);
+          setAvailableUsers([]);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      
+      fetchData();
+    }, [currentProjectId, isOpen]);
 
   if (!isOpen || !currentTask) return null;
 
@@ -137,9 +204,9 @@ const TaskSidebar = ({ isOpen, onClose, task }: TaskSidebarProps) => {
           task={currentTask} 
           onSave={handleSave}
           onCancel={() => setIsEditMode(false)} 
-          availableEpics={[]}
-          availableSprints={[]}
-          availableUsers={[]}
+          availableEpics={availableEpics}
+          availableSprints={availableSprints}
+          availableUsers={availableUsers}
           validationErrors={validationErrors}
         />;
       } else if (isBug(currentTask)) {
@@ -147,10 +214,10 @@ const TaskSidebar = ({ isOpen, onClose, task }: TaskSidebarProps) => {
           task={currentTask} 
           onSave={handleSave}
           onCancel={() => setIsEditMode(false)}
-          availableSprints={[]}
+          availableSprints={availableSprints}
           availableTasks={onlytasks}
           availableUserStories={onlystories}
-          availableUsers={[]}
+          availableUsers={availableUsers}
           validationErrors={validationErrors}
         />;
       } else {
@@ -158,8 +225,8 @@ const TaskSidebar = ({ isOpen, onClose, task }: TaskSidebarProps) => {
           task={currentTask} 
           onSave={handleSave}  
           onCancel={() => setIsEditMode(false)}
-          availableSprints={[]}
-          availableUsers={[]}
+          availableSprints={availableSprints}
+          availableUsers={availableUsers}
           userstories={onlystories}
           validationErrors={validationErrors}
         />;

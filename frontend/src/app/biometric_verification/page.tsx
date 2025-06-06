@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -42,7 +42,6 @@ export interface ParticipantResult {
   dominantEmotion: string
 }
 
-// 🔥 AGREGAR LA INTERFACE
 interface TaskReassignment {
   taskId: string
   taskName: string
@@ -58,7 +57,8 @@ interface TaskReassignment {
   }
 }
 
-export default function BiometricVerificationPage() {
+
+function BiometricVerificationContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const projectId = searchParams.get("projectId") || ""
@@ -74,10 +74,8 @@ export default function BiometricVerificationPage() {
   const [participantResults, setParticipantResults] = useState<ParticipantResult[]>([])
   const [showTransition, setShowTransition] = useState(false)
 
-  // 🔥 NUEVO ESTADO PARA ALMACENAR REASIGNACIONES
   const [finalReassignments, setFinalReassignments] = useState<TaskReassignment[]>([])
 
-  // Contexts
   const { sprint, tasks } = useSprintContext()
 
   const updateProgress = () => {
@@ -101,15 +99,13 @@ export default function BiometricVerificationPage() {
   const handleParticipantComplete = (results: ParticipantResult) => {
     setParticipantResults([...participantResults, results])
 
-    // Add risk tasks to replacement pool
     const riskTasks = results.taskResults.filter((tr) => tr.isRisk).map((tr) => tr.taskId)
     setReplacementPool([...replacementPool, ...riskTasks])
 
-    // Check if there are more participants
     if (currentParticipantIndex < selectedParticipantObjects.length - 1) {
       setShowTransition(true)
     } else {
-      setCurrentStep(5) // Go to results
+      setCurrentStep(5) 
     }
   }
 
@@ -119,16 +115,13 @@ export default function BiometricVerificationPage() {
     setCurrentStep(3) // Back to calibration for next participant
   }
 
-  // 🔥 MODIFICAR finishAndReturn PARA INCLUIR REASIGNACIONES
   const finishAndReturn = (reassignments?: TaskReassignment[]) => {
     if (reassignments && reassignments.length > 0) {
       console.log("🔄 Biometric verification completed with reassignments:", reassignments)
       setFinalReassignments(reassignments)
       
-      // 🔥 ASEGURAR QUE ESTÉN EN LOCALSTORAGE
       localStorage.setItem("biometricReassignments", JSON.stringify(reassignments))
       
-      // 🔥 IR DIRECTO AL SPRINT PLANNING CON FLAG DE CAMBIOS BIOMÉTRICOS
       router.push(`/sprint_planning?projectId=${projectId}&sprintId=${sprintId}&biometricChanges=true`)
     } else {
       console.log("✅ Biometric verification completed without changes")
@@ -261,11 +254,24 @@ export default function BiometricVerificationPage() {
               tasks={tasks}
               sprint={sprint}
               onBack={() => setCurrentStep(5)}
-              onFinish={finishAndReturn} // 🔥 Pasar la función modificada
+              onFinish={finishAndReturn} 
             />
           )}
         </div>
       </div>
     </div>
+  )
+}
+
+
+function BiometricVerificationLoading() {
+  return <DefaultLoading text="biometric verification" />
+}
+
+export default function BiometricVerificationPage() {
+  return (
+    <Suspense fallback={<BiometricVerificationLoading />}>
+      <BiometricVerificationContent />
+    </Suspense>
   )
 }

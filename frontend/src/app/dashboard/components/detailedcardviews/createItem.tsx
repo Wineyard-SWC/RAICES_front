@@ -52,7 +52,6 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
   const { getUserStoriesForProject } = useUserStories();
   const { getTasksForProject } = useTasks();
   
-  // Add states for available data
   const [availableSprints, setAvailableSprints] = useState<Sprint[]>([]);
   const [availableEpics, setAvailableEpics] = useState<EpicOption[]>([]);
   const [availableUsers, setAvailableUsers] = useState<ProjectUser[]>([]);
@@ -66,18 +65,15 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
   };
   const userInfo = getUserInfo();
 
-  // Fetch available data when component mounts or projectId changes
   useEffect(() => {
     if (!projectId || !isOpen) return;
     
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Fetch available sprints
         const sprints = await getProjectSprints(projectId);
         setAvailableSprints(sprints);
         
-        // Fetch available epics
         const epics = await getProjectEpics(projectId);
         const formattedEpics = epics.map(epic => ({
           id: epic.idTitle || epic.uuid,
@@ -85,7 +81,6 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
         }));
         setAvailableEpics(formattedEpics);
         
-        // Fetch available users (project members)
         const apiURL = process.env.NEXT_PUBLIC_API_URL;
         const usersResponse = await fetch(`${apiURL}/project_users/project/${projectId}`);
         
@@ -107,7 +102,6 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
         setAvailableUsers(formattedUsers);
       } catch (error) {
         console.error("Error fetching data:", error);
-        // Set empty arrays to prevent errors
         setAvailableSprints([]);
         setAvailableEpics([]);
         setAvailableUsers([]);
@@ -190,7 +184,7 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
                 userStoryRelated: itemData.userStoryRelated || undefined,
                 sprintId: itemData.sprintId || undefined,
                 reportedBy:itemData.reportedBy || {"users": [userInfo[0],userInfo[1]]},
-                assignee:itemData.assignees || [],
+                assignee:itemData.assignee || [],
                 createdAt: itemData.createdAt || now,
                 modifiedAt: itemData.modifiedAt || now,
                 stepsToReproduce:itemData.stepsToReproduce || [],
@@ -301,7 +295,7 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
             projectId={projectId}
             availableTasks={onlytasks}
             availableUserStories={onlystories.map(story => ({
-              uuid: story.uuid,  // Usar uuid en lugar de id
+              uuid: story.uuid,  
               title: story.title
             }))}
             availableUsers={availableUsers}

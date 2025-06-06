@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Save, Trash,X,Plus} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Bug as BugType } from "@/types/bug";
+import { getAssigneeName,getAssigneeId } from "../../utils/secureAssigneeFormat";
 
 interface BugEditFormProps {
   task: BugType;
@@ -11,8 +12,9 @@ interface BugEditFormProps {
   availableSprints?: Array<{ id: string; name: string }>;
   availableTasks?: Array<{ id: string; title: string }>;
   availableUserStories?: Array<{ id: string; title: string }>;
-  validationErrors?: Record<string, string>; // Add this prop
+  validationErrors?: Record<string, string>; 
 }
+
 
 const BugEditForm = ({ 
   task, 
@@ -22,7 +24,7 @@ const BugEditForm = ({
   availableSprints = [], 
   availableTasks = [], 
   availableUserStories = [],
-  validationErrors = {} // Default to empty object
+  validationErrors = {} 
 }: BugEditFormProps) => {
   const [formData, setFormData] = useState({
     title: task.title || "",
@@ -36,7 +38,7 @@ const BugEditForm = ({
     taskRelated: task.taskRelated || "",
     userStoryRelated: task.userStoryRelated || "",
     sprintId: task.sprintId || "",
-    assignees: task.assignee || [],
+    assignee: task.assignee || [],
     expectedBehavior: task.expectedBehavior || "",
     actualBehavior: task.actualBehavior || "",
     stepsToReproduce: task.stepsToReproduce || [],
@@ -76,7 +78,7 @@ const BugEditForm = ({
       taskRelated: task.taskRelated || "",
       userStoryRelated: task.userStoryRelated || "",
       sprintId: task.sprintId || "",
-      assignees: task.assignee || [],
+      assignee: task.assignee || [],
       expectedBehavior: task.expectedBehavior || "",
       actualBehavior: task.actualBehavior || "",
       stepsToReproduce: task.stepsToReproduce || [],
@@ -97,12 +99,12 @@ const BugEditForm = ({
   }, [task]);
 
   const handleAddAssignee = () => {
-    if (tempInputs.newAssignee && !formData.assignees.some(a => a.users[0] === tempInputs.newAssignee)) {
+    if (tempInputs.newAssignee && !formData.assignee.some(a => getAssigneeId(a) === tempInputs.newAssignee)) {
       const user = availableUsers.find(u => u.id === tempInputs.newAssignee);
       if (user) {
         setFormData({
           ...formData,
-          assignees: [...formData.assignees, { users: [user.id, user.name] }],
+          assignee: [...formData.assignee, { users: [user.id, user.name] }],
         });
         setTempInputs({ ...tempInputs, newAssignee: "" });
       }
@@ -112,7 +114,7 @@ const BugEditForm = ({
   const handleRemoveAssignee = (userId: string) => {
     setFormData({
       ...formData,
-      assignees: formData.assignees.filter(a => a.users[0] !== userId),
+      assignee: formData.assignee.filter(a => getAssigneeId(a) !== userId),
     });
   };
 
@@ -206,7 +208,7 @@ const BugEditForm = ({
       taskRelated: formData.taskRelated || undefined,
       userStoryRelated: formData.userStoryRelated || undefined,
       sprintId: formData.sprintId || undefined,
-      assignees: formData.assignees,
+      assignee: formData.assignee,
       expectedBehavior: formData.expectedBehavior || undefined,
       actualBehavior: formData.actualBehavior || undefined,
       stepsToReproduce: formData.stepsToReproduce,
@@ -411,14 +413,14 @@ const BugEditForm = ({
         <label className="block text-lg font-semibold text-[#4A2B4A] mb-2">Assignees</label>
         
         {/* Current assignees */}
-        {formData.assignees.length > 0 && (
+        {formData.assignee.length > 0 && (
           <div className="mb-3 space-y-2">
-            {formData.assignees.map((assignee, index) => (
+            {formData.assignee.map((a, index) => (
               <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded-md">
-                <span className="text-lg">{assignee.users[1]} ({assignee.users[0]})</span>
+                <span className="text-lg">{getAssigneeName(a)}</span>
                 <Button
                   type="button"
-                  onClick={() => handleRemoveAssignee(assignee.users[0])}
+                  onClick={() => handleRemoveAssignee(getAssigneeId(a))}
                   variant="ghost"
                   size="sm"
                   className="text-red-500 hover:text-red-700"
@@ -440,7 +442,7 @@ const BugEditForm = ({
           >
             <option value="">Select user to assign</option>
             {availableUsers
-              .filter(u => !formData.assignees.some(a => a.users[0] === u.id))
+              .filter(u => !formData.assignee.some(a => getAssigneeId(a) === u.id))
               .map(user => (
                 <option key={user.id} value={user.id}>
                   {user.name}
@@ -793,7 +795,7 @@ const BugEditForm = ({
         </Button>
         <Button 
           onClick={handleSave}
-          className="flex-1 bg-green-600 text-white hover:bg-green-700"
+          className="flex-1 bg-[#694969] text-white hover:bg-green-700"
         >
           <Save className="h-4 w-4 mr-2" /> Save Changes
         </Button>

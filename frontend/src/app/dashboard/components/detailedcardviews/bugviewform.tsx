@@ -5,10 +5,12 @@ import { Calendar, Clock, AlertTriangle,
          Hash, GitBranch } from "lucide-react";
 
 import { Bug as BugType } from "@/types/bug";
+import { getAssigneeName,getAssigneeId } from "../../utils/secureAssigneeFormat";
 
 interface BugViewFormProps {
   task: BugType;
 }
+
 
 const BugViewForm = ({ task }: BugViewFormProps) => {
   return (
@@ -107,7 +109,7 @@ const BugViewForm = ({ task }: BugViewFormProps) => {
             {task.assignee.map((assignee, index) => (
               <div key={index} className="flex items-center">
                 <User className="h-4 w-4 mr-2 text-gray-500" />
-                <p className="text-black text-lg">{assignee.users[1]}</p>
+                <p className="text-black text-lg">{getAssigneeName(assignee)}</p>
               </div>
             ))}
           </div>

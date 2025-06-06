@@ -56,13 +56,6 @@ export default function RoadmapTopBar({
               <span>Load</span>
             </button>
             <button
-              onClick={onExport}
-              className="px-4 py-2 text-[#694969] rounded-lg border border-black shadow shadow-mb hover:bg-[#694969] hover:text-white transition-colors flex items-center gap-2"
-            >
-              <FileText className="w-5 h-5" />
-              <span>Export</span>
-            </button>
-            <button
               onClick={onDuplicate}
               className="px-4 py-2 text-[#694969] rounded-lg border border-black shadow shadow-mb hover:bg-[#694969] hover:text-white transition-colors flex items-center gap-2"
             >
