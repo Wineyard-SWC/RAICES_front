@@ -3,6 +3,7 @@ import { RoadmapItem } from "@/types/roadmap";
 import { Plus } from "lucide-react";
 import { getItemId, getItemTitle, getItemType, getItemPriority,getItemStatus } from "@/types/roadmap";
 import { getPriorityColor, getStatusColor } from "../styles/items";
+import { getAssigneeName } from "@/app/dashboard/utils/secureAssigneeFormat";
 
 type Props = {
   items: RoadmapItem[];
@@ -70,7 +71,7 @@ const AvailableItemsList: React.FC<Props> = ({
                     }>{item.severity}</strong></span>
                 )}
                 {('assignee' in item) && item.assignee && Array.isArray(item.assignee) && item.assignee.length > 0 && (
-                    <span>Assignee: <strong>{item.assignee[0].users[1]}</strong></span>
+                    <span>Assignee: <strong>{getAssigneeName(item.assignee[0]) }</strong></span>
                 )}
                 </div>
               </div>
