@@ -4,13 +4,14 @@ import { Button } from "@/components/ui/button";
 import type { BugSeverity, BugType, BugPriority } from "@/types/bug";
 import { v4 as uuidv4 } from "uuid";
 import { useUser } from "@/contexts/usercontext";
+import { getAssigneeId, getAssigneeName } from "../../utils/secureAssigneeFormat";
 
 interface CreateBugFormProps {
   onSave: (data: any) => void;
   onCancel: () => void;
   projectId: string;
   availableTasks?: Array<{ id: string; title: string }>;
-  availableUserStories?: Array<{ uuid: string; title: string }>;  // Cambiado a uuid
+  availableUserStories?: Array<{ uuid: string; title: string }>;  
   availableUsers?: Array<{ id: string; name: string }>;
   availableSprints?: Array<{ id: string; name: string }>;
 }
@@ -43,7 +44,7 @@ const CreateBugForm = ({
     taskRelated: "",
     userStoryRelated: "",  // Este guardará el uuid de la user story
     sprintId: "",
-    assignees: [] as Array<{ users: [string, string] }>,
+    assignee: [] as Array<{ users: [string, string] }>,
     expectedBehavior: "",
     actualBehavior: "",
     duplicateOf: "",
@@ -77,12 +78,12 @@ const CreateBugForm = ({
   };
 
   const handleAddAssignee = () => {
-    if (tempInputs.newAssignee && !formData.assignees.some(a => a.users[0] === tempInputs.newAssignee)) {
+    if (tempInputs.newAssignee && !formData.assignee.some(a => getAssigneeId(a) === tempInputs.newAssignee)) {
       const user = availableUsers.find(u => u.id === tempInputs.newAssignee);
       if (user) {
         setFormData({
           ...formData,
-          assignees: [...formData.assignees, { users: [user.id, user.name] }],
+          assignee: [...formData.assignee, { users: [user.id, user.name] }],
         });
         setTempInputs({ ...tempInputs, newAssignee: "" });
       }
@@ -92,7 +93,7 @@ const CreateBugForm = ({
   const handleRemoveAssignee = (userId: string) => {
     setFormData({
       ...formData,
-      assignees: formData.assignees.filter(a => a.users[0] !== userId),
+      assignee: formData.assignee.filter(a =>getAssigneeId(a) !== userId),
     });
   };
 
@@ -193,9 +194,9 @@ const CreateBugForm = ({
       tags: formData.tags.length > 0 ? formData.tags : undefined,
       relatedBugs: formData.relatedBugs.length > 0 ? formData.relatedBugs : undefined,
       taskRelated: formData.taskRelated || undefined,
-      userStoryRelated: formData.userStoryRelated || undefined,  // Guardará el uuid
+      userStoryRelated: formData.userStoryRelated || undefined,  
       sprintId: formData.sprintId || undefined,
-      assignees: formData.assignees,
+      assignee: formData.assignee,
       expectedBehavior: formData.expectedBehavior || undefined,
       actualBehavior: formData.actualBehavior || undefined,
       duplicateOf: formData.duplicateOf || undefined,
@@ -278,6 +279,7 @@ const CreateBugForm = ({
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
                 <select
+                  aria-label="priority"
                   value={formData.priority}
                   onChange={(e) => setFormData({ ...formData, priority: e.target.value as BugPriority })}
                   className="w-full p-2 border border-gray-300 rounded-md"
@@ -291,6 +293,7 @@ const CreateBugForm = ({
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Severity</label>
                 <select
+                  aria-label="severity"                  
                   value={formData.severity}
                   onChange={(e) => setFormData({ ...formData, severity: e.target.value as BugSeverity })}
                   className="w-full p-2 border border-gray-300 rounded-md"
@@ -308,6 +311,7 @@ const CreateBugForm = ({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Bug Type</label>
               <select
+                aria-label="type"
                 value={formData.type}
                 onChange={(e) => setFormData({ ...formData, type: e.target.value as BugType })}
                 className="w-full p-2 border border-gray-300 rounded-md"
@@ -345,6 +349,7 @@ const CreateBugForm = ({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Related Task</label>
               <select
+                aria-label="taskRelated"
                 value={formData.taskRelated}
                 onChange={(e) => setFormData({ ...formData, taskRelated: e.target.value })}
                 className="w-full p-2 border border-gray-300 rounded-md"
@@ -362,6 +367,7 @@ const CreateBugForm = ({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Related User Story</label>
               <select
+                aria-label="userstoryrelated"
                 value={formData.userStoryRelated}
                 onChange={(e) => setFormData({ ...formData, userStoryRelated: e.target.value })}
                 className="w-full p-2 border border-gray-300 rounded-md"
@@ -379,6 +385,7 @@ const CreateBugForm = ({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Sprint</label>
               <select
+                aria-label="sprint"
                 value={formData.sprintId}
                 onChange={(e) => setFormData({ ...formData, sprintId: e.target.value })}
                 className="w-full p-2 border border-gray-300 rounded-md"
@@ -430,6 +437,7 @@ const CreateBugForm = ({
           <div className="space-y-4">
             <div className="flex gap-2">
               <select
+                aria-label="newAssignee"
                 value={tempInputs.newAssignee}
                 onChange={(e) => setTempInputs({ ...tempInputs, newAssignee: e.target.value })}
                 className="flex-1 p-2 border border-gray-300 rounded-md"
@@ -446,17 +454,17 @@ const CreateBugForm = ({
               </Button>
             </div>
 
-            {formData.assignees.length > 0 && (
+            {formData.assignee.length > 0 && (
               <div className="space-y-2">
                 <p className="text-sm font-medium text-gray-700">Assigned to:</p>
-                {formData.assignees.map((assignee, index) => (
+                {formData.assignee.map((a, index) => (
                   <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                    <span className="text-sm">{assignee.users[1]}</span>
+                    <span className="text-sm">{getAssigneeName(a)}</span>
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleRemoveAssignee(assignee.users[0])}
+                      onClick={() => handleRemoveAssignee(getAssigneeId(a))}
                     >
                       <X className="h-4 w-4" />
                     </Button>
