@@ -97,16 +97,119 @@ export default function ImprovedBiometricDashboard() {
       <div className="min-h-screen bg-[#EBE5EB]/30">
         <Navbar projectSelected={false} />
         <main className="container mx-auto p-6 flex items-center justify-center min-h-[calc(100vh-80px)]">
-          <Card className="w-full max-w-md bg-white shadow-sm">
-            <CardContent className="pt-6">
+          <Card className="w-full max-w-2xl bg-white shadow-lg border-0"> {/* 🔥 HACER MÁS ANCHO Y MEJORAR SOMBRA */}
+            <CardContent className="pt-8 pb-8 px-8"> {/* 🔥 MÁS PADDING */}
               <div className="flex flex-col items-center text-center">
-                <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
-                <h2 className="text-xl font-semibold mb-2 text-[#4A2B4A]">No Data Available</h2>
-                <p className="text-[#694969] mb-4">{error || "No biometric sessions found to display."}</p>
-                <Button onClick={refetch} className="bg-[#4A2B4A] hover:bg-[#694969] text-white">
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Retry
-                </Button>
+                
+                {/* 🔥 AVATAR CON EMOCIÓN TRISTE */}
+                <div className="mb-6">
+                  <div className="w-32 h-32 mx-auto rounded-full bg-gradient-to-b from-[#4A2B4A] to-[#694969] p-1 shadow-lg">
+                    <div className="w-full h-full rounded-full bg-gradient-to-b from-purple-50 to-blue-50 overflow-hidden">
+                      {avatarUrl ? (
+                        <Canvas camera={{ position: [0, 0.2, 2.5], fov: 30 }}>
+                          <ambientLight intensity={0.8} />
+                          <directionalLight position={[1, 2, 1.5]} intensity={1.2} />
+                          <Suspense fallback={
+                            <div className="w-full h-full flex items-center justify-center">
+                              <div className="text-4xl">😢</div>
+                            </div>
+                          }>
+                            <DynamicAnimatedAvatar
+                              avatarUrl={avatarUrl}
+                              gender={gender === 'female' ? 'feminine' : 'masculine'}
+                              minDelay={5000}
+                              maxDelay={10000}
+                              idleTime={8000}
+                              emotion="Sad" // 🔥 EMOCIÓN TRISTE
+                              expressionIntensity={0.9}
+                            />
+                          </Suspense>
+                        </Canvas>
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <div className="text-5xl">😢</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 🔥 TÍTULO MEJORADO */}
+                <h2 className="text-2xl font-bold mb-3 text-[#4A2B4A]">
+                  No Biometric Data Yet
+                </h2>
+                
+                {/* 🔥 MENSAJE EXPLICATIVO MEJORADO */}
+                <div className="space-y-4 mb-6 max-w-lg">
+                  <p className="text-[#694969] text-lg leading-relaxed">
+                    You haven't participated in any biometric verification sessions to collect wellness data yet.
+                  </p>
+                  
+                  <div className="bg-[#EBE5EB]/30 rounded-lg p-4 text-left">
+                    <h3 className="font-semibold text-[#4A2B4A] mb-2 flex items-center gap-2">
+                      <Brain className="h-4 w-4" />
+                      How to start collecting data:
+                    </h3>
+                    <ul className="text-sm text-[#694969] space-y-2">
+                      <li className="flex items-start gap-2">
+                        <span className="font-medium text-[#4A2B4A] mt-0.5">1.</span>
+                        <span>Create a new sprint in your project dashboard</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="font-medium text-[#4A2B4A] mt-0.5">2.</span>
+                        <span>Enable biometric verification when setting up your sprint</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="font-medium text-[#4A2B4A] mt-0.5">3.</span>
+                        <span>Complete tasks with biometric monitoring active</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="font-medium text-[#4A2B4A] mt-0.5">4.</span>
+                        <span>Return here to view your wellness insights and trends</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <p className="text-sm text-[#694969] italic">
+                    Once you start participating in biometric sessions, you'll see detailed analytics about your stress levels, energy patterns, and emotional states.
+                  </p>
+                </div>
+
+                {/* 🔥 BOTONES DE ACCIÓN MEJORADOS */}
+                <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
+                  <Link href="/dashboard" className="flex-1">
+                    <Button className="w-full bg-[#4A2B4A] hover:bg-[#694969] text-white">
+                      <Target className="h-4 w-4 mr-2" />
+                      Go to Dashboard
+                    </Button>
+                  </Link>
+                  
+                  <Button 
+                    variant="outline" 
+                    onClick={refetch}
+                    disabled={loading}
+                    className="flex-1 border-[#C7A0B8] text-[#4A2B4A] hover:bg-[#F7F0F7]"
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+                    Check Again
+                  </Button>
+                </div>
+
+                {/* 🔥 ESTADÍSTICAS PLACEHOLDER */}
+                <div className="mt-6 grid grid-cols-3 gap-4 w-full max-w-md">
+                  <div className="text-center p-3 bg-[#EBE5EB]/20 rounded-lg">
+                    <div className="text-lg font-bold text-[#4A2B4A]">0</div>
+                    <div className="text-xs text-[#694969]">Sessions</div>
+                  </div>
+                  <div className="text-center p-3 bg-[#EBE5EB]/20 rounded-lg">
+                    <div className="text-lg font-bold text-[#4A2B4A]">--</div>
+                    <div className="text-xs text-[#694969]">Avg Stress</div>
+                  </div>
+                  <div className="text-center p-3 bg-[#EBE5EB]/20 rounded-lg">
+                    <div className="text-lg font-bold text-[#4A2B4A]">--</div>
+                    <div className="text-xs text-[#694969]">Energy</div>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
