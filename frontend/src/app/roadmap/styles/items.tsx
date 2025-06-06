@@ -3,6 +3,7 @@ import { RoadmapItem, RoadmapPhase, TypeConfig } from "@/types/roadmap";
 import { UserStory } from "@/types/userstory";
 import { Task } from "@/types/task";
 import { Bug } from "@/types/bug";
+import { getAssigneeName } from "@/app/dashboard/utils/secureAssigneeFormat";
 
 export const getPriorityColor = (priority: string) => {
   switch (priority) {
@@ -143,7 +144,7 @@ export const getDetailedInfo = (type:string, originalData:RoadmapItem | RoadmapP
       case 'task':
         const task = originalData as Task;
         return {
-          assignee: task.assignee?.[0]?.users[1],
+          assignee: task.assignee?.[0] ? getAssigneeName(task.assignee[0]) : null,
           description: task.description
         };
       

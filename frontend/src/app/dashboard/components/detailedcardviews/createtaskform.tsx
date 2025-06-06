@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Save, X,Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserStory } from "@/types/userstory";
+import { getAssigneeId, getAssigneeName } from "../../utils/secureAssigneeFormat";
 
 interface CreateTaskFormProps {
   onSave: (data: any) => void;
@@ -53,7 +54,7 @@ const CreateTaskForm = ({ onSave, onCancel, userstories, availableUsers = [], av
   };
 
   const handleAddAssignee = () => {
-    if (newAssignee && !formData.assignee.some(a => a.users[0] === newAssignee)) {
+    if (newAssignee && !formData.assignee.some(a => getAssigneeId(a) === newAssignee)) {
       const user = availableUsers.find(u => u.id === newAssignee);
       if (user) {
         setFormData({
@@ -68,12 +69,18 @@ const CreateTaskForm = ({ onSave, onCancel, userstories, availableUsers = [], av
   const handleRemoveAssignee = (userId: string) => {
     setFormData({
       ...formData,
-      assignee: formData.assignee.filter(a => a.users[0] !== userId),
+      assignee: formData.assignee.filter(a => getAssigneeId(a) !== userId),
     });
   };
 
   const handleSubmit = () => {
     if (!validateForm()) return;
+
+    const formattedAssignees = formData.assignee.map(assignee => {
+      const id = getAssigneeId(assignee);
+      const name = getAssigneeName(assignee);
+      return [id, name]; 
+    });
 
     const taskData = {
       title: formData.title.trim(),
@@ -85,7 +92,7 @@ const CreateTaskForm = ({ onSave, onCancel, userstories, availableUsers = [], av
       status_khanban: formData.status_khanban,
       story_points: formData.story_points,
       sprint_id: formData.sprint_id || undefined,
-      assignee: formData.assignee,
+      assignee: formattedAssignees,
     };
 
     onSave(taskData);
@@ -231,11 +238,11 @@ const CreateTaskForm = ({ onSave, onCancel, userstories, availableUsers = [], av
           {formData.assignee.length > 0 && (
             <div className="mb-3 space-y-2">
               {formData.assignee.map((assignee, index) => (
-                <div key={assignee.users[0]} className="flex items-center justify-between bg-gray-50 p-2 rounded-md">
-                  <span className="text-lg">{assignee.users[1]}</span>
+                <div key={getAssigneeId(assignee)} className="flex items-center justify-between bg-gray-50 p-2 rounded-md">
+                  <span className="text-lg">{getAssigneeName(assignee)}</span>
                   <Button
                     type="button"
-                    onClick={() => handleRemoveAssignee(assignee.users[0])}
+                    onClick={() => handleRemoveAssignee(getAssigneeId(assignee))}
                     variant="ghost"
                     size="sm"
                     className="text-red-500 hover:text-red-700"
@@ -257,7 +264,7 @@ const CreateTaskForm = ({ onSave, onCancel, userstories, availableUsers = [], av
         >
           <option value="">Select user to assign</option>
           {availableUsers
-            .filter(u => !formData.assignee.some(a => a.users[0] === u.id))
+            .filter(u => !formData.assignee.some(a => getAssigneeId(a) === u.id))
             .map(user => (
               <option key={user.id} value={user.id}>
                 {user.name}

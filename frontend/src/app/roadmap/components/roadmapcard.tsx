@@ -18,6 +18,7 @@ getItemIcon,
 truncateTitle
 } from '../styles/items';
 import { renderConnectionHandles } from '../subcomponents/roadmapcardconections';
+import { getAssigneeName } from '@/app/dashboard/utils/secureAssigneeFormat';
 
 const TaskCard: React.FC<TaskCardProps> = ({ data, isConnectable }) => {
   const { type, title, originalData, isCollapsed, hasCollapsibleChildren, hasConnections  } = data;
