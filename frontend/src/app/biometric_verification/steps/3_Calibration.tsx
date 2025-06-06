@@ -39,6 +39,11 @@ export default function Calibration({ participant, onComplete }: CalibrationProp
   const [isCalibrating, setIsCalibrating] = useState(false);
   const [connectError, setConnectError] = useState<string | null>(null);
 
+  // 🔥 NUEVOS ESTADOS PARA FASE INFORMATIVA
+  const [showInfoPhase, setShowInfoPhase] = useState(false);
+  const [infoTime, setInfoTime] = useState(10);
+  const [isInfoActive, setIsInfoActive] = useState(false);
+
   // Referencias para evitar duplicados
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const hasCalibrationCompleted = useRef(false);
@@ -80,27 +85,67 @@ export default function Calibration({ participant, onComplete }: CalibrationProp
 
   // Start the calibration process
   const startCalibration = () => {
-    console.log("🚀 Starting calibration phase");
+    console.log("🚀 Starting info phase before calibration");
     setConnectionPhase(false);
-    setIsCalibrating(true);
-    setCalibrationTime(10);
-    hasCalibrationCompleted.current = false;
+    setShowInfoPhase(true);
+    setIsInfoActive(true);
+    setInfoTime(20);
     
-    // Limpiar cualquier interval previo
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
-    
-    // Iniciar contador
-    startCountdown();
+    // Iniciar countdown de información
+    startInfoCountdown();
   };
 
+  // 🔥 NUEVA FUNCIÓN PARA COUNTDOWN DE INFORMACIÓN
+  const startInfoCountdown = () => {
+    console.log("ℹ️ Starting info countdown");
+    
+    // 🔥 ASEGURAR QUE NO HAY TIMERS PREVIOS
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    
+    const infoInterval = setInterval(() => {
+      setInfoTime((prevTime) => {
+        console.log(`ℹ️ Info time remaining: ${prevTime - 1}s`);
+        
+        if (prevTime <= 1) {
+          clearInterval(infoInterval);
+          
+          // 🔥 PEQUEÑO DELAY ANTES DE EMPEZAR CALIBRACIÓN PARA EVITAR CONFLICTOS
+          setTimeout(() => {
+            // Transición a calibración real
+            setShowInfoPhase(false);
+            setIsInfoActive(false);
+            setIsCalibrating(true);
+            setCalibrationTime(30);
+            hasCalibrationCompleted.current = false;
+            
+            // Iniciar calibración real
+            startCountdown();
+          }, 100); // 100ms de delay
+          
+          return 0;
+        }
+        
+        return prevTime - 1;
+      });
+    }, 1000);
+  };
+
+  // 🔥 TAMBIÉN MEJORAR startCountdown PARA ASEGURAR LIMPIEZA
   const startCountdown = () => {
-    console.log("⏱️ Iniciando countdown");
+    console.log("⏱️ Iniciando countdown de calibración");
+    
+    // 🔥 ASEGURAR QUE NO HAY TIMERS PREVIOS
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
     
     intervalRef.current = setInterval(() => {
       setCalibrationTime((prevTime) => {
-        console.log(`⏱️ Tiempo restante: ${prevTime - 1}s`);
+        console.log(`⏱️ Calibration time remaining: ${prevTime - 1}s`);
         
         if (prevTime <= 1) {
           // Tiempo terminado
@@ -138,7 +183,7 @@ export default function Calibration({ participant, onComplete }: CalibrationProp
         });
         
         setCalibrationComplete(true);
-        setShowNeutralPoint(true);
+        setShowNeutralPoint(false);
       } catch (err) {
         console.error("❌ Error en captureRestData:", err);
       }
@@ -294,38 +339,67 @@ export default function Calibration({ participant, onComplete }: CalibrationProp
                   )}
                 </div>
               </div>
-            </div>
-            
-            {connectionStatus === "connected" && (
-              <>
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">EEG Signal Preview</h4>
+              
+              {/* 🔥 BRAINWAVE VISUALIZER AL LADO DERECHO */}
+              {connectionStatus === "connected" && (
+                <div className="flex-shrink-0 w-full md:w-80">
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">EEG Signal Preview</h4>
+                  <div className="bg-gray-50 rounded-lg p-4 h-48">
                     <BrainwaveVisualizer eegData={eegData} />
                   </div>
-                  
+                </div>
+              )}
+            </div>
+            
+            {connectionStatus === "connected" && signalQuality !== "poor" && (
+              <div className="mt-6 pt-4 border-t">
+                <div className="flex items-start">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
                   <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Electrode Signal Quality</h4>
-                    <ElectrodeQualityIndicator electrodeQuality={electrodeQuality} />
+                    <h4 className="font-medium">Ready for Calibration</h4>
+                    <p className="text-sm text-gray-600">
+                      The Muse headset is properly connected and showing good signal quality. 
+                      You're ready to begin the baseline calibration process.
+                    </p>
                   </div>
                 </div>
-                
-                {signalQuality !== "poor" && (
-                  <div className="mt-6 pt-4 border-t">
-                    <div className="flex items-start">
-                      <CheckCircle className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
-                      <div>
-                        <h4 className="font-medium">Ready for Calibration</h4>
-                        <p className="text-sm text-gray-600">
-                          The Muse headset is properly connected and showing good signal quality. 
-                          You're ready to begin the baseline calibration process.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </>
+              </div>
             )}
+          </div>
+        </div>
+      ) : showInfoPhase ? (
+        // 🔥 NUEVA FASE INFORMATIVA ANTES DE CALIBRACIÓN
+        <div className="text-center">
+          <div className="max-w-2xl mx-auto">
+            <div className="w-32 h-32 rounded-full bg-blue-50 flex items-center justify-center mb-6 mx-auto">
+              <Brain className="h-16 w-16 text-blue-600" />
+            </div>
+            
+            <h3 className="text-2xl font-semibold mb-6 text-gray-900">
+              Baseline Calibration Setup
+            </h3>
+            
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+              <p className="text-lg text-blue-900 leading-relaxed">
+                We will now take your baseline measurements while you're at rest. This helps us establish 
+                your natural emotional and stress patterns, enabling more accurate analysis during task evaluation.
+              </p>
+              
+              <div className="mt-4 text-sm text-blue-700">
+                <p className="mb-2">
+                  <strong>What to do:</strong> Sit comfortably, breathe naturally, and try to stay relaxed.
+                </p>
+                <p>
+                  <strong>Duration:</strong> This will take about 30 seconds once we begin.
+                </p>
+              </div>
+            </div>
+            
+            <div className="text-6xl font-bold text-blue-600 mb-4">{infoTime}s</div>
+            
+            <p className="text-gray-600">
+              The baseline measurement will begin automatically when the countdown reaches zero.
+            </p>
           </div>
         </div>
       ) : (
@@ -340,12 +414,12 @@ export default function Calibration({ participant, onComplete }: CalibrationProp
 
             <div className="text-4xl font-bold mb-4">{calibrationTime}s</div>
             
-            {isCalibrating && (
+            {/* {isCalibrating && (
               <div className="w-full max-w-md bg-white p-4 rounded-lg mb-4">
                 <h4 className="text-sm font-medium text-gray-700 mb-2">Live EEG Data</h4>
                 <BrainwaveVisualizer eegData={eegData} />
               </div>
-            )}
+            )} */}
 
             {showNeutralPoint && (
               <div className="w-full max-w-md">

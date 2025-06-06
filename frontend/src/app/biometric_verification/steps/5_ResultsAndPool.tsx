@@ -135,7 +135,7 @@ export default function ResultsAndPool({
           <h2 className="text-2xl font-bold">Biometric Verification Results</h2>
           <p className="text-gray-600">
             Session with {data.total_participants} participants • 
-            Session ID: <span className="font-mono text-sm">{data.session_relation}</span>
+            {/* Session ID: <span className="font-mono text-sm">{data.session_relation}</span> */}
           </p>
           
           {/* Status indicators mejorados */}
@@ -260,11 +260,14 @@ export default function ResultsAndPool({
                   {selectedSession.user_name} - {selectedTask.task_name}
                 </h4>
                 
-                <EmotionalAvatarDisplay
-                  avatarUrl={selectedSession.user_avatar_url}
-                  expression={getEmotionExpression(selectedTask.emotion_label)}
-                  size={280}
-                />
+                {/* 🔥 Contenedor específico para centrar el avatar */}
+                <div className="flex justify-center">
+                  <EmotionalAvatarDisplay
+                    avatarUrl={selectedSession.user_avatar_url}
+                    expression={getEmotionExpression(selectedTask.emotion_label)}
+                    size={280}
+                  />
+                </div>
                 
                 <div className="mt-3 p-3 bg-gradient-to-r from-gray-50 to-purple-50 rounded-lg border border-purple-100">
                   <div className="flex items-center justify-center gap-2 text-lg">
@@ -304,7 +307,7 @@ export default function ResultsAndPool({
                     </div>
                   )}
                   
-                  <div className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-100">
+                  {/* <div className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-100">
                     <div className="flex items-center gap-2">
                       <span className="text-blue-500">🕒</span>
                       <span className="text-gray-700 font-medium">Completed</span>
@@ -312,7 +315,7 @@ export default function ResultsAndPool({
                     <span className="font-medium text-blue-600">
                       {new Date(selectedTask.created_at).toLocaleTimeString()}
                     </span>
-                  </div>
+                  </div> */}
                 </div>
               </div>
 
@@ -327,7 +330,7 @@ export default function ResultsAndPool({
                   <div className="text-center p-2 bg-purple-50 rounded border border-purple-100">
                     <div className="flex items-center justify-center gap-1 text-xs text-gray-600 mb-1">
                       <Activity className="h-3 w-3 text-purple-500" />
-                      Arousal
+                      Energy Level
                     </div>
                     <div className="font-bold text-purple-600">
                       {selectedSession.session_arousal.toFixed(2)}
@@ -337,7 +340,7 @@ export default function ResultsAndPool({
                   <div className="text-center p-2 bg-indigo-50 rounded border border-indigo-100">
                     <div className="flex items-center justify-center gap-1 text-xs text-gray-600 mb-1">
                       <Brain className="h-3 w-3 text-indigo-500" />
-                      Valence
+                      Mood
                     </div>
                     <div className="font-bold text-indigo-600">
                       {selectedSession.session_valence.toFixed(2)}
@@ -373,7 +376,7 @@ export default function ResultsAndPool({
             Tasks Requiring Reassignment
           </h3>
           <p className="text-sm text-red-600 mb-3">
-            {replacementPool.length} tasks were flagged for potential reassignment due to high complexity rating (&lt; 4).
+            These tasks were flagged for potential reassignment due to high complexity rating (&lt; 4).
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {/* 🔥 Filtrar tareas duplicadas por nombre */}

@@ -29,31 +29,7 @@ export default function DeviceSelection({ selectedDevices, onDeviceToggle, onNex
           </div>
           <div className="flex items-center text-sm text-gray-500">
             <Brain className="h-4 w-4 mr-2" />
-            <span>EEG θ/β (brain waves)</span>
-          </div>
-          <div className="mt-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded inline-flex items-center">
-            <span className="h-2 w-2 bg-green-500 rounded-full mr-1"></span>
-            Connected
-          </div>
-        </div>
-
-        <div
-          onClick={() => onDeviceToggle("shimmer")}
-          className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-            selectedDevices.includes("shimmer") ? "border-[#4a2b4a] bg-[#f5f0f5]" : "hover:border-[#4a2b4a]/50"
-          }`}
-        >
-          <div className="flex items-center mb-2">
-            <Checkbox checked={selectedDevices.includes("shimmer")} className="mr-2" />
-            <h3 className="font-medium">Shimmer GSR</h3>
-          </div>
-          <div className="flex items-center text-sm text-gray-500">
-            <Activity className="h-4 w-4 mr-2" />
-            <span>GSR µS (galvanic skin response)</span>
-          </div>
-          <div className="mt-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded inline-flex items-center">
-            <span className="h-2 w-2 bg-yellow-500 rounded-full mr-1"></span>
-            Connecting...
+            <span>EEG θ/β Analysis (brain waves)</span>
           </div>
         </div>
       </div>

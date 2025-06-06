@@ -16,6 +16,7 @@ import TaskEvaluation from "./steps/4_TaskEvaluation"
 import ResultsAndPool from "./steps/5_ResultsAndPool"
 import FinalReview from "./steps/6_FinalReview"
 import ParticipantTransition from "./components/ParticipantTransition"
+import Navbar from "@/components/NavBar"
 
 // Types
 export interface BiometricData {
@@ -41,6 +42,22 @@ export interface ParticipantResult {
   dominantEmotion: string
 }
 
+interface TaskReassignment {
+  taskId: string
+  taskName: string
+  fromUserId: string
+  fromUserName: string
+  toUserId: string
+  toUserName: string
+  reason: string
+  improvementData: {
+    ratingImprovement: number
+    stressReduction: number
+    compatibilityScore: number
+  }
+}
+
+
 function BiometricVerificationContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -57,7 +74,8 @@ function BiometricVerificationContent() {
   const [participantResults, setParticipantResults] = useState<ParticipantResult[]>([])
   const [showTransition, setShowTransition] = useState(false)
 
-  // Contexts
+  const [finalReassignments, setFinalReassignments] = useState<TaskReassignment[]>([])
+
   const { sprint, tasks } = useSprintContext()
 
   const updateProgress = () => {
@@ -81,15 +99,13 @@ function BiometricVerificationContent() {
   const handleParticipantComplete = (results: ParticipantResult) => {
     setParticipantResults([...participantResults, results])
 
-    // Add risk tasks to replacement pool
     const riskTasks = results.taskResults.filter((tr) => tr.isRisk).map((tr) => tr.taskId)
     setReplacementPool([...replacementPool, ...riskTasks])
 
-    // Check if there are more participants
     if (currentParticipantIndex < selectedParticipantObjects.length - 1) {
       setShowTransition(true)
     } else {
-      setCurrentStep(5) // Go to results
+      setCurrentStep(5) 
     }
   }
 
@@ -99,14 +115,25 @@ function BiometricVerificationContent() {
     setCurrentStep(3) // Back to calibration for next participant
   }
 
-  const finishAndReturn = () => {
-    router.push(`/sprint_planning?projectId=${projectId}&sprintId=${sprintId}`)
+  const finishAndReturn = (reassignments?: TaskReassignment[]) => {
+    if (reassignments && reassignments.length > 0) {
+      console.log("🔄 Biometric verification completed with reassignments:", reassignments)
+      setFinalReassignments(reassignments)
+      
+      localStorage.setItem("biometricReassignments", JSON.stringify(reassignments))
+      
+      router.push(`/sprint_planning?projectId=${projectId}&sprintId=${sprintId}&biometricChanges=true`)
+    } else {
+      console.log("✅ Biometric verification completed without changes")
+      router.push(`/sprint_planning?projectId=${projectId}&sprintId=${sprintId}`)
+    }
   }
 
   const stepTitles = ["Devices", "Participants", "Calibration", "Evaluation", "Processing", "Review"]
 
   return (
     <div className="min-h-screen bg-[#ebe5eb]/30">
+      <Navbar projectSelected />
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -227,7 +254,7 @@ function BiometricVerificationContent() {
               tasks={tasks}
               sprint={sprint}
               onBack={() => setCurrentStep(5)}
-              onFinish={finishAndReturn}
+              onFinish={finishAndReturn} 
             />
           )}
         </div>
