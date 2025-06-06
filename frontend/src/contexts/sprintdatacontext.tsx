@@ -57,12 +57,10 @@ interface SprintComparisonData {
   completion_percentage: number
   scope_changes: number
   bugs_found: number
-  bug_severity_distribution: BugSeverityDistribution
   risk_assessment: string
   velocity: number
   average_velocity: number
-  days_elapsed: number
-  sprint_duration: number
+  days_left: number
   start_date: string
   end_date: string
 }
@@ -75,6 +73,9 @@ interface SprintDataContextType {
   refreshBurndownData: () => Promise<void>
   refreshVelocityData: () => Promise<void>
   refreshSprintComparison: () => Promise<void>
+  isLoadingBurndown: boolean
+  isLoadingVelocity: boolean
+  isLoadingComparison: boolean
 }
 
 const SprintDataContext = createContext<SprintDataContextType | undefined>(undefined)
@@ -92,6 +93,12 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
   const [sprintComparison, setSprintComparison] = useState<SprintComparisonData[]>([])
   const [isClient, setIsClient] = useState(false)
   const [project_id, setProjectId] = useState<string | null>(null)
+  const [isLoadingBurndown, setIsLoadingBurndown] = useState(false)
+  const [isLoadingVelocity, setIsLoadingVelocity] = useState(false)
+  const [isLoadingComparison, setIsLoadingComparison] = useState(false)
+  
+  const [lastFetchedProjectId, setLastFetchedProjectId] = useState<string | null>(null)
+  
   const apiURL = process.env.NEXT_PUBLIC_API_URL || ""
   
   const { getTasksForProject } = useTasks();
@@ -99,8 +106,36 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     setIsClient(true)
     const storedProjectId = localStorage.getItem("currentProjectId")
+    console.log('🔍 [SPRINT CONTEXT] Initial project ID:', storedProjectId)
     setProjectId(storedProjectId)
   }, [])
+
+  useEffect(() => {
+    if (!isClient) return
+
+    const handleStorageChange = () => {
+      const newProjectId = localStorage.getItem("currentProjectId")
+      console.log('🔄 [SPRINT CONTEXT] Storage changed, new project ID:', newProjectId)
+      if (newProjectId !== project_id) {
+        setProjectId(newProjectId)
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    
+    const interval = setInterval(() => {
+      const currentProjectId = localStorage.getItem("currentProjectId")
+      if (currentProjectId !== project_id) {
+        console.log('🔄 [SPRINT CONTEXT] Polling detected change:', currentProjectId)
+        setProjectId(currentProjectId)
+      }
+    }, 1000)
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      clearInterval(interval)
+    }
+  }, [isClient, project_id])
 
   const getTaskDataForGraphs = async () => {
     if (!project_id || !apiURL) return
@@ -115,6 +150,7 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
 
   const fetchBurndownData = async () => {
     if (!project_id || !apiURL) return
+    setIsLoadingBurndown(true)
     
     const tasksData = await getTaskDataForGraphs() || []
 
@@ -133,15 +169,18 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
         console.error(data.error)
         return
       }
-      // console.log('BURNDOWN CHART DATA:', JSON.parse(JSON.stringify(data)))
+      console.log('BURNDOWN CHART DATA:', JSON.parse(JSON.stringify(data)))
       setBurndownData(data)
     } catch (error) {
       console.error("Error fetching burndown data:", error)
+    } finally {
+      setIsLoadingBurndown(false)
     }
   }
 
   const fetchVelocityData = async () => {
     if (!project_id || !apiURL) return
+    setIsLoadingVelocity(true)
 
     const tasksData = await getTaskDataForGraphs() || []
 
@@ -156,10 +195,12 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
       })
 
       const data = await response.json()
-      console.log(data)
+      console.log('VELOCITY DATA:', JSON.parse(JSON.stringify(data)))
       setVelocityData(data)
     } catch (error) {
       console.error("Error fetching velocity data:", error)
+    } finally {
+      setIsLoadingVelocity(false)
     }
   }
 
@@ -168,24 +209,45 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
       console.log("Missing project_id or apiURL", { project_id, apiURL })
       return
     }
+    
+    if (isLoadingComparison || lastFetchedProjectId === project_id) {
+      console.log("Already loading or already fetched for this project")
+      return
+    }
+    
+    setIsLoadingComparison(true)
 
     try {
       const url = `${apiURL}/api/sprints/comparison?projectId=${project_id}`
       const response = await fetch(url)
       const data = await response.json()
+      console.log('SPRINT COMPARISON DATA:', JSON.parse(JSON.stringify(data)))  
       setSprintComparison(data)
+      setLastFetchedProjectId(project_id)
     } catch (error) {
       console.error("Error fetching sprint comparison:", error)
+    } finally {
+      setIsLoadingComparison(false)
     }
   }
 
   useEffect(() => {
-    if (isClient && project_id) {
+    console.log('🧹 [SPRINT CONTEXT] Project changed to:', project_id, '- Clearing data')
+    setBurndownData(null)
+    setTeamMembers([])
+    setVelocityData([])
+    setSprintComparison([])
+    setLastFetchedProjectId(null)
+  }, [project_id])
+
+  useEffect(() => {
+    if (isClient && project_id && project_id !== lastFetchedProjectId) {
+      console.log('🔄 [SPRINT CONTEXT] Fetching data for project:', project_id)
       fetchBurndownData()
       fetchVelocityData()
       fetchSprintComparison()
     }
-  }, [isClient, project_id])
+  }, [isClient, project_id, lastFetchedProjectId])
 
   return (
     <SprintDataContext.Provider
@@ -197,6 +259,9 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
         refreshBurndownData: fetchBurndownData,
         refreshVelocityData: fetchVelocityData,
         refreshSprintComparison: fetchSprintComparison,
+        isLoadingBurndown,
+        isLoadingVelocity,
+        isLoadingComparison,
       }}
     >
       {children}

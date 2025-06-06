@@ -52,7 +52,6 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
   const { getUserStoriesForProject } = useUserStories();
   const { getTasksForProject } = useTasks();
   
-  // Add states for available data
   const [availableSprints, setAvailableSprints] = useState<Sprint[]>([]);
   const [availableEpics, setAvailableEpics] = useState<EpicOption[]>([]);
   const [availableUsers, setAvailableUsers] = useState<ProjectUser[]>([]);
@@ -66,18 +65,15 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
   };
   const userInfo = getUserInfo();
 
-  // Fetch available data when component mounts or projectId changes
   useEffect(() => {
     if (!projectId || !isOpen) return;
     
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Fetch available sprints
         const sprints = await getProjectSprints(projectId);
         setAvailableSprints(sprints);
         
-        // Fetch available epics
         const epics = await getProjectEpics(projectId);
         const formattedEpics = epics.map(epic => ({
           id: epic.idTitle || epic.uuid,
@@ -85,7 +81,6 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
         }));
         setAvailableEpics(formattedEpics);
         
-        // Fetch available users (project members)
         const apiURL = process.env.NEXT_PUBLIC_API_URL;
         const usersResponse = await fetch(`${apiURL}/project_users/project/${projectId}`);
         
@@ -107,7 +102,6 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
         setAvailableUsers(formattedUsers);
       } catch (error) {
         console.error("Error fetching data:", error);
-        // Set empty arrays to prevent errors
         setAvailableSprints([]);
         setAvailableEpics([]);
         setAvailableUsers([]);
@@ -177,7 +171,7 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
         else
         {
             const newBug: BugType = {
-                id: itemData.bugId || uuidv4(),
+                id: itemData.id || uuidv4(),
                 title: itemData.title,
                 description: itemData.description,
                 type: itemData.type || "Other" ,
@@ -186,6 +180,9 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
                 status_khanban: itemData.status_khanban || "Backlog",
                 bug_status:itemData.bug_status || "New",
                 projectId:projectId!,
+                taskRelated: itemData.taskRelated || undefined,
+                userStoryRelated: itemData.userStoryRelated || undefined,
+                sprintId: itemData.sprintId || undefined,
                 reportedBy:itemData.reportedBy || {"users": [userInfo[0],userInfo[1]]},
                 assignee:itemData.assignee || [],
                 createdAt: itemData.createdAt || now,
@@ -193,7 +190,7 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
                 stepsToReproduce:itemData.stepsToReproduce || [],
                 visibleToCustomers:itemData.visibleToCustomers || false,
                 affectedComponents: itemData.affectedComponents?.length > 0 ? itemData.affectedComponents : undefined,
-                environment: Object.values(itemData.environment).some((val: any) => val?.trim() !== "")
+                environment: itemData.environment && Object.values(itemData.environment).some((val: any) => val?.trim() !== "")
                 ? {
                     browser: itemData.environment?.browser || undefined,
                     os: itemData.environment?.os || undefined,
@@ -297,8 +294,15 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
             onCancel={() => setSelectedType(null)}
             projectId={projectId}
             availableTasks={onlytasks}
-            availableUserStories={onlystories}
-            //availableUsers={availableUsers}
+            availableUserStories={onlystories.map(story => ({
+              uuid: story.uuid,  
+              title: story.title
+            }))}
+            availableUsers={availableUsers}
+            availableSprints={availableSprints.map(sprint => ({
+              id: sprint.id,
+              name: sprint.name
+            }))}
           />
         );
       default:

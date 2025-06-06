@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef , Suspense } from "react"
 import Link from "next/link"
 import { Bell, ChevronDown, Settings, LogOut, FolderOpen, Users } from "lucide-react"
 import Image from "next/image"
@@ -18,7 +18,7 @@ type NavbarProps = {
 }
 
 // Definimos las pestañas como constantes para evitar errores de tipeo
-const TABS = ["Dashboard", "Sprints", "Roadmap", "Team", "Generate"] as const
+const TABS = ["Dashboard", "Sprints", "Dependency Map", "Team", "Generate"] as const
 type TabType = (typeof TABS)[number]
 
 // Definir constantes de permisos
@@ -30,13 +30,14 @@ const PERMISSIONS = {
 const PATH_TO_TAB: Record<string, TabType> = {
   "/dashboard": "Dashboard",
   "/my-sprints": "Sprints",
-  "/roadmap": "Roadmap",
+  "/roadmap": "Dependency Map",
   "/team": "Team",
   "/generate": "Generate",
   "/gen_requirements": "Generate",
   "/gen_epics": "Generate",
   "/gen_user_stories": "Generate",
   "/gen_tasks": "Generate",
+  "/biometric_dashboard": "Dashboard"
 }
 
 const Navbar = ({ projectSelected = false }: NavbarProps) => {
@@ -177,7 +178,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
           router.push(`/dashboard?projectId=${currentProjectId}`)
         }
         break
-      case "Roadmap":
+      case "Dependency Map":
         if (currentProjectId) {
           router.push(`/roadmap?projectId=${currentProjectId}`)
         }
@@ -235,6 +236,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
   }
 
   return (
+    <Suspense fallback={<div>Loading Navbar...</div>}>
     <nav className="relative flex items-center justify-between px-4 py-2 border-b border-black bg-[#EBE5EB]/30">
       {/* Logo */}
       <div className="flex-shrink-0 h-[60px] flex items-center w-1/4">
@@ -476,6 +478,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
         </div>
       </div>
     </nav>
+    </Suspense>
   )
 }
 

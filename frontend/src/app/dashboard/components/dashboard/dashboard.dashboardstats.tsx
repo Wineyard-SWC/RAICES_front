@@ -1,34 +1,24 @@
 import { ProgressCard } from "./dashboard.progresscard"
-import { Calendar, Clock, BarChart2, MapPin, Users } from "lucide-react"
+import { Calendar, Clock, BarChart2, MapPin, Users, Brain } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/progress"
 import { dashboardStatsStyles as s } from "../../styles/dashboardstyles"
-import { BurndownChart } from "@/components/burndownchart"
 import { useEffect, useState, useMemo, Suspense } from "react"
 import { useSprintDataContext } from "@/contexts/sprintdatacontext"
 import { useKanban } from "@/contexts/unifieddashboardcontext"
 import { useAvatar } from "@/contexts/AvatarContext"
 import { useUserPermissions } from "@/contexts/UserPermissions"
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import dynamic from 'next/dynamic'
 import { Canvas } from '@react-three/fiber'
-import { EventCard } from "../sprintcalendar/EventCard"
+import { useBiometricData } from "@/hooks/useBiometricData" // 🔥 AGREGAR IMPORT
 
 // Importación dinámica del componente Three.js para evitar errores de SSR
 const DynamicAnimatedAvatar = dynamic(
   () => import('./avatarConfig/avatarAnimationsDashboard').then((mod) => mod.AnimatedAvatar),
   { ssr: false }
 )
-
-type Props = {
-  onViewSprintDetails: () => void;
-  onViewCalendar?: () => void;
-}
-
-interface BurndownDataPoint {
-  day: string
-  Remaining: number
-  Ideal: number
-}
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
@@ -58,6 +48,11 @@ interface EventData {
   updated_at: string
 }
 
+type Props = {
+  onViewSprintDetails: () => void;
+  onViewCalendar?: () => void;
+}
+
 const today = new Date()
 const todayString = today.toLocaleDateString('en-US', {
     weekday: 'long',  
@@ -65,28 +60,29 @@ const todayString = today.toLocaleDateString('en-US', {
     day: 'numeric',   
 })
 
-const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
-  // State for burndown chart
-  const [burndownChartData, setBurndownChartData] = useState<BurndownDataPoint[]>([])
-  const [actualPercentage, setActualPercentage] = useState(0)
-  const [idealPercentage, setIdealPercentage] = useState(0)
-  
-  // State for sprint progress
-  const [sprintVelocity, setSprintVelocity] = useState(0)
-  const [taskCompletion, setTaskCompletion] = useState(0)
-  const [daysLeft, setDaysLeft] = useState(0)
+const DashboardStats = ({ onViewSprintDetails, onViewCalendar }: Props) => {
+  // AGREGAR HOOKS PARA SESIÓN Y NAVEGACIÓN
+  const { data: session } = useSession()
+  const router = useRouter()
+
+  // OBTENER USER ID DESDE LA SESIÓN
+  const userId = session?.user?.uid || null
+
+  // 🔥 AGREGAR HOOK PARA OBTENER DATOS BIOMÉTRICOS
+  const { analytics } = useBiometricData(userId || "")
+
+  const currentEmotion = analytics?.currentState?.emotion || "Neutral"
+  console.log("Current emotion from analytics:", currentEmotion)
 
   // New state for today's meetings/events
   const [todayEvents, setTodayEvents] = useState<EventData[]>([])
   const [loadingEvents, setLoadingEvents] = useState(true)
+  const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false)
 
-  // Use the sprint data context to get the data
   const { 
-    burndownData, 
-    teamMembers, 
-    velocityData,
-    refreshBurndownData, 
-    refreshVelocityData 
+    sprintComparison,
+    isLoadingComparison,
+    refreshSprintComparison 
   } = useSprintDataContext()
   
   // Use the unified Kanban context instead of backlog context
@@ -94,99 +90,6 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
 
   // Add this to use the UserPermissions context
   const { getCurrentProject } = useUserPermissions()
-  
-  const setChartData = (duration_days: number, total_story_points: number) => {
-    const totalDays = duration_days + 1
-    const idealDropPerDay = total_story_points / duration_days
-    const generatedData: BurndownDataPoint[] = []
-
-    for (let day = 0; day < totalDays; day++) {
-      const ideal = total_story_points - idealDropPerDay * day
-      const remaining = getRemainingPointsForDay(day, duration_days, total_story_points)
-
-      generatedData.push({
-        day: `Day ${day}`,
-        Ideal: parseFloat(ideal.toFixed(2)),
-        Remaining: parseFloat(remaining.toFixed(2))
-      })
-    }
-
-    // Actualizar estado
-    setBurndownChartData(generatedData)
-
-    if (generatedData.length > 0) {
-      const last = generatedData[generatedData.length - 1]
-      const initial = total_story_points
-
-      setActualPercentage(Math.round(((initial - last.Remaining) / initial) * 100))
-      setIdealPercentage(Math.round(((initial - last.Ideal) / initial) * 100))
-    }
-  }
-
-  const getRemainingPointsForDay = (day: number, duration: number, totalPoints: number): number => {
-    // Calcular la fecha correspondiente al día del sprint
-    const sprintStart = localStorage.getItem("sprint_start_date")
-    if (!sprintStart) return totalPoints
-
-    const startDate = new Date(sprintStart)
-    const currentDate = new Date(startDate)
-    currentDate.setDate(startDate.getDate() + day)
-
-    // Filtrar tareas que no estén completadas antes de esta fecha
-    const allTasks = Object.values(tasks).flat() // combinar todas las columnas
-
-    const remainingPoints = allTasks.reduce((sum, task) => {
-      const taskCompletedDate = new Date(task.date_completed || "")
-      const isDone = task.status_khanban?.toLowerCase() === "done"
-      const completedBeforeOrOnDay = isDone && taskCompletedDate <= currentDate
-
-      // Si no se completió aún (o se completió después del día), aún cuenta
-      if (!completedBeforeOrOnDay) {
-        return sum + (task.story_points || 0)
-      }
-      return sum
-    }, 0)
-
-    return remainingPoints
-  }
-  // Process burndown data for chart
-  useEffect(() => {
-  if (!burndownData) return
-  const { duration_days, total_story_points } = burndownData
-
-  if (duration_days <= 0 || total_story_points <= 0) {
-    setBurndownChartData([])
-    setActualPercentage(0)
-    setIdealPercentage(0)
-    return
-  }
-
-  setChartData(duration_days, total_story_points)
-}, [burndownData])
-
-  // Process velocity data
-  useEffect(() => {
-    if (!Array.isArray(velocityData) || velocityData.length === 0) return
-
-    try {
-      // Calculate average velocity from last 3 sprints
-      const recentVelocity = velocityData.slice(-3)
-      const avgVelocity = recentVelocity.reduce((sum, sprint) => sum + sprint.Actual, 0) / recentVelocity.length
-      setSprintVelocity(Math.round(avgVelocity))
-      
-      // Get task completion from localStorage or calculate from recent sprint
-      const storedCompletion = parseInt(localStorage.getItem("sprint_task_completion") || "0")
-      if (storedCompletion) {
-        setTaskCompletion(storedCompletion)
-      } else if (velocityData.length > 0) {
-        const latestSprint = velocityData[velocityData.length - 1]
-        const completion = latestSprint.Actual / latestSprint.Planned * 100
-        setTaskCompletion(Math.round(completion))
-      }
-    } catch (error) {
-      console.error("Error processing velocity data:", error)
-    }
-  }, [velocityData])
 
   // Calculate task statistics from the TaskColumns
   const taskStats = useMemo(() => {
@@ -203,7 +106,7 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
     
     return {
       completedTasks: done,
-      inProgressTasks: inProgress, // Counting both in progress and review as active tasks
+      inProgressTasks: inProgress,
       totalTasks,
       completionPercentage
     }
@@ -211,70 +114,17 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
   
   localStorage.setItem("taskStadistics", JSON.stringify(taskStats))
 
-  // Function to fetch or calculate sprint dates
-  const calculateSprintDates = () => {
-    // Try to get dates from context first
-    if (burndownData?.sprint_info?.duration_days || 0) {
-      const sprintStartDate = localStorage.getItem("sprint_start_date")
-      
-      if (sprintStartDate) {
-        const startDate = new Date(sprintStartDate)
-        const currentDate = new Date()
-        const endDate = new Date(startDate)
-        
-        // Add duration_days to startDate to get endDate
-        endDate.setDate(startDate.getDate() + (burndownData.sprint_info.duration_days || 0))
-
-        // Calculate days remaining
-        const msPerDay = 1000 * 60 * 60 * 24
-        const daysRemaining = Math.max(0, Math.ceil((endDate.getTime() - currentDate.getTime()) / msPerDay))
-        
-        setDaysLeft(daysRemaining)
-      }
+  // NUEVA FUNCIÓN PARA IR AL DASHBOARD BIOMÉTRICO
+  const handleViewBiometricDashboard = () => {
+    if (!userId) {
+      console.error("No user ID available for biometric dashboard")
+      alert("Error: No se pudo obtener la información del usuario")
+      return
     }
+    
+    console.log("Navigating to biometric dashboard for user:", userId)
+    router.push(`/biometrics_dashboard?userId=${userId}`)
   }
-  
-  // Call this function initially and whenever burndownData changes
-  useEffect(() => {
-    calculateSprintDates()
-  }, [burndownData])
-
-  // Refresh data when component mounts - IMPROVED VERSION TO AVOID CIRCULAR DEPENDENCY
-  useEffect(() => {
-    let isActive = true
-    
-    const loadData = async () => {
-      try {
-        // Stagger the calls to avoid timing issues
-        await refreshBurndownData()
-        
-        if (isActive) {
-          await new Promise(resolve => setTimeout(resolve, 100)) // Small delay
-          await refreshVelocityData()
-        }
-        
-        if (isActive) {
-          await new Promise(resolve => setTimeout(resolve, 100)) // Small delay
-          await refreshKanban()
-        }
-
-        // Fetch today's events
-        if (isActive) {
-          await fetchTodayEvents()
-        }
-      } catch (error) {
-        console.error("Error loading data:", error)
-      }
-    }
-    
-    loadData()
-    
-    // Cleanup function to prevent state updates if component unmounts
-    return () => { isActive = false }
-  }, []) // Remove all dependencies to avoid infinite loop
-
-  // Obtener avatar y género desde el contexto
-  const { avatarUrl, gender } = useAvatar()
 
   // Function to fetch today's events
   const fetchTodayEvents = async () => {
@@ -306,45 +156,129 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
       setLoadingEvents(false)
     }
   }
-  
+
+  useEffect(() => {
+    if (hasLoadedInitialData) return
+    
+    const loadData = async () => {
+      try {
+        const projectId = getCurrentProject()
+        if (!projectId) {
+          console.log("No project ID available, skipping data load")
+          return
+        }
+
+        console.log("Loading initial dashboard data for project:", projectId)
+        
+        if (sprintComparison.length === 0 && !isLoadingComparison) {
+          console.log("Loading sprint comparison data...")
+          await refreshSprintComparison()
+        }
+
+        console.log("Loading today's events...")
+        await fetchTodayEvents()
+        
+        setHasLoadedInitialData(true)
+        
+      } catch (error) {
+        console.error("Error loading initial dashboard data:", error)
+      }
+    }
+    
+    loadData()
+  }, [])
+
+  useEffect(() => {
+    const projectId = getCurrentProject()
+    if (projectId) {
+      setHasLoadedInitialData(false)
+      setTodayEvents([])
+    }
+  }, [getCurrentProject()])
+
+  const currentSprintData = useMemo(() => {
+    if (!Array.isArray(sprintComparison) || sprintComparison.length === 0) {
+      return null
+    }
+    
+    return sprintComparison.find(sprint => sprint.is_current) || 
+           sprintComparison[sprintComparison.length - 1]
+  }, [sprintComparison])
+
+  // Obtener avatar y género desde el contexto
+  const { avatarUrl, gender } = useAvatar()
+
   // Fetch today's events on component mount
   useEffect(() => {
     fetchTodayEvents()
   }, [])
 
+  // DEBUG: Log del user ID para verificar
+  useEffect(() => {
+    console.log("Session data:", session)
+    console.log("User ID from session:", userId)
+  }, [session, userId])
+
+  // 🔥 FUNCIÓN PARA MAPEAR EMOCIONES A EMOJIS
+  const getEmotionEmoji = (emotion: string): string => {
+    const emojiMap: Record<string, string> = {
+      Relaxed: "😌",
+      Happy: "😁", 
+      Euphoric: "🤯",
+      Calm: "😌",
+      Excited: "🤩",
+      Sad: "😢",
+      Stressed: "😰",
+      Neutral: "😐",
+      // Fallbacks
+      Angry: "😠",
+      Surprised: "😲",
+    }
+    return emojiMap[emotion] || "😐"
+  }
+
   return (
     <div className={s.container}>
+      {/* TARJETA DEL DASHBOARD BIOMÉTRICO */}
       <ProgressCard
-        title="Calendar & Meetings"
-        icon={<Calendar className={s.icon} />}
+        title="Biometric Dashboard"
+        icon={<Brain className={s.icon} />}
         footer={
-          <Button variant="default" 
-          className={`${s.button} mt-4`}
-          onClick={onViewCalendar}
+          <Button 
+            variant="default" 
+            className={`${s.button} mt-4`}
+            onClick={handleViewBiometricDashboard}
+            disabled={!userId}
           >
-            View Calendar
+            {userId ? "View Biometrics" : "Loading..."}
           </Button>
         }
       >
         <div className="space-y-4">
           <div className="text-center mb-2">
-            <h3 className="text-gray-700">{todayString}</h3>
+            <h3 className="text-gray-700">Personal Wellness Analytics</h3>
           </div>
           
-          {loadingEvents ? (
+          {!userId ? (
             <div className="flex justify-center py-4">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-800"></div>
             </div>
-          ) : todayEvents.length > 0 ? (
-            <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
-              {todayEvents.map((event) => (
-                <EventCard key={event.id} event={event} />
-              ))}
-            </div>
           ) : (
-            <div className="text-center py-6 text-gray-500">
-              <Calendar className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-              <p>No meetings scheduled for today</p>
+            <div className="text-center py-6 text-[#4a2b4a]">
+              <Brain className="h-12 w-12 mx-auto mb-2 text-[#4a2b4a]" />
+              <p className="text-sm text-gray-600 mb-2">
+                Track your stress levels, emotional patterns, and task performance
+              </p>
+              <div className="grid grid-cols-2 gap-2 mt-4">
+                <div className="bg-purple-50 p-2 rounded">
+                  <div className="text-xs text-purple-600 font-medium">Sessions</div>
+                  <div className="text-sm text-purple-800">View History</div>
+                </div>
+                <div className="bg-blue-50 p-2 rounded">
+                  <div className="text-xs text-blue-600 font-medium">Analytics</div>
+                  <div className="text-sm text-blue-800">Trends & Insights</div>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -367,23 +301,26 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
           <div className="mb-4">
             <div className={s.sprintLabel}>Sprint Velocity</div>
             <Progress 
-              value={sprintVelocity > 0 ? Math.min(sprintVelocity, 100) : 0} 
+              value={(currentSprintData?.total_story_points || 0) > 0 
+                ? Math.min(((currentSprintData?.completed_story_points || 0) / (currentSprintData?.total_story_points || 1)) * 100, 100) 
+                : 0
+              } 
               className={`${s.progressBar} mt-2 mb-2`} 
               indicatorClassName={s.progressBarIndicator} 
             />
             <div className={s.sprintStats}>
-              <span>{sprintVelocity > 0 ? sprintVelocity : 0} SP/Sprint</span>
+              <span>{currentSprintData?.completed_story_points || 0}/{currentSprintData?.total_story_points || 0} SP</span>
             </div>
           </div>
 
           <div className="mb-4">
             <div className="flex justify-between">
               <div className={s.sprintLabel}>Task Completion</div>
-              <div className={s.sprintStats}>{taskStats.completionPercentage}%</div>
+              <div className={s.sprintStats}>{currentSprintData?.completion_percentage || 0}%</div>
             </div>
             <div className="mt-2">
               <Progress 
-                value={taskStats.completionPercentage} 
+                value={currentSprintData?.completion_percentage || 0} 
                 className={`${s.progressBar} mt-2 mb-2`} 
                 indicatorClassName={s.progressBarIndicator} 
               />
@@ -392,16 +329,15 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
 
           <div className="mb-4">
             <div className="grid grid-cols-2 gap-4">
-            
               <div className={s.statCard}>
                 <Clock className={s.statIcon} />
-                <div className={s.statValue}>{daysLeft}</div>
+                <div className={s.statValue}>{currentSprintData?.days_left || 0}</div>
                 <div className={s.statLabel}>Days Left</div>
               </div>
-  
+    
               <div className={s.statCard}>
                 <BarChart2 className={s.statIcon} />
-                <div className={s.statValue}>{taskStats.completionPercentage}%</div>
+                <div className={s.statValue}>{currentSprintData?.completion_percentage || 0}%</div>
                 <div className={s.statLabel}>Completion</div>
               </div>
             </div>
@@ -409,6 +345,7 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
         </div>
       </ProgressCard>
 
+      {/* TARJETA DE PROGRESO PERSONAL */}
       <ProgressCard
         title="Personal Progress"
         icon={
@@ -434,9 +371,8 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
             {avatarUrl ? (
               <div className={s.profileCircle} style={{ 
                 backgroundColor: "#4891E0", 
-                border: "6px solid #C7A0B8" // Contorno añadido de color C7A0B8
+                border: "6px solid #C7A0B8"
               }}>
-                {/* Usar Canvas para renderizar el avatar 3D con Three.js */}
                 <div style={{ width: "100%", height: "100%" }}>
                   <Canvas camera={{ position: [0, 0.4, 3.5], fov: 25 }}>
                     <ambientLight intensity={1} />
@@ -448,13 +384,14 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
                         minDelay={3000}
                         maxDelay={8000}
                         idleTime={5000}
+                        emotion={analytics?.mostCommonEmotion} // 🔥 PASAR LA EMOCIÓN ACTUAL
+                        expressionIntensity={1} // 🔥 INTENSIDAD MODERADA
                       />
                     </Suspense>
                   </Canvas>
                 </div>
               </div>
             ) : (
-              // Fallback a SVG si no hay avatar
               <div className={s.profileCircle}>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -471,7 +408,13 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
                 </svg>
               </div>
             )}
-            <div className={s.emojiBadge}>😄</div>
+            {/* 🔥 MOSTRAR LA EMOCIÓN ACTUAL EN EL BADGE */}
+            <div className={s.emojiBadge}>
+              {analytics?.currentState?.emotion ? 
+                getEmotionEmoji(analytics?.mostCommonEmotion) : 
+                "😐"
+              }
+            </div>
           </div>
         </div>
         
@@ -490,7 +433,8 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
         </div>
       </ProgressCard>
     </div>
-  );
+  )
 }
 
-export default DashboardStats;
+// 🔥 ASEGURAR QUE EL EXPORT DEFAULT ESTÉ CORRECTO
+export default DashboardStats

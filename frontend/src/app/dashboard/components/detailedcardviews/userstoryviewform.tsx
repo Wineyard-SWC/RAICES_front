@@ -2,10 +2,12 @@ import { CheckCircle, Calendar, Clock, User, Users, Hash, GitBranch, Target } fr
 import { UserStory } from "@/types/userstory";
 import { useKanban } from "@/contexts/unifieddashboardcontext";
 import { TaskOrStory } from "@/types/taskkanban";
+import { getAssigneeName,getAssigneeId } from "../../utils/secureAssigneeFormat";
 
 interface UserStoryViewFormProps {
   task: UserStory;
 }
+
 
 const UserStoryViewForm = ({ task }: UserStoryViewFormProps) => {
   const { tasks } = useKanban();
@@ -85,7 +87,7 @@ const UserStoryViewForm = ({ task }: UserStoryViewFormProps) => {
             {task.assignee.map((assignee, index) => (
               <div key={index} className="flex items-center">
                 <User className="h-4 w-4 mr-2 text-gray-500" />
-                <p className="text-black text-lg">{assignee.users[1]} ({assignee.users[0]})</p>
+                <p className="text-black text-lg">{getAssigneeName(assignee)}</p>
               </div>
             ))}
           </div>

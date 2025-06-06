@@ -24,7 +24,7 @@ interface Workinguser {
 // Backend format for assignee (from Firestore)
 interface FirestoreAssignee {
   id: string
-  name: string
+  name:string
 }
 
 type BackendTaskFormData = Omit<TaskFormData, 'assignee'> & {
@@ -107,13 +107,20 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const convertAssigneeFromBackend = (backendAssignee: any): Workinguser[] => {
     if (!backendAssignee) return []
-    
+  
     if (Array.isArray(backendAssignee)) {
       return backendAssignee.map(user => {
+        // Si es un objeto { id, name } (formato de Firestore)
         if (typeof user === 'object' && 'id' in user && 'name' in user) {
           return { users: [user.id, user.name] as [string, string] }
-        } else if (Array.isArray(user) && user.length >= 2) {
+        }
+        // Si es una tupla [id, name] (compatibilidad hacia atrás)
+        else if (Array.isArray(user) && user.length >= 2) {
           return { users: [user[0], user[1]] as [string, string] }
+        }
+        // Si ya tiene el formato correcto { users: [id, name] }
+        else if (typeof user === 'object' && 'users' in user && Array.isArray(user.users)) {
+          return { users: [user.users[0], user.users[1]] as [string, string] }
         }
         console.warn('Unexpected assignee format:', user)
         return { users: ["", ""] as [string, string] }
@@ -124,13 +131,22 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }
 
   const convertAssigneeToBackend = (frontendAssignee: Workinguser[]): FirestoreAssignee[] => {
-    if (!frontendAssignee || !Array.isArray(frontendAssignee)) return []
-    
-    return frontendAssignee.map(workingUser => ({
-      id: workingUser.users[0] || "",
-      name: workingUser.users[1] || ""
-    }))
+  if (!frontendAssignee || !Array.isArray(frontendAssignee)) return []
+
+    return frontendAssignee.map(workingUser => {
+      if (!workingUser || !workingUser.users || !Array.isArray(workingUser.users)) {
+        console.warn('Invalid assignee format:', workingUser)
+        return { id: "", name: "" }
+      }
+      
+      return {
+        id: workingUser.users[0] || "",
+        name: workingUser.users[1] || ""
+      }
+    }).filter(assignee => assignee.id !== "") 
   }
+
+  
 
   const convertTasksToColumns = useCallback((tasks: Task[]): TaskColumns => {
     const columns: TaskColumns = {
@@ -209,9 +225,23 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     delete cleanData.id
     
     if (cleanData.assignee && Array.isArray(cleanData.assignee)) {
+      const normalizedAssignees = cleanData.assignee.map(assignee => {
+
+        if (assignee && typeof assignee === 'object' && 'users' in assignee && Array.isArray(assignee.users)) {
+          return assignee
+        }
+
+        if (Array.isArray(assignee) && assignee.length >= 2) {
+          return { users: [assignee[0], assignee[1]] }
+        }
+
+        console.warn('Invalid assignee format detected:', assignee)
+        return null
+      }).filter(Boolean) 
+      
       return {
         ...cleanData,
-        assignee: convertAssigneeToBackend(cleanData.assignee)
+        assignee: convertAssigneeToBackend(normalizedAssignees as Workinguser[]) as any[]
       }
     }
     
@@ -224,9 +254,20 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     delete cleanData.id
     
     if (cleanData.assignee && Array.isArray(cleanData.assignee)) {
+      const normalizedAssignees = cleanData.assignee.map(assignee => {
+        if (assignee && typeof assignee === 'object' && 'users' in assignee && Array.isArray(assignee.users)) {
+          return assignee
+        }
+        if (Array.isArray(assignee) && assignee.length >= 2) {
+          return { users: [assignee[0], assignee[1]] }
+        }
+        console.warn('Invalid assignee format detected in story:', assignee)
+        return null
+      }).filter(Boolean)
+      
       return {
         ...cleanData,
-        assignee: convertAssigneeToBackend(cleanData.assignee)
+        assignee: convertAssigneeToBackend(normalizedAssignees as Workinguser[] )as any[]
       }
     }
     
@@ -239,9 +280,20 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     delete cleanData.id
     
     if (cleanData.assignee && Array.isArray(cleanData.assignee)) {
+      const normalizedAssignees = cleanData.assignee.map(assignee => {
+        if (assignee && typeof assignee === 'object' && 'users' in assignee && Array.isArray(assignee.users)) {
+          return assignee
+        }
+        if (Array.isArray(assignee) && assignee.length >= 2) {
+          return { users: [assignee[0], assignee[1]] }
+        }
+        console.warn('Invalid assignee format detected in bug:', assignee)
+        return null
+      }).filter(Boolean)
+      
       return {
         ...cleanData,
-        assignee: convertAssigneeToBackend(cleanData.assignee)
+        assignee: convertAssigneeToBackend(normalizedAssignees as Workinguser[]) as any[]
       }
     }
     
@@ -353,11 +405,21 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     const normalizedData = {
-    ...updateData,
-    assignee: Array.isArray(updateData.assignee)
-      ? updateData.assignee.map(item => Array.isArray(item) ? item : item.users) as Workinguser[]
-      : [],
-  };
+      ...updateData,
+      assignee: updateData.assignee ? updateData.assignee.map(assignee => {
+        // Si ya tiene el formato correcto { users: [id, name] }
+        if (assignee && typeof assignee === 'object' && 'users' in assignee) {
+          return assignee
+        }
+        // Si es un array directo [id, name]
+        if (Array.isArray(assignee) && (assignee as any[]).length >= 2) {
+          return { users: [assignee[0], assignee[1]] } as Workinguser
+        }
+        // Formato inválido
+        console.warn('Invalid assignee format in updateTask:', assignee)
+        return null
+      }).filter(Boolean) as Workinguser[] : []
+    }
 
   try {
     // 3) Preparamos el payload para el backend (resto de campos, fechas, etc.)

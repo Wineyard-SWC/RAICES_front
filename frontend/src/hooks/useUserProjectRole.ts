@@ -39,11 +39,11 @@ export const useUserProjectRole = (userId: string | null, projectId: string) => 
     fetchUserRole()
   }, [userId, projectId])
 
-  return {
+return {
     role,
-    isOwner: role === "owner",
-    // cualquiero otro rol =>  admin, member, etc
-    isMember: role === "member" || role === "Admin" || role === "Developer",
+    isOwner: role?.toLocaleLowerCase() === "owner",
+    // cualquiero otro rol =>  admin, member, etc, cualquiera que no sea "owner"
+    isMember: role?.toLocaleLowerCase() !== "owner",
     loading,
     error,
   }

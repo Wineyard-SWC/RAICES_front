@@ -100,28 +100,36 @@ export default function SprintSidebar({
             <section>
               <h3 className="mb-3 font-medium">Selected Items</h3>
               <div className="space-y-2">
-                {selectedStories.map(story => {
-                  // FIX: Obtener tasks reales para cada historia
-                  const storyTasks = (story.tasks || [])
-                    .map(taskId => tasksMap.get(taskId))
-                    .filter(Boolean) as Task[];
-                  
-                  const storyPoints = storyTasks.reduce((sum, task) => sum + (task.story_points || 0), 0);
-                  
-                  return (
-                    <SelectedCard
-                      key={story.id}
-                      id={story.id}
-                      type="story"
-                      title={story.userStory?.title ?? "Untitled"}
-                      points={storyPoints}
-                      tasksCount={storyTasks.length}
-                      onRemove={
-                        onToggleUserStory ? () => onToggleUserStory(story.id) : undefined
-                      }
-                    />
-                  );
-                })}
+                {selectedStories.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <p className="text-sm text-gray-500 mb-1">No user stories selected</p>
+                    <p className="text-xs text-gray-400">
+                      Select stories from the backlog to add them to your sprint
+                    </p>
+                  </div>
+                ) : (
+                  selectedStories.map(story => {
+                    const storyTasks = (story.tasks || [])
+                      .map(taskId => tasksMap.get(taskId))
+                      .filter(Boolean) as Task[];
+                    
+                    const storyPoints = storyTasks.reduce((sum, task) => sum + (task.story_points || 0), 0);
+                    
+                    return (
+                      <SelectedCard
+                        key={story.id}
+                        id={story.id}
+                        type="story"
+                        title={story.userStory?.title ?? "Untitled"}
+                        points={storyPoints}
+                        tasksCount={storyTasks.length}
+                        onRemove={
+                          onToggleUserStory ? () => onToggleUserStory(story.id) : undefined
+                        }
+                      />
+                    );
+                  })
+                )}
               </div>
             </section>
 
@@ -157,6 +165,7 @@ export default function SprintSidebar({
                   Task Assignment
                 </Button>
               </Link>
+              <div></div>
               <Button
                 variant="outline"
                 className="w-full border-[#4a2b4a] text-[#4a2b4a] hover:bg-[#f5f0f1]"
