@@ -10,18 +10,18 @@ import dynamic from 'next/dynamic'
 import { Button } from "@/components/ui/button"
 import Navbar from "@/components/NavBar"
 import { useBiometricData } from "@/hooks/useBiometricData"
-import { Card, CardContent, CardHeader, CardTitle } from "../settings/components/ui/card"
-import { Badge } from "../settings/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "../../settings/components/ui/card"
+import { Badge } from "../../settings/components/ui/badge"
 import { Progress } from "@/components/progress"
 import { useAvatar } from "@/contexts/AvatarContext"
 
 // 🔥 IMPORTAR LOS COMPONENTES EXISTENTES
-import TaskPerformance from "./components/TaskPerformance"
-import BiometricTrends from "./components/BiometricTrends"
+import TaskPerformance from "./TaskPerformance"
+import BiometricTrends from "./BiometricTrends"
 
 // 🔥 IMPORTACIÓN DINÁMICA DEL AVATAR ANIMADO
 const DynamicAnimatedAvatar = dynamic(
-  () => import('../dashboard/components/dashboard/avatarConfig/avatarAnimationsDashboard').then((mod) => mod.AnimatedAvatar),
+  () => import('../../dashboard/components/dashboard/avatarConfig/avatarAnimationsDashboard').then((mod) => mod.AnimatedAvatar),
   { ssr: false }
 )
 
@@ -58,24 +58,7 @@ const useEmotionUtils = () => ({
   },
 })
 
-// 🔥 COMPONENTE DE LOADING PARA SUSPENSE
-function LoadingBiometricsDashboard() {
-  return (
-    <div className="min-h-screen bg-[#EBE5EB]/30">
-      <Navbar projectSelected={false} />
-      <main className="container mx-auto p-6 flex items-center justify-center min-h-[calc(100vh-80px)]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-[#C7A0B8] border-t-[#4A2B4A] rounded-full animate-spin"></div>
-          <span className="text-xl font-semibold text-[#4A2B4A]">Loading your dashboard...</span>
-          <span className="text-sm text-[#694969]">Analyzing your biometric data</span>
-        </div>
-      </main>
-    </div>
-  )
-}
-
-// 🔥 TU COMPONENTE ACTUAL - SIN CAMBIOS
-function ImprovedBiometricDashboard() {
+export default function BiometricsDashboardContent() {
   const { data: session } = useSession()
   const userIdFromSession = session?.user?.uid
   const userId = userIdFromSession || ""
@@ -114,8 +97,8 @@ function ImprovedBiometricDashboard() {
       <div className="min-h-screen bg-[#EBE5EB]/30">
         <Navbar projectSelected={false} />
         <main className="container mx-auto p-6 flex items-center justify-center min-h-[calc(100vh-80px)]">
-          <Card className="w-full max-w-2xl bg-white shadow-lg border-0">
-            <CardContent className="pt-8 pb-8 px-8">
+          <Card className="w-full max-w-2xl bg-white shadow-lg border-0"> {/* 🔥 HACER MÁS ANCHO Y MEJORAR SOMBRA */}
+            <CardContent className="pt-8 pb-8 px-8"> {/* 🔥 MÁS PADDING */}
               <div className="flex flex-col items-center text-center">
                 
                 {/* 🔥 AVATAR CON EMOCIÓN TRISTE */}
@@ -137,7 +120,7 @@ function ImprovedBiometricDashboard() {
                               minDelay={5000}
                               maxDelay={10000}
                               idleTime={8000}
-                              emotion="Sad"
+                              emotion="Sad" // 🔥 EMOCIÓN TRISTE
                               expressionIntensity={0.9}
                             />
                           </Suspense>
@@ -236,7 +219,7 @@ function ImprovedBiometricDashboard() {
   }
 
   const stressInfo = getStressLevel(analytics.currentState.stress)
-  const energyInfo = getEnergyLevel(analytics.currentState.arousal)
+  const energyInfo = getEnergyLevel(analytics.currentState.arousal) // 🔥 NUEVA VARIABLE
 
   return (
     <div className="min-h-screen bg-[#EBE5EB]/30">
@@ -273,8 +256,8 @@ function ImprovedBiometricDashboard() {
                               minDelay={4000}
                               maxDelay={8000}
                               idleTime={6000}
-                              emotion={analytics.mostCommonEmotion}
-                              expressionIntensity={1.0}
+                              emotion={analytics.currentState.emotion} // 🔥 EMOCIÓN ACTUAL
+                              expressionIntensity={0.8}
                             />
                           </Suspense>
                         </Canvas>
@@ -370,7 +353,7 @@ function ImprovedBiometricDashboard() {
         </div>
 
         {/* 🔥 USAR LOS COMPONENTES EXISTENTES */}
-        <div className="space-y-8">
+        <div className="space-y-8"> {/* 🔥 MANTENER ESPACIO CONSISTENTE */}
           {/* Biometric Trends Component - YA TIENE SU PROPIO MARGEN SUPERIOR */}
           <BiometricTrends analytics={analytics} />
           
@@ -381,13 +364,3 @@ function ImprovedBiometricDashboard() {
     </div>
   )
 }
-
-// 🔥 COMPONENTE PRINCIPAL EXPORTADO CON SUSPENSE (para el build)
-export default function BiometricsDashboardPage() {
-  return (
-    <Suspense fallback={<LoadingBiometricsDashboard />}>
-      <ImprovedBiometricDashboard />
-    </Suspense>
-  )
-}
-
