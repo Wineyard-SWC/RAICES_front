@@ -37,6 +37,7 @@ const PATH_TO_TAB: Record<string, TabType> = {
   "/gen_epics": "Generate",
   "/gen_user_stories": "Generate",
   "/gen_tasks": "Generate",
+  "/biometric_dashboard": "Dashboard"
 }
 
 const Navbar = ({ projectSelected = false }: NavbarProps) => {

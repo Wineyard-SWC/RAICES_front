@@ -4,6 +4,7 @@
 import { useRef, useEffect, useState } from "react"
 import { useGLTF, useAnimations } from "@react-three/drei"
 import * as THREE from "three"
+import { EmotionKey, getExpressionFromEmotion, applyExpressionToMesh } from "@/utils/avatarExpressions"
 
 interface AvatarAnimationOptions {
   minDelay?: number
@@ -67,14 +68,14 @@ export function useAvatarAnimationName(options: AvatarAnimationOptions = {}) {
   return { currentClip }
 }
 
-
-
 interface AnimatedAvatarProps {
   avatarUrl: string
   gender?: "masculine" | "feminine"
   minDelay?: number     // ms, delay mínimo antes de cada variación
   maxDelay?: number     // ms, delay máximo antes de cada variación
   idleTime?: number     // ms, tiempo en idle entre variaciones
+  emotion?: string      // 🔥 NUEVA PROP: emoción del backend
+  expressionIntensity?: number // 🔥 NUEVA PROP: intensidad de la expresión (0-1)
 }
 
 export function AnimatedAvatar({
@@ -82,9 +83,12 @@ export function AnimatedAvatar({
   gender = "masculine",
   minDelay = 2000,
   maxDelay = 4000,
-  idleTime  = 7000,
+  idleTime = 7000,
+  emotion = "Neutral", // 🔥 VALOR POR DEFECTO
+  expressionIntensity = 1.0 // 🔥 VALOR POR DEFECTO
 }: AnimatedAvatarProps) {
   const group = useRef<THREE.Group>(null!)
+  const [avatarScene, setAvatarScene] = useState<THREE.Object3D | null>(null)
 
   // Prefijo según género
   const prefix = gender === "feminine" ? "F" : "M"
@@ -122,6 +126,30 @@ export function AnimatedAvatar({
   // 3) Conecta acciones al grupo
   const { actions } = useAnimations(allClips, group)
 
+  // 🔥 EFECTO PARA MANEJAR EXPRESIONES FACIALES
+  useEffect(() => {
+    if (!avatarScene) return;
+
+    const targetExpression = getExpressionFromEmotion(emotion);
+    
+    // Buscar meshes con morph targets y aplicar la expresión
+    avatarScene.traverse((object) => {
+      if (object instanceof THREE.Mesh && object.morphTargetDictionary && object.morphTargetInfluences) {
+        applyExpressionToMesh(object, targetExpression, expressionIntensity);
+      }
+    });
+
+    console.log(`🎭 Applied expression: ${targetExpression} for emotion: ${emotion} with intensity: ${expressionIntensity}`);
+  }, [avatarScene, emotion, expressionIntensity]);
+
+  // 🔥 ESTABLECER LA ESCENA DEL AVATAR CUANDO SE CARGA
+  useEffect(() => {
+    if (avatarGltf.scene) {
+      setAvatarScene(avatarGltf.scene);
+    }
+  }, [avatarGltf.scene]);
+
+  // 4) SISTEMA DE ANIMACIONES (sin cambios)
   useEffect(() => {
     if (!actions) return
 
@@ -144,20 +172,16 @@ export function AnimatedAvatar({
       // cross-fade out del idle
       idleAction.fadeOut(0.5)
 
-      // configurar la variación: 1 sola pasada y “clamp” en el último frame
+      // configurar la variación: 1 sola pasada y "clamp" en el último frame
       varAction.reset()
       varAction.setLoop(THREE.LoopOnce, 1)
       varAction.clampWhenFinished = true
       varAction.fadeIn(0.5).play()
 
-      console.log("Playing variation:", variation)
+      console.log("🎬 Playing animation variation:", variation)
 
       // programa el retorno al idle usando la duración real
       const durationMs = (varAction.getClip().duration || 3) * 1000
-
-      console.log("Duration:", durationMs)
-      console.log("variation:", variation)
-      console.log("idleName:", idleName)
 
       timer = setTimeout(() => {
         // fade out de la variación

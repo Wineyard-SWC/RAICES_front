@@ -1,28 +1,24 @@
 import { ProgressCard } from "./dashboard.progresscard"
-import { Calendar, Clock, BarChart2, MapPin, Users } from "lucide-react"
+import { Calendar, Clock, BarChart2, MapPin, Users, Brain } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/progress"
 import { dashboardStatsStyles as s } from "../../styles/dashboardstyles"
-// import { BurndownChart } from "@/components/burndownchart"
 import { useEffect, useState, useMemo, Suspense } from "react"
 import { useSprintDataContext } from "@/contexts/sprintdatacontext"
 import { useKanban } from "@/contexts/unifieddashboardcontext"
 import { useAvatar } from "@/contexts/AvatarContext"
 import { useUserPermissions } from "@/contexts/UserPermissions"
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import dynamic from 'next/dynamic'
 import { Canvas } from '@react-three/fiber'
-import { EventCard } from "../sprintcalendar/EventCard"
+import { useBiometricData } from "@/hooks/useBiometricData" // 🔥 AGREGAR IMPORT
 
 // Importación dinámica del componente Three.js para evitar errores de SSR
 const DynamicAnimatedAvatar = dynamic(
   () => import('./avatarConfig/avatarAnimationsDashboard').then((mod) => mod.AnimatedAvatar),
   { ssr: false }
 )
-
-type Props = {
-  onViewSprintDetails: () => void;
-  onViewCalendar?: () => void;
-}
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
@@ -52,6 +48,11 @@ interface EventData {
   updated_at: string
 }
 
+type Props = {
+  onViewSprintDetails: () => void;
+  onViewCalendar?: () => void;
+}
+
 const today = new Date()
 const todayString = today.toLocaleDateString('en-US', {
     weekday: 'long',  
@@ -59,11 +60,23 @@ const todayString = today.toLocaleDateString('en-US', {
     day: 'numeric',   
 })
 
-const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
+const DashboardStats = ({ onViewSprintDetails, onViewCalendar }: Props) => {
+  // AGREGAR HOOKS PARA SESIÓN Y NAVEGACIÓN
+  const { data: session } = useSession()
+  const router = useRouter()
+
+  // OBTENER USER ID DESDE LA SESIÓN
+  const userId = session?.user?.uid || null
+
+  // 🔥 AGREGAR HOOK PARA OBTENER DATOS BIOMÉTRICOS
+  const { analytics } = useBiometricData(userId || "")
+
+  const currentEmotion = analytics?.currentState?.emotion || "Neutral"
+  console.log("Current emotion from analytics:", currentEmotion)
+
   // New state for today's meetings/events
   const [todayEvents, setTodayEvents] = useState<EventData[]>([])
   const [loadingEvents, setLoadingEvents] = useState(true)
-  
   const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false)
 
   const { 
@@ -100,6 +113,18 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
   }, [tasks])
   
   localStorage.setItem("taskStadistics", JSON.stringify(taskStats))
+
+  // NUEVA FUNCIÓN PARA IR AL DASHBOARD BIOMÉTRICO
+  const handleViewBiometricDashboard = () => {
+    if (!userId) {
+      console.error("No user ID available for biometric dashboard")
+      alert("Error: No se pudo obtener la información del usuario")
+      return
+    }
+    
+    console.log("Navigating to biometric dashboard for user:", userId)
+    router.push(`/biometrics_dashboard?userId=${userId}`)
+  }
 
   // Function to fetch today's events
   const fetchTodayEvents = async () => {
@@ -188,39 +213,72 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
     fetchTodayEvents()
   }, [])
 
+  // DEBUG: Log del user ID para verificar
+  useEffect(() => {
+    console.log("Session data:", session)
+    console.log("User ID from session:", userId)
+  }, [session, userId])
+
+  // 🔥 FUNCIÓN PARA MAPEAR EMOCIONES A EMOJIS
+  const getEmotionEmoji = (emotion: string): string => {
+    const emojiMap: Record<string, string> = {
+      Relaxed: "😌",
+      Happy: "😁", 
+      Euphoric: "🤯",
+      Calm: "😌",
+      Excited: "🤩",
+      Sad: "😢",
+      Stressed: "😰",
+      Neutral: "😐",
+      // Fallbacks
+      Angry: "😠",
+      Surprised: "😲",
+    }
+    return emojiMap[emotion] || "😐"
+  }
+
   return (
     <div className={s.container}>
+      {/* TARJETA DEL DASHBOARD BIOMÉTRICO */}
       <ProgressCard
-        title="Calendar & Meetings"
-        icon={<Calendar className={s.icon} />}
+        title="Biometric Dashboard"
+        icon={<Brain className={s.icon} />}
         footer={
-          <Button variant="default" 
-          className={`${s.button} mt-4`}
-          onClick={onViewCalendar}
+          <Button 
+            variant="default" 
+            className={`${s.button} mt-4`}
+            onClick={handleViewBiometricDashboard}
+            disabled={!userId}
           >
-            View Calendar
+            {userId ? "View Biometrics" : "Loading..."}
           </Button>
         }
       >
         <div className="space-y-4">
           <div className="text-center mb-2">
-            <h3 className="text-gray-700">{todayString}</h3>
+            <h3 className="text-gray-700">Personal Wellness Analytics</h3>
           </div>
           
-          {loadingEvents ? (
+          {!userId ? (
             <div className="flex justify-center py-4">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-800"></div>
             </div>
-          ) : todayEvents.length > 0 ? (
-            <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
-              {todayEvents.map((event) => (
-                <EventCard key={event.id} event={event} />
-              ))}
-            </div>
           ) : (
-            <div className="text-center py-6 text-gray-500">
-              <Calendar className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-              <p>No meetings scheduled for today</p>
+            <div className="text-center py-6 text-[#4a2b4a]">
+              <Brain className="h-12 w-12 mx-auto mb-2 text-[#4a2b4a]" />
+              <p className="text-sm text-gray-600 mb-2">
+                Track your stress levels, emotional patterns, and task performance
+              </p>
+              <div className="grid grid-cols-2 gap-2 mt-4">
+                <div className="bg-purple-50 p-2 rounded">
+                  <div className="text-xs text-purple-600 font-medium">Sessions</div>
+                  <div className="text-sm text-purple-800">View History</div>
+                </div>
+                <div className="bg-blue-50 p-2 rounded">
+                  <div className="text-xs text-blue-600 font-medium">Analytics</div>
+                  <div className="text-sm text-blue-800">Trends & Insights</div>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -287,6 +345,7 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
         </div>
       </ProgressCard>
 
+      {/* TARJETA DE PROGRESO PERSONAL */}
       <ProgressCard
         title="Personal Progress"
         icon={
@@ -325,6 +384,8 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
                         minDelay={3000}
                         maxDelay={8000}
                         idleTime={5000}
+                        emotion={currentEmotion} // 🔥 PASAR LA EMOCIÓN ACTUAL
+                        expressionIntensity={0.8} // 🔥 INTENSIDAD MODERADA
                       />
                     </Suspense>
                   </Canvas>
@@ -347,7 +408,13 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
                 </svg>
               </div>
             )}
-            <div className={s.emojiBadge}>😄</div>
+            {/* 🔥 MOSTRAR LA EMOCIÓN ACTUAL EN EL BADGE */}
+            <div className={s.emojiBadge}>
+              {analytics?.currentState?.emotion ? 
+                getEmotionEmoji(analytics.currentState.emotion) : 
+                "😐"
+              }
+            </div>
           </div>
         </div>
         
@@ -366,7 +433,8 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar}: Props) => {
         </div>
       </ProgressCard>
     </div>
-  );
+  )
 }
 
-export default DashboardStats;
+// 🔥 ASEGURAR QUE EL EXPORT DEFAULT ESTÉ CORRECTO
+export default DashboardStats
