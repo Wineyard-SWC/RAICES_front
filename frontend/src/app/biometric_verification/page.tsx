@@ -16,6 +16,7 @@ import TaskEvaluation from "./steps/4_TaskEvaluation"
 import ResultsAndPool from "./steps/5_ResultsAndPool"
 import FinalReview from "./steps/6_FinalReview"
 import ParticipantTransition from "./components/ParticipantTransition"
+import Navbar from "@/components/NavBar"
 
 // Types
 export interface BiometricData {
@@ -41,6 +42,22 @@ export interface ParticipantResult {
   dominantEmotion: string
 }
 
+// 🔥 AGREGAR LA INTERFACE
+interface TaskReassignment {
+  taskId: string
+  taskName: string
+  fromUserId: string
+  fromUserName: string
+  toUserId: string
+  toUserName: string
+  reason: string
+  improvementData: {
+    ratingImprovement: number
+    stressReduction: number
+    compatibilityScore: number
+  }
+}
+
 export default function BiometricVerificationPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -56,6 +73,9 @@ export default function BiometricVerificationPage() {
   const [replacementPool, setReplacementPool] = useState<string[]>([])
   const [participantResults, setParticipantResults] = useState<ParticipantResult[]>([])
   const [showTransition, setShowTransition] = useState(false)
+
+  // 🔥 NUEVO ESTADO PARA ALMACENAR REASIGNACIONES
+  const [finalReassignments, setFinalReassignments] = useState<TaskReassignment[]>([])
 
   // Contexts
   const { sprint, tasks } = useSprintContext()
@@ -99,14 +119,28 @@ export default function BiometricVerificationPage() {
     setCurrentStep(3) // Back to calibration for next participant
   }
 
-  const finishAndReturn = () => {
-    router.push(`/sprint_planning?projectId=${projectId}&sprintId=${sprintId}`)
+  // 🔥 MODIFICAR finishAndReturn PARA INCLUIR REASIGNACIONES
+  const finishAndReturn = (reassignments?: TaskReassignment[]) => {
+    if (reassignments && reassignments.length > 0) {
+      console.log("🔄 Biometric verification completed with reassignments:", reassignments)
+      setFinalReassignments(reassignments)
+      
+      // 🔥 ASEGURAR QUE ESTÉN EN LOCALSTORAGE
+      localStorage.setItem("biometricReassignments", JSON.stringify(reassignments))
+      
+      // 🔥 IR DIRECTO AL SPRINT PLANNING CON FLAG DE CAMBIOS BIOMÉTRICOS
+      router.push(`/sprint_planning?projectId=${projectId}&sprintId=${sprintId}&biometricChanges=true`)
+    } else {
+      console.log("✅ Biometric verification completed without changes")
+      router.push(`/sprint_planning?projectId=${projectId}&sprintId=${sprintId}`)
+    }
   }
 
   const stepTitles = ["Devices", "Participants", "Calibration", "Evaluation", "Processing", "Review"]
 
   return (
     <div className="min-h-screen bg-[#ebe5eb]/30">
+      <Navbar projectSelected />
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -227,7 +261,7 @@ export default function BiometricVerificationPage() {
               tasks={tasks}
               sprint={sprint}
               onBack={() => setCurrentStep(5)}
-              onFinish={finishAndReturn}
+              onFinish={finishAndReturn} // 🔥 Pasar la función modificada
             />
           )}
         </div>

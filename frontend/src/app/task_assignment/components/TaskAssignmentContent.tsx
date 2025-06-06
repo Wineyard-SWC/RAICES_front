@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Search, ArrowLeft, Users, X, AlertCircle, Brain, ChevronRight } from "lucide-react"
@@ -17,6 +17,22 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { useSessionRelation } from "@/hooks/useSessionRelation" // 👈 Agregar import
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL!
+
+// 🔥 AGREGAR LA INTERFACE
+interface TaskReassignment {
+  taskId: string
+  taskName: string
+  fromUserId: string
+  fromUserName: string
+  toUserId: string
+  toUserName: string
+  reason: string
+  improvementData: {
+    ratingImprovement: number
+    stressReduction: number
+    compatibilityScore: number
+  }
+}
 
 export default function TaskAssignmentContent() {
   // Obtener parámetros de la URL y configurar router
@@ -39,6 +55,11 @@ export default function TaskAssignmentContent() {
 
   // Estados para el modal de verificación biométrica
   const [biometricModalOpen, setBiometricModalOpen] = useState(false)
+
+  // 🔥 NUEVOS ESTADOS PARA MANEJAR CAMBIOS BIOMÉTRICOS
+  const [biometricChanges, setBiometricChanges] = useState<TaskReassignment[]>([])
+  const [showBiometricChangesModal, setShowBiometricChangesModal] = useState(false)
+  const [pendingChanges, setPendingChanges] = useState<TaskReassignment[]>([])
 
   // Contextos
   const { sprint, tasks, setTasks } = useSprintContext()
@@ -223,6 +244,118 @@ export default function TaskAssignmentContent() {
   const saveAssignments = () => {
     // Mostrar modal de verificación biométrica en lugar de guardar directamente
     showBiometricModal()
+  }
+
+  // 🔥 VERIFICAR SI HAY CAMBIOS BIOMÉTRICOS AL CARGAR
+  useEffect(() => {
+    const hasBiometricChanges = searchParams.get("biometricChanges")
+    
+    if (hasBiometricChanges === "true") {
+      console.log("🔍 Checking for biometric changes...")
+      
+      // Verificar si hay cambios en localStorage (guardados por biometric_verification)
+      const savedChanges = localStorage.getItem("biometricReassignments")
+      if (savedChanges) {
+        try {
+          const reassignments: TaskReassignment[] = JSON.parse(savedChanges)
+          console.log("📊 Biometric reassignments found in localStorage:", reassignments)
+          
+          if (reassignments.length > 0) {
+            setPendingChanges(reassignments)
+            setShowBiometricChangesModal(true)
+            
+            // Limpiar localStorage después de leer
+            localStorage.removeItem("biometricReassignments")
+            
+            console.log("✅ Biometric reassignments loaded and modal will show")
+          } else {
+            console.log("ℹ️ No reassignments found in localStorage")
+          }
+        } catch (error) {
+          console.error("❌ Error parsing biometric reassignments:", error)
+          localStorage.removeItem("biometricReassignments") // Limpiar datos corruptos
+        }
+      } else {
+        console.log("ℹ️ No biometric data found in localStorage")
+      }
+      
+      // 🔥 LIMPIAR EL PARÁMETRO DE LA URL DESPUÉS DE PROCESAR
+      const newUrl = new URL(window.location.href)
+      newUrl.searchParams.delete("biometricChanges")
+      window.history.replaceState({}, "", newUrl.toString())
+    }
+  }, [searchParams])
+
+  // 🔥 MEJORAR LA FUNCIÓN PARA APLICAR CAMBIOS BIOMÉTRICOS
+  const applyBiometricChanges = (reassignments: TaskReassignment[]) => {
+    // 🔥 MOSTRAR CONFIRMACIÓN ANTES DE APLICAR
+    const confirmed = window.confirm(
+      `¿Estás seguro de que quieres aplicar estos ${reassignments.length} cambios biométricos?\n\n` +
+      `Esto reasignará las siguientes tareas:\n` +
+      reassignments.map(r => `• ${r.taskName}: ${r.fromUserName} → ${r.toUserName}`).join('\n')
+    )
+    
+    if (!confirmed) {
+      console.log("❌ User cancelled biometric changes")
+      return
+    }
+    
+    console.log("🔄 Applying biometric changes:", reassignments)
+    
+    const updatedTasks = tasks.map(task => {
+      const reassignment = reassignments.find(r => r.taskId === task.id)
+      
+      if (reassignment) {
+        console.log(`🔄 Applying reassignment: ${task.title} from ${reassignment.fromUserName} to ${reassignment.toUserName}`)
+        return {
+          ...task,
+          assignee_id: reassignment.toUserId,
+          // Agregar metadata sobre el cambio biométrico
+          biometric_reassignment: {
+            previousAssignee: reassignment.fromUserId,
+            reason: reassignment.reason,
+            improvements: reassignment.improvementData,
+            timestamp: new Date().toISOString()
+          }
+        }
+      }
+      
+      return task
+    })
+
+    // 🔥 ACTUALIZAR EN EL CONTEXTO
+    setTasks(updatedTasks)
+    setBiometricChanges(reassignments)
+    setShowBiometricChangesModal(false)
+    setPendingChanges([])
+    
+    console.log("✅ Biometric reassignments applied successfully")
+    
+    // 🔥 GUARDAR Y IR DIRECTO AL SPRINT PLANNING
+    alert(`✅ Applied ${reassignments.length} biometric optimizations successfully!`)
+    
+    // Usar la misma función que continueWithNormalAssignment
+    setTimeout(() => {
+      saveAssignmentsToBackend()
+    }, 1000)
+  }
+
+  // 🔥 FUNCIÓN PARA RECHAZAR CAMBIOS BIOMÉTRICOS
+  const rejectBiometricChanges = () => {
+    const confirmed = window.confirm(
+      "¿Estás seguro de que quieres mantener las asignaciones actuales sin aplicar los cambios biométricos?"
+    )
+    
+    if (confirmed) {
+      console.log("❌ Biometric reassignments rejected by user")
+      setShowBiometricChangesModal(false)
+      setPendingChanges([])
+      
+      // 🔥 IR AL SPRINT PLANNING SIN CAMBIOS
+      setTimeout(() => {
+        saveAssignmentsToBackend()
+      }, 500)
+    }
   }
 
   return (
@@ -573,9 +706,9 @@ export default function TaskAssignmentContent() {
       <Dialog open={biometricModalOpen} onOpenChange={setBiometricModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-xl">¿Verificar con biométricos?</DialogTitle>
+            <DialogTitle className="text-xl">Would you like to analyze your assignments through biometrics?</DialogTitle>
             <DialogDescription className="pt-2">
-              Selecciona cómo deseas proceder con la asignación de tareas.
+              Select how you want to proceed with task assignment.
             </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
@@ -586,8 +719,8 @@ export default function TaskAssignmentContent() {
               <div className="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
                 <ChevronRight className="h-6 w-6 text-gray-600" />
               </div>
-              <h3 className="font-medium text-center">Continuar con asignación normal</h3>
-              <p className="text-sm text-gray-500 text-center mt-2">Guardar asignaciones sin verificación adicional</p>
+              <h3 className="font-medium text-center">Continue with normal assignment</h3>
+              <p className="text-sm text-gray-500 text-center mt-2">Save assignments without additional verification</p>
             </div>
 
             <div
@@ -597,14 +730,66 @@ export default function TaskAssignmentContent() {
               <div className="h-12 w-12 rounded-full bg-[#f0e6f0] flex items-center justify-center mb-3">
                 <Brain className="h-6 w-6 text-[#4a2b4a]" />
               </div>
-              <h3 className="font-medium text-center">Verificar con biométricos</h3>
+              <h3 className="font-medium text-center">Verify with biometrics</h3>
               <p className="text-sm text-gray-500 text-center mt-2">
-                Evaluar el estrés y complejidad percibida por cada miembro
+                Evaluate the stress and perceived complexity of each member
               </p>
             </div>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* 🔥 MODAL PARA CONFIRMAR CAMBIOS BIOMÉTRICOS */}
+      {showBiometricChangesModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto mx-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Brain className="h-6 w-6 text-[#4a2b4a]" />
+              <h2 className="text-xl font-bold">Biometric Analysis Results</h2>
+            </div>
+            
+            <p className="text-gray-600 mb-4">
+              The biometric verification identified {pendingChanges.length} optimal task reassignments. 
+              Would you like to apply these changes?
+            </p>
+
+            <div className="space-y-3 mb-6 max-h-60 overflow-y-auto">
+              {pendingChanges.map((change, index) => (
+                <div key={index} className="border rounded-lg p-3 bg-blue-50">
+                  <div className="font-medium text-sm">{change.taskName}</div>
+                  <div className="text-sm text-gray-600 mt-1">
+                    <span className="text-red-600">{change.fromUserName}</span> → 
+                    <span className="text-green-600 ml-1">{change.toUserName}</span>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-2">
+                    <div>Rating improvement: +{change.improvementData.ratingImprovement} points</div>
+                    <div>Stress reduction: -{Math.round(change.improvementData.stressReduction * 100)}%</div>
+                    <div>Compatibility: {Math.round(change.improvementData.compatibilityScore * 100)}%</div>
+                  </div>
+                  <div className="text-xs text-blue-600 mt-1 italic">
+                    "{change.reason}"
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <Button 
+                variant="outline" 
+                onClick={rejectBiometricChanges}
+              >
+                Keep Current Assignments
+              </Button>
+              <Button 
+                className="bg-[#4a2b4a] text-white hover:bg-[#694969]"
+                onClick={() => applyBiometricChanges(pendingChanges)}
+              >
+                Apply Biometric Optimizations
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

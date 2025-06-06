@@ -97,7 +97,7 @@ export default function ParticipantCard({
             <div className={`text-center p-3 rounded-lg border ${arousalStatus.bgColor} ${arousalStatus.borderColor}`}>
               <div className="flex items-center justify-center gap-1 text-sm text-gray-600 mb-2">
                 <arousalStatus.icon className="h-4 w-4" style={{ color: arousalStatus.color }} />
-                <span className="font-medium">Arousal</span>
+                <span className="font-medium">Energy Level</span>
               </div>
               <div className="font-bold text-lg" style={{ color: arousalStatus.color }}>
                 {session.session_arousal.toFixed(2)}
@@ -111,7 +111,7 @@ export default function ParticipantCard({
             <div className={`text-center p-3 rounded-lg border ${valenceStatus.bgColor} ${valenceStatus.borderColor}`}>
               <div className="flex items-center justify-center gap-1 text-sm text-gray-600 mb-2">
                 <valenceStatus.icon className="h-4 w-4" style={{ color: valenceStatus.color }} />
-                <span className="font-medium">Valence</span>
+                <span className="font-medium">Mood</span>
               </div>
               <div className="font-bold text-lg" style={{ color: valenceStatus.color }}>
                 {session.session_valence.toFixed(2)}
