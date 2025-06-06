@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -41,7 +41,7 @@ export interface ParticipantResult {
   dominantEmotion: string
 }
 
-export default function BiometricVerificationPage() {
+function BiometricVerificationContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const projectId = searchParams.get("projectId") || ""
@@ -233,5 +233,18 @@ export default function BiometricVerificationPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+
+function BiometricVerificationLoading() {
+  return <DefaultLoading text="biometric verification" />
+}
+
+export default function BiometricVerificationPage() {
+  return (
+    <Suspense fallback={<BiometricVerificationLoading />}>
+      <BiometricVerificationContent />
+    </Suspense>
   )
 }
