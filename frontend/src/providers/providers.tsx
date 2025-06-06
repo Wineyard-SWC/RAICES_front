@@ -1,4 +1,4 @@
-'use client' // Add this line to make it a client component
+'use client'
 
 import type React from "react"
 import type { ReactNode } from "react"
@@ -29,7 +29,8 @@ import { CalendarProvider } from "@/contexts/CalendarContext"
 import { RoadmapSuggestionsProvider } from "@/contexts/roadmapSuggestedContext"
 import { RoadmapProvider } from "@/contexts/roadmapContext"
 import { GenerativeAISessionProvider } from "@/contexts/generativeAISessionContext"
-         
+import { BiometricProvider } from "@/contexts/BiometricContext"
+
 interface ProvidersProps {
   children: ReactNode
 }
@@ -42,50 +43,52 @@ export function AllProviders({ children }: { children: React.ReactNode }) {
           <AvatarProvider>
             <UserRolesProvider>
               <ProjectProvider>
-                <RequirementProvider>
-                  <EpicProvider>
-                    <UserStoryProvider>
-                      <TaskProvider>
-                        <SprintProvider>
-                          <SelectedRequirementProvider>
-                            <SelectedEpicProvider>
-                              <SelectedUserStoriesProvider>
-                                <LanguageProvider>
-                                  <SprintDataProvider>
-                                    <SavedUserStoryProvider>
-                                      <AssignmentProvider>
-                                        <GeneratedTasksProvider>
-                                          <BugProvider>
-                                            <KanbanProvider>
-                                              <TeamsProvider>
-                                                <ProjectUsersProvider>
-                                                  <UserPermissionsProvider>
-                                                    <CalendarProvider>
-                                                      <RoadmapSuggestionsProvider>
-                                                        <RoadmapProvider> 
-                                                          {children}
-                                                          <div id="modal-root" />
-                                                        </RoadmapProvider> 
-                                                      </RoadmapSuggestionsProvider>
-                                                    </CalendarProvider>
-                                                  </UserPermissionsProvider>
-                                                </ProjectUsersProvider>
-                                              </TeamsProvider>
-                                            </KanbanProvider>
-                                          </BugProvider>
-                                        </GeneratedTasksProvider>
-                                      </AssignmentProvider>
-                                    </SavedUserStoryProvider>
-                                  </SprintDataProvider>
-                                </LanguageProvider>
-                              </SelectedUserStoriesProvider>
-                            </SelectedEpicProvider>
-                          </SelectedRequirementProvider>
-                        </SprintProvider>
-                      </TaskProvider>
-                    </UserStoryProvider>
-                  </EpicProvider>
-                </RequirementProvider>
+                <BiometricProvider>
+                  <RequirementProvider>
+                    <EpicProvider>
+                      <UserStoryProvider>
+                        <TaskProvider>
+                          <SprintProvider>
+                            <SelectedRequirementProvider>
+                              <SelectedEpicProvider>
+                                <SelectedUserStoriesProvider>
+                                  <LanguageProvider>
+                                    <SprintDataProvider>
+                                      <SavedUserStoryProvider>
+                                        <AssignmentProvider>
+                                          <GeneratedTasksProvider>
+                                            <BugProvider>
+                                              <KanbanProvider>
+                                                <TeamsProvider>
+                                                  <ProjectUsersProvider>
+                                                    <UserPermissionsProvider>
+                                                      <CalendarProvider>
+                                                        <RoadmapSuggestionsProvider>
+                                                          <RoadmapProvider>
+                                                            {children}
+                                                            <div id="modal-root" />
+                                                          </RoadmapProvider>
+                                                        </RoadmapSuggestionsProvider>
+                                                      </CalendarProvider>
+                                                    </UserPermissionsProvider>
+                                                  </ProjectUsersProvider>
+                                                </TeamsProvider>
+                                              </KanbanProvider>
+                                            </BugProvider>
+                                          </GeneratedTasksProvider>
+                                        </AssignmentProvider>
+                                      </SavedUserStoryProvider>
+                                    </SprintDataProvider>
+                                  </LanguageProvider>
+                                </SelectedUserStoriesProvider>
+                              </SelectedEpicProvider>
+                            </SelectedRequirementProvider>
+                          </SprintProvider>
+                        </TaskProvider>
+                      </UserStoryProvider>
+                    </EpicProvider>
+                  </RequirementProvider>
+                </BiometricProvider>
               </ProjectProvider>
             </UserRolesProvider>
           </AvatarProvider>

@@ -1,0 +1,367 @@
+"use client";
+
+import { useState, useEffect, useRef } from "react"
+import { Waves, AlertCircle, CheckCircle, Bluetooth, Brain, Loader2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import EmotionWheel from "../components/EmotionWheel"
+import BrainwaveVisualizer from "../components/BrainwaveVisualizer"
+import ElectrodeQualityIndicator from "../components/ElectrodeQualityIndicator"
+import { useMuse } from "@/hooks/useMuse";
+import { useSessionData } from "@/hooks/useSessionData";
+
+interface TeamMember {
+  id: string;
+  name: string;
+}
+
+interface CalibrationProps {
+  participant: TeamMember;
+  onComplete: () => void;
+}
+
+export default function Calibration({ participant, onComplete }: CalibrationProps) {
+  const {
+    connectionStatus,
+    signalQuality,
+    eegData,
+    electrodeQuality,
+    connect,
+    disconnect,
+  } = useMuse();
+
+  const { captureRestData } = useSessionData();
+
+  // Estados de UI
+  const [connectionPhase, setConnectionPhase] = useState(true);
+  const [calibrationTime, setCalibrationTime] = useState(30);
+  const [calibrationComplete, setCalibrationComplete] = useState(false);
+  const [showNeutralPoint, setShowNeutralPoint] = useState(false);
+  const [isCalibrating, setIsCalibrating] = useState(false);
+  const [connectError, setConnectError] = useState<string | null>(null);
+
+  // Referencias para evitar duplicados
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const hasCalibrationCompleted = useRef(false);
+
+  // Escuchar cambios en el estado de conexión
+  useEffect(() => {
+    if (connectionStatus === "error") {
+      setConnectError("Failed to connect to Muse. Please ensure the device is powered on and in pairing mode.");
+    } else if (connectionStatus === "connected") {
+      setConnectError(null);
+    }
+  }, [connectionStatus]);
+
+  // Connect to Muse headset
+  const handleConnect = async () => {
+    setConnectError(null);
+    
+    try {
+      if (!navigator.bluetooth) {
+        setConnectError("Web Bluetooth is not supported in your browser. Please use Chrome, Edge, or Opera on desktop, or check browser compatibility.");
+        return;
+      }
+      
+      await connect();
+      
+    } catch (error: any) {
+      console.error("Error connecting to Muse:", error);
+      
+      // Handle specific user cancellation error
+      if (error.message?.includes("User cancelled") || 
+          error.name === "NotFoundError" || 
+          error.name === "AbortError") {
+        setConnectError("Connection cancelled. Please try again when ready.");
+      } else {
+        setConnectError("An error occurred while connecting to Muse. Please try again.");
+      }
+    }
+  };
+
+  // Start the calibration process
+  const startCalibration = () => {
+    console.log("🚀 Starting calibration phase");
+    setConnectionPhase(false);
+    setIsCalibrating(true);
+    setCalibrationTime(10);
+    hasCalibrationCompleted.current = false;
+    
+    // Limpiar cualquier interval previo
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+    
+    // Iniciar contador
+    startCountdown();
+  };
+
+  const startCountdown = () => {
+    console.log("⏱️ Iniciando countdown");
+    
+    intervalRef.current = setInterval(() => {
+      setCalibrationTime((prevTime) => {
+        console.log(`⏱️ Tiempo restante: ${prevTime - 1}s`);
+        
+        if (prevTime <= 1) {
+          // Tiempo terminado
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+          }
+          
+          if (!hasCalibrationCompleted.current) {
+            hasCalibrationCompleted.current = true;
+            handleCalibrationComplete();
+          }
+          
+          return 0;
+        }
+        
+        return prevTime - 1;
+      });
+    }, 1000);
+  };
+
+  const handleCalibrationComplete = () => {
+    console.log("⏱️ Calibración completada → capturando baseline");
+    setIsCalibrating(false);
+    
+    // Pequeño delay para asegurar que todos los datos lleguen
+    setTimeout(() => {
+      try {
+        console.log("📊 Ejecutando captureRestData...");
+        const rest = captureRestData();
+        console.log("📊 Baseline capturado:", {
+          eeg: rest?.eeg?.length || 0,
+          ppg: rest?.ppg?.length || 0,
+          hr: rest?.hr?.length || 0,
+        });
+        
+        setCalibrationComplete(true);
+        setShowNeutralPoint(true);
+      } catch (err) {
+        console.error("❌ Error en captureRestData:", err);
+      }
+    }, 500);
+  };
+
+  // Cleanup al desmontar
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+      disconnect();
+    };
+  }, [disconnect]);
+
+  // Reset cuando cambia de participante
+  useEffect(() => {
+    setConnectionPhase(true);
+    setCalibrationTime(30);
+    setCalibrationComplete(false);
+    setShowNeutralPoint(false);
+    setIsCalibrating(false);
+    hasCalibrationCompleted.current = false;
+    
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, [participant.id]);
+
+  return (
+    <div>
+      <h2 className="text-2xl font-bold mb-4">Calibration - {participant.name}</h2>
+      
+      {connectionPhase ? (
+        // Device Connection Phase
+        <div>
+          <p className="text-gray-600 mb-6">Please connect and position the Muse 2 headset to continue.</p>
+          
+          <div className="bg-white border rounded-lg p-6 mb-6">
+            <div className="flex flex-col md:flex-row md:items-start gap-6">
+              <div className="flex-shrink-0">
+                <div className="w-44 h-44 relative">
+                  <div className="absolute w-32 h-8 bg-gray-700 rounded-full top-20 left-6"></div>
+                  <div className="absolute w-8 h-16 bg-gray-700 rounded-md left-6 top-12"></div>
+                  <div className="absolute w-8 h-16 bg-gray-700 rounded-md right-6 top-12"></div>
+                  
+                  <div className="absolute w-4 h-4 rounded-full top-20 left-10 animate-pulse" 
+                    style={{
+                      backgroundColor: 
+                        connectionStatus === "connected" ? "#10b981" : 
+                        connectionStatus === "connecting" ? "#f59e0b" : 
+                        connectionStatus === "error" ? "#ef4444" : "#6b7280"
+                    }}
+                  ></div>
+                </div>
+              </div>
+              
+              <div className="flex-grow">
+                <h3 className="text-lg font-medium mb-3">Muse 2 Headset</h3>
+                
+                <div className="flex items-center mb-3">
+                  <Bluetooth className="h-5 w-5 mr-2 text-blue-500" />
+                  <span className="font-medium mr-2">Connection:</span>
+                  <span className={`
+                    px-2 py-1 rounded-full text-xs font-medium
+                    ${connectionStatus === "disconnected" ? "bg-gray-100 text-gray-700" : ""}
+                    ${connectionStatus === "connecting" ? "bg-yellow-100 text-yellow-700 animate-pulse" : ""}
+                    ${connectionStatus === "connected" ? "bg-green-100 text-green-700" : ""}
+                    ${connectionStatus === "error" ? "bg-red-100 text-red-700" : ""}
+                  `}>
+                    {connectionStatus === "disconnected" && "Not Connected"}
+                    {connectionStatus === "connecting" && "Connecting..."}
+                    {connectionStatus === "connected" && "Connected"}
+                    {connectionStatus === "error" && "Connection Error"}
+                  </span>
+                </div>
+                
+                {connectionStatus === "connected" && (
+                  <div className="flex items-center mb-3">
+                    <Brain className="h-5 w-5 mr-2 text-purple-500" />
+                    <span className="font-medium mr-2">Signal Quality:</span>
+                    <span className={`
+                      px-2 py-1 rounded-full text-xs font-medium
+                      ${signalQuality === "poor" ? "bg-red-100 text-red-700" : ""}
+                      ${signalQuality === "fair" ? "bg-yellow-100 text-yellow-700" : ""}
+                      ${signalQuality === "good" ? "bg-green-100 text-green-700" : ""}
+                      ${signalQuality === "excellent" ? "bg-emerald-100 text-emerald-700" : ""}
+                    `}>
+                      {signalQuality.charAt(0).toUpperCase() + signalQuality.slice(1)}
+                    </span>
+                  </div>
+                )}
+                
+                {/* Error Display */}
+                {connectError && (
+                  <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
+                    <div className="flex items-start">
+                      <AlertCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
+                      <div className="flex-grow">
+                        <p className="text-sm text-red-700 mb-2">{connectError}</p>
+                        <Button 
+                          onClick={() => setConnectError(null)} 
+                          variant="outline" 
+                          size="sm"
+                          className="text-red-600 border-red-300 hover:bg-red-50"
+                        >
+                          Try Again
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="mt-4">
+                  {connectionStatus !== "connected" && (
+                    <Button 
+                      onClick={handleConnect} 
+                      disabled={connectionStatus === "connecting"} 
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      {connectionStatus === "connecting" ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Connecting...
+                        </>
+                      ) : (
+                        "Connect Muse Headset"
+                      )}
+                    </Button>
+                  )}
+                  
+                  {connectionStatus === "connected" && (
+                    <div className="flex space-x-3">
+                      <Button 
+                        onClick={() => disconnect()} 
+                        variant="outline"
+                      >
+                        Disconnect
+                      </Button>
+                      
+                      <Button 
+                        onClick={startCalibration} 
+                        disabled={signalQuality === "poor"} 
+                        className="bg-[#4a2b4a] text-white hover:bg-[#694969]"
+                      >
+                        {signalQuality === "poor" 
+                          ? "Improve Signal Quality First" 
+                          : "Begin Calibration"}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            {connectionStatus === "connected" && (
+              <>
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">EEG Signal Preview</h4>
+                    <BrainwaveVisualizer eegData={eegData} />
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Electrode Signal Quality</h4>
+                    <ElectrodeQualityIndicator electrodeQuality={electrodeQuality} />
+                  </div>
+                </div>
+                
+                {signalQuality !== "poor" && (
+                  <div className="mt-6 pt-4 border-t">
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
+                      <div>
+                        <h4 className="font-medium">Ready for Calibration</h4>
+                        <p className="text-sm text-gray-600">
+                          The Muse headset is properly connected and showing good signal quality. 
+                          You're ready to begin the baseline calibration process.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      ) : (
+        // Calibration Phase
+        <div>
+          <p className="text-gray-600 mb-6">Maintain a relaxed posture and breathe normally for {calibrationTime} seconds.</p>
+          
+          <div className="flex flex-col items-center mb-8">
+            <div className="w-32 h-32 rounded-full bg-[#f0e6f0] flex items-center justify-center mb-4">
+              <Waves className="h-16 w-16 text-[#4a2b4a]" />
+            </div>
+
+            <div className="text-4xl font-bold mb-4">{calibrationTime}s</div>
+            
+            {isCalibrating && (
+              <div className="w-full max-w-md bg-white p-4 rounded-lg mb-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Live EEG Data</h4>
+                <BrainwaveVisualizer eegData={eegData} />
+              </div>
+            )}
+
+            {showNeutralPoint && (
+              <div className="w-full max-w-md">
+                <h3 className="text-lg font-medium mb-4 text-center">This is your neutral point</h3>
+                <EmotionWheel showNeutralPoint={true} />
+              </div>
+            )}
+
+            {calibrationComplete && (
+              <Button className="bg-[#4a2b4a] text-white hover:bg-[#694969] mt-4" onClick={onComplete}>
+                Start task evaluation
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
