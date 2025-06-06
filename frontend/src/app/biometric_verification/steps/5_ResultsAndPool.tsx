@@ -266,6 +266,7 @@ export default function ResultsAndPool({
                     avatarUrl={selectedSession.user_avatar_url}
                     expression={getEmotionExpression(selectedTask.emotion_label)}
                     size={280}
+                    expressionIntensity={1} // 🔥 AGREGAR INTENSIDAD CONSISTENTE
                   />
                 </div>
                 
