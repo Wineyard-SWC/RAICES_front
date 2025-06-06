@@ -384,8 +384,8 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar }: Props) => {
                         minDelay={3000}
                         maxDelay={8000}
                         idleTime={5000}
-                        emotion={currentEmotion} // 🔥 PASAR LA EMOCIÓN ACTUAL
-                        expressionIntensity={0.8} // 🔥 INTENSIDAD MODERADA
+                        emotion={analytics?.mostCommonEmotion} // 🔥 PASAR LA EMOCIÓN ACTUAL
+                        expressionIntensity={1} // 🔥 INTENSIDAD MODERADA
                       />
                     </Suspense>
                   </Canvas>
@@ -411,7 +411,7 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar }: Props) => {
             {/* 🔥 MOSTRAR LA EMOCIÓN ACTUAL EN EL BADGE */}
             <div className={s.emojiBadge}>
               {analytics?.currentState?.emotion ? 
-                getEmotionEmoji(analytics.currentState.emotion) : 
+                getEmotionEmoji(analytics?.mostCommonEmotion) : 
                 "😐"
               }
             </div>

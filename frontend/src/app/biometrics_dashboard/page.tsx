@@ -120,7 +120,7 @@ export default function ImprovedBiometricDashboard() {
                               minDelay={5000}
                               maxDelay={10000}
                               idleTime={8000}
-                              emotion="Sad" // 🔥 EMOCIÓN TRISTE
+                              emotion="Sad"
                               expressionIntensity={0.9}
                             />
                           </Suspense>
@@ -256,8 +256,8 @@ export default function ImprovedBiometricDashboard() {
                               minDelay={4000}
                               maxDelay={8000}
                               idleTime={6000}
-                              emotion={analytics.currentState.emotion} // 🔥 EMOCIÓN ACTUAL
-                              expressionIntensity={0.8}
+                              emotion={analytics.mostCommonEmotion} // 🔥 EMOCIÓN ACTUAL
+                              expressionIntensity={1.0} // 🔥 INTENSIDAD DE LA EXPRESIÓN
                             />
                           </Suspense>
                         </Canvas>
