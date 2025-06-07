@@ -1,11 +1,11 @@
 "use client"
 
 import type React from "react"
-import { useEffect, useState, useRef , Suspense } from "react"
+import { useEffect, useState, useRef, Suspense } from "react"
 import Link from "next/link"
 import { Bell, ChevronDown, Settings, LogOut, FolderOpen, Users } from "lucide-react"
 import Image from "next/image"
-import { useSearchParams, useRouter, usePathname } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { useUser } from "@/contexts/usercontext"
 import { useProjects } from "@/hooks/useProjects"
 import { useAvatar } from "@/contexts/AvatarContext"
@@ -13,10 +13,8 @@ import AvatarProfileIcon from "./Avatar/AvatarDisplay"
 import { useUserPermissions } from "@/contexts/UserPermissions"
 import { print } from "@/utils/debugLogger"
 
-type NavbarProps = {
-  projectSelected: boolean
-  onProjectSelect?: () => void
-}
+// Importamos useSearchParams solo en el componente cliente
+import { useSearchParams } from "next/navigation"
 
 // Definimos las pestañas como constantes para evitar errores de tipeo
 const TABS = ["Dashboard", "Sprints", "Dependencies", "Team", "Generate"] as const
@@ -41,10 +39,36 @@ const PATH_TO_TAB: Record<string, TabType> = {
   "/biometric_dashboard": "Dashboard"
 }
 
+type NavbarProps = {
+  projectSelected: boolean
+  onProjectSelect?: () => void
+}
+
+// Componente Loading simple
+function NavbarLoading() {
+  return <div className="relative flex items-center justify-between px-4 py-2 border-b border-black bg-[#EBE5EB]/30 min-h-[60px]">
+    <div className="animate-pulse bg-[#EBE5EB] h-10 w-24"></div>
+    <div className="animate-pulse bg-[#EBE5EB] h-8 w-80"></div>
+    <div className="animate-pulse bg-[#EBE5EB] h-10 w-24"></div>
+  </div>
+}
+
+// Componente principal - sin useSearchParams
 const Navbar = ({ projectSelected = false }: NavbarProps) => {
+  return (
+    <Suspense fallback={<NavbarLoading />}>
+      <NavbarContent projectSelected={projectSelected} />
+    </Suspense>
+  )
+}
+
+// ⭐ COMPONENTE INTERNO CON SEARCH PARAMS
+function NavbarContent({ projectSelected = false }: NavbarProps) {
   const router = useRouter()
+  // useSearchParams ahora está dentro del componente envuelto por Suspense
   const searchParams = useSearchParams()
   const pathname = usePathname()
+  
   const dropdownRef = useRef<HTMLDivElement>(null)
   const projectDropdownRef = useRef<HTMLDivElement>(null)
 
@@ -115,7 +139,6 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
 
     // Si estamos en una ruta que requiere un proyecto seleccionado pero no hay ninguno,
     // redirigimos a la página de proyectos
-    // Reemplaza la línea 74 (aproximadamente)
     if (!hasSelectedProject && pathname !== "/projects" && pathname !== "/" && pathname !== "/settings" && pathname !== "/virtual_office") {
       router.push("/projects")
     }
@@ -150,7 +173,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
     if (found && found.title !== currentProject) {
       setCurrentProject(found.title);
     }
-  }, [projects]);
+  }, [projects, currentProject]);
 
   // Función para manejar el clic en una pestaña
   const handleTabClick = (tab: TabType) => {
@@ -237,10 +260,9 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
   }
 
   return (
-    <Suspense fallback={<div>Loading Navbar...</div>}>
-    <nav className="relative flex items-center justify-between px-4 py-2 border-b border-black bg-[#EBE5EB]/30">
+    <nav className="relative flex items-center justify-between px-4 py-2 border-b border-black bg-[#EBE5EB]/30 min-h-[60px]">
       {/* Logo */}
-      <div className="flex-shrink-0 h-[60px] flex items-center w-1/4">
+      <div className="flex-shrink-0 flex items-center w-1/4">
         <Link href="/projects" className="mr-4 flex items-center">
           <div className="flex items-center">
             <Image
@@ -248,7 +270,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
               alt="Logo RAICES"
               width={110}
               height={40}
-              className="object-contain"
+              className="object-contain max-w-[110px] h-auto"
             />
           </div>
         </Link>
@@ -479,7 +501,6 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
         </div>
       </div>
     </nav>
-    </Suspense>
   )
 }
 
