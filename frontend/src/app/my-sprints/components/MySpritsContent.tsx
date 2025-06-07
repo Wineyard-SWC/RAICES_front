@@ -9,7 +9,7 @@ import { formatDate } from "@/utils/dateUtils"
 import Navbar from "@/components/NavBar"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Search, CalendarClock, FileText, Bug, Users, PenSquare } from "lucide-react"
+import { Search, CalendarClock, FileText, Bug, Users, PenSquare, Plus } from "lucide-react"
 import { Progress } from "@/components/progress"
 import { useUserPermissions } from "@/contexts/UserPermissions"
 import { printError } from "@/utils/debugLogger"
@@ -119,118 +119,140 @@ export default function MySpritsContent() {
 
         {currentSprint ? (
           <div className="mb-10">
-            <h2 className="text-xl font-semibold mb-5 flex items-center">
-              <span className="text-yellow-500 mr-2">★</span>
-              Current Sprint
-            </h2>
-            <div className="bg-white rounded-lg shadow-md p-8 border">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center">
-                    <StatusBadge status={currentSprint.status} />
-                    <h3 className="text-2xl font-bold ml-4">Sprint {currentSprint.sprintName.split(' ').pop()}</h3>
-                  </div>
-                  
-                  <div className="mt-4 mb-6 flex items-center text-[#694969]">
-                    <CalendarClock size={16} className="mr-2" />
-                    <span>{formatDate(currentSprint.startDate)} - {formatDate(currentSprint.endDate)}</span>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-8">
-                    <div className="bg-gray-50 p-5 rounded-lg flex items-center">
-                      <div className="bg-[#4a2b4a] p-2 rounded-full">
-                        <FileText size={20} className="text-white" />
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              <div className="bg-[#F5F0F5] px-6 py-4 border-b border-gray-200">
+                <h2 className="text-lg font-semibold text-[#4A2B4A] flex items-center gap-2">
+                  <CalendarClock className="w-5 h-5" />
+                  Current Sprint
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#4A2B4A] text-white">
+                    Active
+                  </span>
+                </h2>
+              </div>
+              
+              <div className="p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center mb-4">
+                      <StatusBadge status={currentSprint.status} />
+                      <h3 className="text-2xl font-bold ml-4">Sprint {currentSprint.sprintName.split(' ').pop()}</h3>
+                    </div>
+                    
+                    <div className="mb-6 flex items-center text-gray-600">
+                      <CalendarClock size={16} className="mr-2" />
+                      <span>{formatDate(currentSprint.startDate)} - {formatDate(currentSprint.endDate)}</span>
+                    </div>
+                    
+                    {/* Stats grid igual pero con mejor spacing */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                      <div className="bg-gray-50 p-5 rounded-lg flex items-center">
+                        <div className="bg-[#4a2b4a] p-2 rounded-full">
+                          <FileText size={20} className="text-white" />
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-2xl font-bold">{currentSprint.selectedStories.length}</div>
+                          <div className="text-sm text-[#694969]">User Stories</div>
+                        </div>
                       </div>
-                      <div className="ml-4">
-                        <div className="text-2xl font-bold">{currentSprint.selectedStories.length}</div>
-                        <div className="text-sm text-[#694969]">User Stories</div>
+                      
+                      <div className="bg-gray-50 p-5 rounded-lg flex items-center">
+                        <div className="bg-[#4a2b4a] p-2 rounded-full">
+                          <Bug size={20} className="text-white" />
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-2xl font-bold">{currentSprint.bugsCount || 0}</div>
+                          <div className="text-sm text-[#694969]">Bugs</div>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gray-50 p-5 rounded-lg flex items-center">
+                        <div className="bg-[#4a2b4a] p-2 rounded-full">
+                          <Users size={20} className="text-white" />
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-2xl font-bold">{currentSprint.teamSize}</div>
+                          <div className="text-sm text-[#694969]">Team Members</div>
+                        </div>
                       </div>
                     </div>
                     
-                    <div className="bg-gray-50 p-5 rounded-lg flex items-center">
-                      <div className="bg-[#4a2b4a] p-2 rounded-full">
-                        <Bug size={20} className="text-white" />
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-2xl font-bold">{currentSprint.bugsCount || 0}</div>
-                        <div className="text-sm text-[#694969]">Bugs</div>
-                      </div>
+                    <div className="mt-6">
+                      {canPlanSprints && (
+                        <button 
+                          className="inline-flex items-center px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 shadow-sm font-medium"
+                          onClick={() => router.push(`/sprint_planning?projectId=${projectId}&sprintId=${currentSprint.sprintId}`)}
+                        >
+                          <PenSquare size={16} className="mr-2" />
+                          Edit Sprint
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Progress section igual */}
+                  <div className="w-72 flex flex-col items-center">
+                    <div className="text-center mb-3">
+                      <h4 className="font-medium text-lg">Sprint Progress</h4>
                     </div>
                     
-                    <div className="bg-gray-50 p-5 rounded-lg flex items-center">
-                      <div className="bg-[#4a2b4a] p-2 rounded-full">
-                        <Users size={20} className="text-white" />
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-2xl font-bold">{currentSprint.teamSize}</div>
-                        <div className="text-sm text-[#694969]">Team Members</div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-8">
-                    {/* Solo mostrar botón de edición si tiene permiso */}
-                    {canPlanSprints && (
-                      <Button 
-                        variant="outline" 
-                        className="flex items-center"
-                        onClick={() => router.push(`/sprint_planning?projectId=${projectId}&sprintId=${currentSprint.sprintId}`)}
-                      >
-                        <PenSquare size={16} className="mr-2" />
-                        <span>Edit Sprint</span>
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="w-72 flex flex-col items-center">
-                  <div className="text-center mb-3">
-                    <h4 className="font-medium text-lg">Sprint Progress</h4>
-                  </div>
-                  
-                  <SprintProgressCircle 
-                    percentage={currentSprint.completionPercentage} 
-                    size={160} 
-                    strokeWidth={15} 
-                  />
-                  
-                  <div className="w-full mt-8">
-                    <div className="flex justify-between mb-2">
-                      <span className="text-sm">Story Points</span>
-                      <span className="text-sm font-medium">{currentSprint.completedPoints}/{currentSprint.totalPoints}</span>
-                    </div>
-                    <Progress 
-                      value={currentSprint.completionPercentage} 
-                      className="h-2.5 bg-gray-200" 
-                      indicatorClassName="bg-[#4a2b4a]"
+                    <SprintProgressCircle 
+                      percentage={currentSprint.completionPercentage} 
+                      size={160} 
+                      strokeWidth={15} 
                     />
                     
-                    <div className="flex justify-between mt-6 mb-2">
-                      <span className="text-sm">Days Remaining</span>
-                      <span className="text-sm font-medium">{currentSprint.daysRemaining}/{currentSprint.totalDuration}</span>
+                    <div className="w-full mt-8">
+                      <div className="flex justify-between mb-2">
+                        <span className="text-sm">Story Points</span>
+                        <span className="text-sm font-medium">{currentSprint.completedPoints}/{currentSprint.totalPoints}</span>
+                      </div>
+                      <Progress 
+                        value={currentSprint.completionPercentage} 
+                        className="h-2.5 bg-gray-200" 
+                        indicatorClassName="bg-[#4a2b4a]"
+                      />
+                      
+                      <div className="flex justify-between mt-6 mb-2">
+                        <span className="text-sm">Days Remaining</span>
+                        <span className="text-sm font-medium">{currentSprint.daysRemaining}/{currentSprint.totalDuration}</span>
+                      </div>
+                      <Progress
+                        value={100 - (currentSprint.daysRemaining / currentSprint.totalDuration * 100)}
+                        className="h-2.5 bg-gray-200" 
+                        indicatorClassName="bg-[#4a2b4a]"
+                      />
                     </div>
-                    <Progress
-                      value={100 - (currentSprint.daysRemaining / currentSprint.totalDuration * 100)}
-                      className="h-2.5 bg-gray-200" 
-                      indicatorClassName="bg-[#4a2b4a]"
-                    />
                   </div>
                 </div>
               </div>
             </div>
           </div>
         ) : (
-          <div className="mb-10 p-8 border rounded-lg bg-gray-50 text-center">
-            <h3 className="font-semibold text-xl mb-3">No Active Sprint</h3>
-            <p className="text-[#694969] mb-6">You don't have any active sprints at the moment</p>
-            {canPlanSprints && (
-              <Button 
-                onClick={handleCreateSprint}
-                className="bg-[#4a2b4a] hover:bg-[#694969] text-white"
-              >
-                Create Your First Sprint
-              </Button>
-            )}
+          <div className="mb-10">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              <div className="bg-[#F5F0F1] px-6 py-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-[#4A2B4A] flex items-center gap-2">
+                  <CalendarClock className="w-5 h-5" />
+                  Current Sprint
+                </h3>
+              </div>
+              <div className="p-6">
+                <div className="text-center py-16 text-gray-500">
+                  <CalendarClock className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                  <p className="text-lg font-medium mb-2">No Active Sprint</p>
+                  <p className="text-sm mb-6">You don't have any active sprints at the moment</p>
+                  {canPlanSprints && (
+                    <button 
+                      onClick={handleCreateSprint}
+                      className="inline-flex items-center px-6 py-3 bg-[#4A2B4A] text-white rounded-lg hover:bg-[#3A1F3A] transition-colors duration-200 shadow-sm hover:shadow-md font-medium"
+                    >
+                      <Plus className="w-5 h-5 mr-2" />
+                      Create Your First Sprint
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
