@@ -267,17 +267,26 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar }: Props) => {
           ) : (
             <div className="text-center py-6 text-[#4a2b4a]">
               <Brain className="h-12 w-12 mx-auto mb-2 text-[#4a2b4a]" />
-              <p className="text-sm text-gray-600 mb-2">
+              <p className="text-sm text-gray-600 mb-4">
                 Track your stress levels, emotional patterns, and task performance
               </p>
-              <div className="grid grid-cols-2 gap-2 mt-4">
-                <div className="bg-purple-50 p-2 rounded">
-                  <div className="text-xs text-purple-600 font-medium">Sessions</div>
-                  <div className="text-sm text-purple-800">View History</div>
+              
+              {/* Grid mejorado con la paleta consistente */}
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                <div className="bg-[#F5F0F5] border border-gray-200 p-3 rounded-lg hover:bg-[#EBE5EB] transition-colors">
+                  <div className="flex items-center justify-center mb-2">
+                    <Calendar className="w-4 h-4 text-[#4a2b4a]" />
+                  </div>
+                  <div className="text-xs text-[#4a2b4a] font-semibold mb-1">Sessions</div>
+                  <div className="text-xs text-gray-600">View History</div>
                 </div>
-                <div className="bg-blue-50 p-2 rounded">
-                  <div className="text-xs text-blue-600 font-medium">Analytics</div>
-                  <div className="text-sm text-blue-800">Trends & Insights</div>
+                
+                <div className="bg-[#F5F0F5] border border-gray-200 p-3 rounded-lg hover:bg-[#EBE5EB] transition-colors">
+                  <div className="flex items-center justify-center mb-2">
+                    <BarChart2 className="w-4 h-4 text-[#4a2b4a]" />
+                  </div>
+                  <div className="text-xs text-[#4a2b4a] font-semibold mb-1">Analytics</div>
+                  <div className="text-xs text-gray-600">Trends & Insights</div>
                 </div>
               </div>
             </div>

@@ -10,7 +10,7 @@ import { useUserStories } from "@/contexts/saveduserstoriescontext";
 import { useKanban } from "@/contexts/unifieddashboardcontext";
 import { useRoadmapSuggestions } from "@/contexts/roadmapSuggestedContext";
 
-import { Loader2 } from "lucide-react";
+import { Loader2, Map, Plus, FolderOpen, Sparkles, Bot } from "lucide-react";
 //components/subcomponents
 import RoadmapTopBar from "./subcomponents/roadmaptopbar";
 import RoadmapSelectorModal from "./subcomponents/roadmapselectormodal";
@@ -133,10 +133,7 @@ export default function CustomRoadmapPage() {
     selectedPhases: SuggestedPhase[], 
     selectedItems: { id: string; title: string }[]
   ) => {
-
-
     const convertToRoadmapPhase = (phase: SuggestedPhase, index: number): RoadmapPhase => {
-     
       const phaseItemUUIDs = phase.user_stories.map(us => {
         const foundUserStory = currentUserStories.find(userStory => userStory.id === us.id);
         
@@ -145,9 +142,7 @@ export default function CustomRoadmapPage() {
         }  
 
         return us.id; 
-      
       });
-
 
       return {
         id: crypto.randomUUID(),
@@ -175,7 +170,6 @@ export default function CustomRoadmapPage() {
     const selectedRoadmapItems: RoadmapItem[] = [];
   
     selectedItemsWithUUIDs.forEach(item => {
-      
       const foundItem = currentUserStories.find(us => us.id === item.id || us.id === item.id) ||
                       currentTasks.find(task => task.id === item.id) ||
                       currentBugs.find(bug => bug.id === item.id);
@@ -189,7 +183,6 @@ export default function CustomRoadmapPage() {
           Array.isArray(foundItem.task_list)
         ) 
         {
-          
           foundItem.task_list.forEach(taskId => {
             const relatedTask = currentTasks.find(task => task.id === taskId);
             if (relatedTask) {
@@ -212,7 +205,6 @@ export default function CustomRoadmapPage() {
           if (relatedBugs.length > 0){
             relatedBugs.forEach(bug => {
               selectedRoadmapItems.push(bug);
-             
             });
           }
         }
@@ -225,7 +217,6 @@ export default function CustomRoadmapPage() {
 
 
     if (addingToExisting && currentRoadmap) {
-      
       const updatedItems = [...currentRoadmap.items, ...selectedRoadmapItems];
       const updatedPhases = [...currentRoadmap.phases, ...convertedPhases];
 
@@ -244,7 +235,6 @@ export default function CustomRoadmapPage() {
       }, 0);
     }
 
-    
     setAddingToExisting(false); 
   };
 
@@ -275,10 +265,10 @@ export default function CustomRoadmapPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 text-lg">Loading available data...</p>
+      <div className={styles.loadingContainer}>
+        <div className={styles.loadingContent}>
+          <div className={styles.loadingSpinner}></div>
+          <p className={styles.loadingText}>Loading available data...</p>
         </div>
       </div>
     );
@@ -348,57 +338,97 @@ export default function CustomRoadmapPage() {
           />
         ) : (
           <div className={styles.emptyStateWrapper}>
-            <div className="w-full min-h-screen mx-auto pt-6 pb-6">
-              {/* Título y botones arriba */}
-              <div className="flex flex-col items-center mb-12">
-                <div className={styles.icon}>🗺️</div>
-                <h3 className={styles.title}>Start Your Custom Dependency Map</h3>
-                <p className={styles.subtitle}>
-                  Create a new Dependency Map or load an existing one to start visualizing 
-                  and planning your project in a structured way.
-                </p>
-                <div className={styles.buttonRow}>
-                  <button 
-                    onClick={() => setShowNewRoadmapDialog(true)}
-                    className={styles.button}
-                  >
-                    Create New Dependency Map
-                  </button>
-                  <button 
-                    onClick={() => setShowRoadmapSelector(true)}
-                    className={styles.button}                
-                  >
-                    Load Existing
-                  </button>
-                  <button
-                    onClick={handleGenerateSuggestions}
-                    disabled={loadingGenerativeError || currentUserStories.length === 0}
-                    className={`${styles.suggestButton} ${
-                      loadingGenerativeError || currentUserStories.length === 0
-                        ? styles.suggestButtonDisabled
-                        : styles.suggestButtonEnabled
-                    }`}
-                  >
-                    {loadingGenerativeError ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>Suggest Dependency Map</>
-                    )}
-                  </button>
-                </div>
+            {/* Header Section */}
+            <div className={styles.headerSection}>
+              <div className={styles.iconWrapper}>
+                <Map className="w-8 h-8 text-[#4A2B4A]" />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-                <div className="col-span-1 ">
+              <h1 className={styles.title}>Dependency Map</h1>
+              <p className={styles.subtitle}>
+                Create visual dependency maps to understand project relationships and plan your development workflow. 
+                Start by creating a new map, loading an existing one, or generate AI-powered suggestions.
+              </p>
+              
+              {/* Action Buttons */}
+              <div className={styles.buttonRow}>
+                <button 
+                  onClick={() => setShowNewRoadmapDialog(true)}
+                  className={styles.button}
+                >
+                  <Plus className="w-5 h-5 mr-2" />
+                  Create New Map
+                </button>
+                <button 
+                  onClick={() => setShowRoadmapSelector(true)}
+                  className={styles.secondaryButton}                
+                >
+                  <FolderOpen className="w-5 h-5 mr-2" />
+                  Load Existing
+                </button>
+                <button
+                  onClick={handleGenerateSuggestions}
+                  disabled={loadingGenerativeError || currentUserStories.length === 0}
+                  className={`${styles.suggestButton} ${
+                    loadingGenerativeError || currentUserStories.length === 0
+                      ? styles.suggestButtonDisabled
+                      : styles.suggestButtonEnabled
+                  }`}
+                >
+                  {loadingGenerativeError ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Bot className="w-5 h-5 mr-2" />
+                      AI Generate
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className={styles.divider}></div>
+
+            {/* Content Grid */}
+            <div className={styles.contentGrid}>
+              {/* Recent Maps */}
+              <div className={styles.recentMapsSection}>
+                <div className={styles.sectionCard}>
+                  <div className={styles.sectionHeader}>
+                    <h3 className={styles.sectionHeaderTitle}>
+                      Recent Maps
+                      <span className={styles.badge}>
+                        {savedRoadmaps.length}
+                      </span>
+                    </h3>
+                  </div>
+                  <div className={styles.sectionContent}>
                     <RecentlyUsedRoadmaps
                       roadmaps={savedRoadmaps}
                       onSelect={handleLoadRoadmap}
                       maxToShow={5}
                     />
+                  </div>
                 </div>
-                <div className="shadow-lg col-span-1 md:col-span-2">
+              </div>
+
+              {/* AI Suggestions */}
+              <div className={styles.suggestionsSection}>
+                <div className={styles.sectionCard}>
+                  <div className={styles.sectionHeaderAI}>
+                    <h3 className={styles.sectionHeaderTitleAI}>
+                      <Bot className="w-5 h-5" />
+                      AI-Generated Suggestions
+                      {hasSuggestions && (
+                        <span className={styles.badgeAI}>
+                          {suggestions.length} phases
+                        </span>
+                      )}
+                    </h3>
+                  </div>
+                  <div className={styles.sectionContent}>
                     {(showSuggestions || hasSuggestions) ? (
                       <SuggestedRoadmapsList
                         suggestedRoadmaps={
@@ -417,10 +447,15 @@ export default function CustomRoadmapPage() {
                         onMaximize={maximizeSuggestions}
                       />
                     ) : (
-                      <div className="text-gray-500 text-center py-8">
-                        No AI suggestions yet. Click "Suggest Dependency Map" to generate.
+                      <div className={styles.emptyAIState}>
+                        <Bot className={styles.emptyAIIcon} />
+                        <p className={styles.emptyAITitle}>No AI suggestions available</p>
+                        <p className={styles.emptyAISubtitle}>
+                          Click "AI Generate" to create intelligent dependency map suggestions based on your user stories
+                        </p>
                       </div>
                     )}
+                  </div>
                 </div>
               </div>
             </div>
