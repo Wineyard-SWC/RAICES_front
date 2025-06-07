@@ -1,3 +1,4 @@
+import { printError } from "@/utils/debugLogger";
 import { Dispatch, SetStateAction } from "react";
 
 export default function toggleSelectRequirement(
@@ -5,7 +6,7 @@ export default function toggleSelectRequirement(
   setSelectedIds: Dispatch<SetStateAction<string[]>>
 ) {
   if (!reqUuid) {
-    console.error("Attempted to toggle selection on requirement with undefined UUID");
+    printError("Attempted to toggle selection on requirement with undefined UUID");
     return;
   }
 

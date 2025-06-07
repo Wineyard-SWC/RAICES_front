@@ -8,6 +8,7 @@ import MembersTabWrapper from "./MembersTabWrapper"
 import { useRouter } from "next/navigation"
 import { useUserRoles } from "@/contexts/userRolesContext"
 import { useProjectUsers } from "@/contexts/ProjectusersContext"
+import { print, printError } from "@/utils/debugLogger"
 
 // Componente cliente que contiene toda la lógica de la página
 export default function MemberSettingsContent() {
@@ -18,34 +19,34 @@ export default function MemberSettingsContent() {
   
   // Verificar si hay un proyecto seleccionado y cargar datos necesarios
   useEffect(() => {
-    console.log("Efecto principal ejecutándose");
+    print("Efecto principal ejecutándose");
     const currentProjectId = localStorage.getItem("currentProjectId");
     
     if (!currentProjectId) {
-      console.log("No hay proyecto seleccionado, redirigiendo...");
+      print("No hay proyecto seleccionado, redirigiendo...");
       router.push("/projects");
       return;
     }
     
-    console.log("Proyecto ID encontrado:", currentProjectId);
+    print("Proyecto ID encontrado:", currentProjectId);
     
     const loadData = async () => {
       try {
-        console.log("Iniciando carga de datos");
+        print("Iniciando carga de datos");
         
         // Cargar roles de usuario
-        console.log("Cargando roles de usuario...");
+        print("Cargando roles de usuario...");
         await fetchUserRoles();
-        console.log("Roles cargados exitosamente");
+        print("Roles cargados exitosamente");
         
         // Cargar usuarios del proyecto
-        console.log("Cargando usuarios del proyecto...");
+        print("Cargando usuarios del proyecto...");
         await loadUsersIfNeeded(currentProjectId);
-        console.log("Usuarios cargados exitosamente");
+        print("Usuarios cargados exitosamente");
         
         setIsLoading(false);
       } catch (error) {
-        console.error("Error cargando datos:", error);
+        printError("Error cargando datos:", error);
         setIsLoading(false);
       }
     };
@@ -54,7 +55,7 @@ export default function MemberSettingsContent() {
     
     // Limpieza al desmontar el componente
     return () => {
-      console.log("Componente desmontado");
+      print("Componente desmontado");
     };
   }, [router]); // No incluimos las funciones para evitar re-renderizados
   

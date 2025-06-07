@@ -2,6 +2,7 @@
 
 import { TaskOrStory } from "@/types/taskkanban"
 import { UserStory } from "@/types/userstory"
+import { printError } from "@/utils/debugLogger"
 import { getProjectUserStories } from "@/utils/getProjectUserStories"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL!
@@ -16,7 +17,7 @@ export const backlogService = {
     try {
       return await getProjectUserStories(projectId)
     } catch (error) {
-      console.error("Failed to fetch user stories:", error)
+      printError("Failed to fetch user stories:", error)
       throw error
     }
   },
@@ -35,7 +36,7 @@ export const backlogService = {
       
       return await response.json()
     } catch (error) {
-      console.error(`Failed to fetch task with id: ${taskId}`, error)
+      printError(`Failed to fetch task with id: ${taskId}`, error)
       throw error
     }
   },
@@ -54,7 +55,7 @@ export const backlogService = {
       
       return await response.json()
     } catch (error) {
-      console.error(`Failed to fetch user story with id: ${storyId}`, error)
+      printError(`Failed to fetch user story with id: ${storyId}`, error)
       throw error
     }
   },

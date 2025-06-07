@@ -20,6 +20,7 @@ import { Dialog, DialogPanel } from "@headlessui/react";
 import { getProjectEpics } from "@/utils/getProjectEpics";
 import { getProjectSprints } from "@/utils/getProjectSprints";
 import { Sprint } from "@/types/sprint";
+import { printError } from "@/utils/debugLogger";
 
 interface CreateItemSidebarProps {
   isOpen: boolean;
@@ -101,7 +102,7 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
         
         setAvailableUsers(formattedUsers);
       } catch (error) {
-        console.error("Error fetching data:", error);
+        printError("Error fetching data:", error);
         setAvailableSprints([]);
         setAvailableEpics([]);
         setAvailableUsers([]);
@@ -208,7 +209,7 @@ const CreateItemSidebar = ({ isOpen, onClose, projectId }: CreateItemSidebarProp
       onClose();
       setSelectedType(null);
     } catch (error) {
-      console.error('Error creating item:', error);
+      printError('Error creating item:', error);
     }
   };
 

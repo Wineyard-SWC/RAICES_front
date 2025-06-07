@@ -14,6 +14,7 @@ import { useGenerateTasksLogic } from "./hooks/useGenerateTasksLogic"
 import LoadingTasks from "@/components/animations/loadingTasks"
 import Toast from '@/components/toast';
 import useToast from '@/hooks/useToast';
+import { printError } from "@/utils/debugLogger"
 
 
 
@@ -59,7 +60,7 @@ export default function GenerateTasksPage() {
       setShowSaveConfirm(false);
       await handleSave();
     } catch (error) {
-      console.error('Error saving tasks:', error);
+      printError('Error saving tasks:', error);
       showToast('Error saving tasks. Please try again.', 'error');
     } finally {
       showToast('Tasks saved successfully!', 'success');

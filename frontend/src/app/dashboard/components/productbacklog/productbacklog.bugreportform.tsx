@@ -27,6 +27,7 @@ import {
 import { useBugs } from "@/contexts/bugscontext"
 import type { Bug as BugInterface } from "@/types/bug"
 import { createBug } from "@/hooks/useBug"
+import { printError } from "@/utils/debugLogger"
 
 interface BugReportFormProps {
   isOpen: boolean
@@ -178,7 +179,7 @@ const BugReportForm: React.FC<BugReportFormProps> = ({ isOpen, onClose, projectI
 
       onClose()
     } catch (error) {
-      console.error("Error creating bug:", error)
+      printError("Error creating bug:", error)
       setErrors({ submit: "Failed to create bug. Please try again." })
     } finally {
       setIsSubmitting(false)

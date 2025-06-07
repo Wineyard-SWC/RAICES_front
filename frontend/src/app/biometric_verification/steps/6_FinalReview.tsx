@@ -9,6 +9,7 @@ import { useSessionResults } from "../hooks/useSessionResults"
 import { useEmotionUtils } from "../hooks/useEmotionUtils"
 import AvatarProfileIcon from "@/components/Avatar/AvatarDisplay"
 import type { Session } from "../hooks/useSessionResults"
+import { print, printError } from "@/utils/debugLogger"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL!
 
@@ -107,7 +108,7 @@ export default function FinalReview({
             array.findIndex(t => t.title === task.title) === index
           )
 
-        console.log(`🔍 Processing ${uniqueTasksInPool.length} unique tasks from ${replacementPool.length} pool tasks`)
+        print(`🔍 Processing ${uniqueTasksInPool.length} unique tasks from ${replacementPool.length} pool tasks`)
         
         // 🔥 SOLO ANALIZAR TAREAS ÚNICAS DEL POOL DE REVISIÓN (calificadas ≤ 3)
         uniqueTasksInPool.forEach(task => {
@@ -130,11 +131,11 @@ export default function FinalReview({
           
           // 🔥 SOLO PROCESAR SI CALIFICACIÓN ≤ 3 (necesita reasignación)
           if (currentTaskEvaluation.complexity_rating > 3) {
-            console.log(`✅ Task "${task.title}" well assigned (rating: ${currentTaskEvaluation.complexity_rating}) - Skipping`)
+            print(`✅ Task "${task.title}" well assigned (rating: ${currentTaskEvaluation.complexity_rating}) - Skipping`)
             return
           }
 
-          console.log(`📋 Analyzing task "${task.title}" for reassignment (rating: ${currentTaskEvaluation.complexity_rating})`)
+          print(`📋 Analyzing task "${task.title}" for reassignment (rating: ${currentTaskEvaluation.complexity_rating})`)
           
           // 🔥 BUSCAR ALTERNATIVAS: todos los que evaluaron una tarea con el mismo NOMBRE
           const alternatives = data.sessions
@@ -215,7 +216,7 @@ export default function FinalReview({
             .slice(0, 3) // Top 3 alternativas
           
           if (alternatives.length === 0) {
-            console.log(`❌ No better alternatives found for task "${task.title}"`)
+            print(`❌ No better alternatives found for task "${task.title}"`)
             return
           }
           
@@ -248,7 +249,7 @@ export default function FinalReview({
           }
           
           taskRecommendations.push(recommendation)
-          console.log(`✅ Generated recommendation for task "${task.title}" with ${alternatives.length} alternatives`)
+          print(`✅ Generated recommendation for task "${task.title}" with ${alternatives.length} alternatives`)
         })
         
         // Ordenar por fuerza de recomendación y mejora potencial
@@ -264,10 +265,10 @@ export default function FinalReview({
         })
         
         setRecommendations(sortedRecommendations)
-        console.log(`🎯 Generated ${sortedRecommendations.length} unique recommendations for tasks needing reassignment`)
+        print(`🎯 Generated ${sortedRecommendations.length} unique recommendations for tasks needing reassignment`)
         
       } catch (error) {
-        console.error("Error generating recommendations:", error)
+        printError("Error generating recommendations:", error)
       } finally {
         setLoadingRecommendations(false)
       }
@@ -344,25 +345,25 @@ export default function FinalReview({
     try {
       const { reassignments } = pendingReassignments
       
-      console.log("🔄 User confirmed - Applying reassignments:", reassignments)
+      print("🔄 User confirmed - Applying reassignments:", reassignments)
       
       // Guardar en localStorage
       if (reassignments.length > 0) {
         localStorage.setItem("biometricReassignments", JSON.stringify(reassignments))
-        console.log("💾 Reassignments saved to localStorage for transfer")
+        print("💾 Reassignments saved to localStorage for transfer")
       }
       
       // Simular procesamiento
       await new Promise(resolve => setTimeout(resolve, 2000))
       
-      console.log("✅ Reassignments prepared successfully")
+      print("✅ Reassignments prepared successfully")
       
       setTimeout(() => {
         onFinish(reassignments)
       }, 1500)
       
     } catch (error) {
-      console.error("Error preparing reassignments:", error)
+      printError("Error preparing reassignments:", error)
       onFinish()
     } finally {
       setIsApplying(false)
@@ -373,12 +374,12 @@ export default function FinalReview({
   const cancelReassignments = () => {
     setShowConfirmationModal(false)
     setPendingReassignments({ reassignments: [], reassignmentsList: [] })
-    console.log("❌ User cancelled biometric reassignments")
+    print("❌ User cancelled biometric reassignments")
   }
 
   // 🔥 AGREGAR FUNCIÓN PARA FINALIZAR SIN CAMBIOS
   const finishWithoutChanges = () => {
-    console.log("✅ Biometric verification completed without changes")
+    print("✅ Biometric verification completed without changes")
     onFinish() // Sin parámetros = sin cambios
   }
 

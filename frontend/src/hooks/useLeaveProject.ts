@@ -1,5 +1,6 @@
 "use client"
 
+import { printError } from "@/utils/debugLogger"
 import { useState } from "react"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
@@ -73,7 +74,7 @@ export const useLeaveProject = (userId: string | null) => {
 
       return true
     } catch (err) {
-      console.error("Error leaving the project:", err)
+      printError("Error leaving the project:", err)
       setError("Could not leave the project")
       return false
     } finally {

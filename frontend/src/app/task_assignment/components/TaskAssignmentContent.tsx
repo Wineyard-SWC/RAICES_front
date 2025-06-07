@@ -15,6 +15,7 @@ import DefaultLoading from "@/components/animations/DefaultLoading"
 import { useTasks } from "@/contexts/taskcontext"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/app/settings/components/ui/dialog"
 import { useSessionRelation } from "@/hooks/useSessionRelation" // 👈 Agregar import
+import { print, printError } from "@/utils/debugLogger"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL!
 
@@ -181,7 +182,7 @@ export default function TaskAssignmentContent() {
           ...(t.assignee_id && member ? { assignee: [[t.assignee_id, member.name]] } : {}),
         }
       })
-      console.log("[TASK ASSIGNMENT] Tareas a actualizar (payload):", tasksToUpdate)
+      print("[TASK ASSIGNMENT] Tareas a actualizar (payload):", tasksToUpdate)
 
       // Actualizar tareas en el backend
       const taskRes = await fetch(`${API_URL}/projects/${projectId}/tasks/batch`, {
@@ -194,20 +195,20 @@ export default function TaskAssignmentContent() {
 
       if (!taskRes.ok) {
         const taskErrorText = await taskRes.text()
-        console.error("Error updating tasks:", taskErrorText)
+        printError("Error updating tasks:", taskErrorText)
         throw new Error(`Tasks update failed: ${taskRes.status} - ${taskErrorText}`)
       }
 
       const updatedFromServer: Task[] = await taskRes.json()
-      console.log("[TASK ASSIGNMENT] Respuesta del backend (tareas actualizadas):", updatedFromServer)
+      print("[TASK ASSIGNMENT] Respuesta del backend (tareas actualizadas):", updatedFromServer)
 
       updatedFromServer.forEach((u) => {
         updateTaskInProject(projectId, u.id, u)
       })
 
-      console.log("Task assignments saved successfully")
+      print("Task assignments saved successfully")
     } catch (error) {
-      console.error("Error saving task assignments:", error)
+      printError("Error saving task assignments:", error)
       // Aún así permitir navegar de vuelta aunque falle el guardado
     } finally {
       setIsSaving(false)
@@ -234,7 +235,7 @@ export default function TaskAssignmentContent() {
     
     // Generar nuevo ID de sesión de investigación
     const sessionRelationId = generateSessionRelationId()
-    console.log("🔗 Generated session relation ID for biometric verification:", sessionRelationId)
+    print("🔗 Generated session relation ID for biometric verification:", sessionRelationId)
     
     // Navegar al flujo de verificación biométrica
     router.push(`/biometric_verification?projectId=${projectId}&sprintId=${safeSprintId}`)
@@ -251,14 +252,14 @@ export default function TaskAssignmentContent() {
     const hasBiometricChanges = searchParams.get("biometricChanges")
     
     if (hasBiometricChanges === "true") {
-      console.log("🔍 Checking for biometric changes...")
+      print("🔍 Checking for biometric changes...")
       
       // Verificar si hay cambios en localStorage (guardados por biometric_verification)
       const savedChanges = localStorage.getItem("biometricReassignments")
       if (savedChanges) {
         try {
           const reassignments: TaskReassignment[] = JSON.parse(savedChanges)
-          console.log("📊 Biometric reassignments found in localStorage:", reassignments)
+          print("📊 Biometric reassignments found in localStorage:", reassignments)
           
           if (reassignments.length > 0) {
             setPendingChanges(reassignments)
@@ -267,16 +268,16 @@ export default function TaskAssignmentContent() {
             // Limpiar localStorage después de leer
             localStorage.removeItem("biometricReassignments")
             
-            console.log("✅ Biometric reassignments loaded and modal will show")
+            print("✅ Biometric reassignments loaded and modal will show")
           } else {
-            console.log("ℹ️ No reassignments found in localStorage")
+            print("ℹ️ No reassignments found in localStorage")
           }
         } catch (error) {
-          console.error("❌ Error parsing biometric reassignments:", error)
+          printError("❌ Error parsing biometric reassignments:", error)
           localStorage.removeItem("biometricReassignments") // Limpiar datos corruptos
         }
       } else {
-        console.log("ℹ️ No biometric data found in localStorage")
+        print("ℹ️ No biometric data found in localStorage")
       }
       
       // 🔥 LIMPIAR EL PARÁMETRO DE LA URL DESPUÉS DE PROCESAR
@@ -296,17 +297,17 @@ export default function TaskAssignmentContent() {
     )
     
     if (!confirmed) {
-      console.log("❌ User cancelled biometric changes")
+      print("❌ User cancelled biometric changes")
       return
     }
     
-    console.log("🔄 Applying biometric changes:", reassignments)
+    print("🔄 Applying biometric changes:", reassignments)
     
     const updatedTasks = tasks.map(task => {
       const reassignment = reassignments.find(r => r.taskId === task.id)
       
       if (reassignment) {
-        console.log(`🔄 Applying reassignment: ${task.title} from ${reassignment.fromUserName} to ${reassignment.toUserName}`)
+        print(`🔄 Applying reassignment: ${task.title} from ${reassignment.fromUserName} to ${reassignment.toUserName}`)
         return {
           ...task,
           assignee_id: reassignment.toUserId,
@@ -329,7 +330,7 @@ export default function TaskAssignmentContent() {
     setShowBiometricChangesModal(false)
     setPendingChanges([])
     
-    console.log("✅ Biometric reassignments applied successfully")
+    print("✅ Biometric reassignments applied successfully")
     
     // 🔥 GUARDAR Y IR DIRECTO AL SPRINT PLANNING
     alert(`✅ Applied ${reassignments.length} biometric optimizations successfully!`)
@@ -347,7 +348,7 @@ export default function TaskAssignmentContent() {
     )
     
     if (confirmed) {
-      console.log("❌ Biometric reassignments rejected by user")
+      print("❌ Biometric reassignments rejected by user")
       setShowBiometricChangesModal(false)
       setPendingChanges([])
       
@@ -659,8 +660,8 @@ export default function TaskAssignmentContent() {
                             }
                           : t,
                       )
-                      console.log("Asignando tarea:", taskToAssign.id, "a miembro:", member.id, member.name)
-                      console.log("Tareas después de asignar:", updatedTasks)
+                      print("Asignando tarea:", taskToAssign.id, "a miembro:", member.id, member.name)
+                      print("Tareas después de asignar:", updatedTasks)
                       setTasks(updatedTasks)
                       setAssignModalOpen(false)
                       setTaskToAssign(null)

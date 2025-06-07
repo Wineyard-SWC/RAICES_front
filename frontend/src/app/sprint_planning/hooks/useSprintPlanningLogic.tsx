@@ -12,6 +12,7 @@ import { useAvatar } from "@/contexts/AvatarContext";
 import { UserRolesProvider } from "@/contexts/userRolesContext";
 import { getProjectSprints } from "@/utils/getProjectSprints";
 import { validateSprintDates } from "@/utils/validateSprintDates";
+import { print, printError } from "@/utils/debugLogger";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 const AVATAR_API = process.env.NEXT_PUBLIC_AVATAR_API!;
@@ -20,11 +21,11 @@ async function fetchAvatar(userId: string): Promise<string | null> {
   if (!userId) return null;
 
   try {
-    console.log(`🔍 Fetching avatar for user: ${userId}`);
+    print(`🔍 Fetching avatar for user: ${userId}`);
     const response = await fetch(`${AVATAR_API}/users/${userId}`);
 
     if (response.status === 404) {
-      console.log(`❌ Avatar not found for user: ${userId}`);
+      print(`❌ Avatar not found for user: ${userId}`);
       return null;
     }
 
@@ -35,10 +36,10 @@ async function fetchAvatar(userId: string): Promise<string | null> {
     const userData = await response.json();
     const avatarUrl = userData.avatar_url || userData.avatarUrl || null;
 
-    console.log(`✅ Avatar fetched for user: ${userId}`, avatarUrl);
+    print(`✅ Avatar fetched for user: ${userId}`, avatarUrl);
     return avatarUrl;
   } catch (err) {
-    console.error(`❌ Error fetching avatar for user: ${userId}`, err);
+    printError(`❌ Error fetching avatar for user: ${userId}`, err);
     return null;
   }
 }
@@ -51,7 +52,7 @@ async function enrichMemberWithAvatar(member: SprintMember): Promise<SprintMembe
       avatar: avatarUrl || member.avatar || null,
     };
   } catch (error) {
-    console.error(`Error enriching member ${member.id}:`, error);
+    printError(`Error enriching member ${member.id}:`, error);
     return member;
   }
 }
@@ -67,7 +68,7 @@ async function fetchProjectOwner(projectId: string): Promise<SprintMember | null
   try {
     const res = await fetch(`${API_URL}/project_users/project/${projectId}`);
     if (!res.ok) {
-      console.error("Error fetching project users:", res.status);
+      printError("Error fetching project users:", res.status);
       return null;
     }
 
@@ -88,7 +89,7 @@ async function fetchProjectOwner(projectId: string): Promise<SprintMember | null
 
     return baseMember;
   } catch (error) {
-    console.error("Error in fetchProjectOwner:", error);
+    printError("Error in fetchProjectOwner:", error);
     return null;
   }
 }
@@ -211,10 +212,10 @@ export function useSprintPlanningLogic() {
       try {
         setLoading(true);
         
-        console.log("🔍 [DEBUG] Starting load process");
-        console.log("🔍 [DEBUG] projectId:", projectId);
-        console.log("🔍 [DEBUG] sprintId:", sprintId);
-        console.log("🔍 [DEBUG] Current sprint in context:", sprint);
+        print("🔍 [DEBUG] Starting load process");
+        print("🔍 [DEBUG] projectId:", projectId);
+        print("🔍 [DEBUG] sprintId:", sprintId);
+        print("🔍 [DEBUG] Current sprint in context:", sprint);
         
         let projectTasks: Task[] = [];
         try {
@@ -224,21 +225,21 @@ export function useSprintPlanningLogic() {
             30 * 60 * 1000  
           );            
         } catch (err) {
-          console.error("Error loading tasks from context:", err);
+          printError("Error loading tasks from context:", err);
           projectTasks = await getProjectTasks(projectId);
         }
         
         setTasks(projectTasks);
-        console.log("🔍 [DEBUG] Tasks loaded:", projectTasks.length);
+        print("🔍 [DEBUG] Tasks loaded:", projectTasks.length);
 
         if (sprint && 
             sprint.id === sprintId && 
             sprint.project_id === projectId) {
-          console.log("🔍 [DEBUG] Using existing sprint from context:", sprint.id);
-          console.log("🔍 [DEBUG] Sprint user stories:", sprint.user_stories?.length);
+          print("🔍 [DEBUG] Using existing sprint from context:", sprint.id);
+          print("🔍 [DEBUG] Sprint user stories:", sprint.user_stories?.length);
           
           if (!sprint.user_stories || sprint.user_stories.length === 0) {
-            console.log("🔍 [DEBUG] Sprint exists but no user stories, loading them...");
+            print("🔍 [DEBUG] Sprint exists but no user stories, loading them...");
             
             let stories: any[] = [];
             try {
@@ -276,28 +277,28 @@ export function useSprintPlanningLogic() {
               user_stories: mappedUserStories,
             });
             
-            console.log("🔍 [DEBUG] User stories added to existing sprint");
+            print("🔍 [DEBUG] User stories added to existing sprint");
           }
           
           setLoading(false);
           return;
         }
 
-        console.log("🔍 [DEBUG] Sprint condition check:");
-        console.log("🔍 [DEBUG] - sprintId exists?", !!sprintId);
-        console.log("🔍 [DEBUG] - sprintId starts with temp?", sprintId.startsWith("temp-"));
-        console.log("🔍 [DEBUG] - Context sprint matches?", sprint?.id === sprintId);
+        print("🔍 [DEBUG] Sprint condition check:");
+        print("🔍 [DEBUG] - sprintId exists?", !!sprintId);
+        print("🔍 [DEBUG] - sprintId starts with temp?", sprintId.startsWith("temp-"));
+        print("🔍 [DEBUG] - Context sprint matches?", sprint?.id === sprintId);
 
         if (sprintId && !sprintId.startsWith("temp-")) {
-          console.log("🔍 [DEBUG] Loading existing sprint from API");
+          print("🔍 [DEBUG] Loading existing sprint from API");
           const sprintRes = await fetch(`${API_URL}/projects/${projectId}/sprints/${sprintId}`);
           
           if (!sprintRes.ok) throw new Error("Sprint not found");
           const raw: Sprint = await sprintRes.json();
 
           const owner = await fetchProjectOwner(projectId); 
-          console.log("🔍 [DEBUG] Owner found:", owner);
-          console.log("🔍 [DEBUG] [SPRINT TEAM MEMBERS]", raw.team_members);
+          print("🔍 [DEBUG] Owner found:", owner);
+          print("🔍 [DEBUG] [SPRINT TEAM MEMBERS]", raw.team_members);
 
           if (!Array.isArray(raw.team_members)) {
             raw.team_members = [];
@@ -323,7 +324,7 @@ export function useSprintPlanningLogic() {
             allProjectStories = await getProjectUserStories(projectId);
           }
           
-          console.log("🔍 [DEBUG] All project stories loaded for existing sprint:", allProjectStories.length);
+          print("🔍 [DEBUG] All project stories loaded for existing sprint:", allProjectStories.length);
 
           const sprintStoryMap = new Map();
           raw.user_stories.forEach(us => {
@@ -351,7 +352,7 @@ export function useSprintPlanningLogic() {
             } as SprintUserStory;
           });
 
-          console.log("🔍 [DEBUG] Hydrated stories for existing sprint:", hydratedStories.length);
+          print("🔍 [DEBUG] Hydrated stories for existing sprint:", hydratedStories.length);
 
           setSprint({ 
             ...raw,  
@@ -361,9 +362,9 @@ export function useSprintPlanningLogic() {
 
         } else {
           // 🔥 FIX: Siempre crear un nuevo sprint cuando no hay sprintId o es temporal
-          console.log("🔍 [DEBUG] Creating new sprint or loading user stories");
+          print("🔍 [DEBUG] Creating new sprint or loading user stories");
           const newSprint = await makeLocalSprint();
-          console.log("🔍 [DEBUG] New sprint created:", newSprint.id);
+          print("🔍 [DEBUG] New sprint created:", newSprint.id);
 
           let stories: any[] = [];
           try {
@@ -376,7 +377,7 @@ export function useSprintPlanningLogic() {
             stories = await getProjectUserStories(projectId);
           }
           
-          console.log("🔍 [DEBUG] User stories loaded:", stories.length);
+          print("🔍 [DEBUG] User stories loaded:", stories.length);
           
           const mappedUserStories = stories.map(st => {
             const acceptance_criteria = normalizeAcceptanceCriteria(st);
@@ -397,7 +398,7 @@ export function useSprintPlanningLogic() {
             };
           });
           
-          console.log("🔍 [DEBUG] Mapped user stories:", mappedUserStories.length);
+          print("🔍 [DEBUG] Mapped user stories:", mappedUserStories.length);
           
           // 🔥 FIX: Siempre establecer el nuevo sprint con user stories
           const finalSprint = {
@@ -405,17 +406,17 @@ export function useSprintPlanningLogic() {
             user_stories: mappedUserStories,
           };
           
-          console.log("🔍 [DEBUG] Setting new sprint:", finalSprint.id);
+          print("🔍 [DEBUG] Setting new sprint:", finalSprint.id);
           setSprint(finalSprint);
-          console.log("🔍 [DEBUG] Sprint updated with user stories");
+          print("🔍 [DEBUG] Sprint updated with user stories");
         }
 
       } catch (e: any) {
-        console.error("❌ [DEBUG] Error in load process:", e);
+        printError("❌ [DEBUG] Error in load process:", e);
         setError(e.message);
       } finally {
         setLoading(false);
-        console.log("🔍 [DEBUG] Load process finished");
+        print("🔍 [DEBUG] Load process finished");
       }
     };
 
@@ -467,7 +468,7 @@ export function useSprintPlanningLogic() {
           // Buscar el miembro usando el assigneeId extraído
           const member = sprint.team_members.find(m => m.id === assigneeId);
           
-          console.log("Procesando tarea:", t.id, "assignee_id original:", t.assignee_id, "assigneeId extraído:", assigneeId, "member encontrado:", member);
+          print("Procesando tarea:", t.id, "assignee_id original:", t.assignee_id, "assigneeId extraído:", assigneeId, "member encontrado:", member);
           
           return {
             id: t.id,
@@ -484,7 +485,7 @@ export function useSprintPlanningLogic() {
           };
         });
 
-      console.log("[SPRINT PLANNING] Tareas a actualizar (payload):", tasksToUpdate);
+      print("[SPRINT PLANNING] Tareas a actualizar (payload):", tasksToUpdate);
 
       if (tasksToUpdate.length > 0) {
         const taskRes = await fetch(`${API_URL}/projects/${projectId}/tasks/batch`, {
@@ -494,18 +495,18 @@ export function useSprintPlanningLogic() {
         });
         if (!taskRes.ok) {
           const taskErrorText = await taskRes.text();
-          console.error("Error updating tasks:", taskErrorText);
+          printError("Error updating tasks:", taskErrorText);
           throw new Error(`Tasks update failed: ${taskRes.status} - ${taskErrorText}`);
         }
         const updatedFromServer: Task[] = await taskRes.json();
         updatedFromServer.forEach(u => {
           taskContext.updateTaskInProject(projectId, u.id, u);
         });
-        console.log("[SPRINT PLANNING] Respuesta del backend (tareas actualizadas):", updatedFromServer);
-        // console.log("Tasks updated before saving sprint");
+        print("[SPRINT PLANNING] Respuesta del backend (tareas actualizadas):", updatedFromServer);
+        // print("Tasks updated before saving sprint");
       }
     } catch (err) {
-      console.error("Error updating tasks before saving sprint:", err);
+      printError("Error updating tasks before saving sprint:", err);
       // Puedes decidir si quieres continuar o abortar el guardado del sprint
     }
 
@@ -578,7 +579,7 @@ export function useSprintPlanningLogic() {
 
       const method = isTempSprint ? "POST" : "PATCH";
 
-      // console.log("Guardando sprint con assignees:", sprintId, payload);
+      // print("Guardando sprint con assignees:", sprintId, payload);
       const res = await fetch(url, {
         method: method,
         headers: { "Content-Type": "application/json" },
@@ -587,7 +588,7 @@ export function useSprintPlanningLogic() {
 
       if (!res.ok) {
         const errorText = await res.text();
-        console.error("Server response:", errorText);
+        printError("Server response:", errorText);
         throw new Error(`Save failed: ${res.status} - ${errorText}`);
       }
 
@@ -599,7 +600,7 @@ export function useSprintPlanningLogic() {
       return saved;
 
     } catch (e: any) {
-      console.error("Error saving sprint:", e);
+      printError("Error saving sprint:", e);
       setError(e.message);
       return null;
     } finally {
@@ -631,7 +632,7 @@ export function useSprintPlanningLogic() {
     const currentMembers = sprint.team_members || [];
     if (currentMembers.some(mem => mem.id === member.id)) return;
 
-    console.log("Adding team member:", member);
+    print("Adding team member:", member);
     const enrichedMember = await enrichMemberWithAvatar(member, fetchAvatar);
     
     setSprint({

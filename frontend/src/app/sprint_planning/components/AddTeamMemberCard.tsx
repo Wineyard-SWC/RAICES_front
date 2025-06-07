@@ -6,6 +6,7 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { SprintMember } from "@/types/sprint";
 import DefaultLoading from "@/components/animations/DefaultLoading";
+import { print, printError } from "@/utils/debugLogger";
 
 interface ProjectUser {
   id: string;
@@ -39,19 +40,19 @@ export default function AddTeamMemberCard({ projectId, already, onAdd }: Props) 
   useEffect(() => {
     if (!open) return;
     
-    console.log("Loading users for project:", projectId); 
-    console.log("Already added members:", already); 
+    print("Loading users for project:", projectId); 
+    print("Already added members:", already); 
     
     setLoading(true);
     setError(null);
     fetch(`${API}/project_users/project/${projectId}`)
       .then(res => {
-        console.log("API response status:", res.status); 
+        print("API response status:", res.status); 
         if (!res.ok) throw new Error(`Fetch users failed: ${res.status}`);
         return res.json();
       })
       .then((list: ProjectUser[]) => {
-        // console.log("Raw users from API:", list); 
+        // print("Raw users from API:", list); 
         
         const normalized = list.map(u => ({
           ...u,
@@ -60,25 +61,25 @@ export default function AddTeamMemberCard({ projectId, already, onAdd }: Props) 
           avatar: u.photoURL || u.avatar || u.profile_picture
         }));
         
-        // console.log("Normalized users:", normalized); 
+        // print("Normalized users:", normalized); 
 
         const alreadyIds = already.map(m => m.id);
-        // console.log("🔍 Already IDs:", alreadyIds); 
-        // console.log("🔍 Normalized IDs:", normalized.map(u => u.id));
+        // print("🔍 Already IDs:", alreadyIds); 
+        // print("🔍 Normalized IDs:", normalized.map(u => u.id));
 
         const filtered = normalized.filter(u => {
           const isIncluded = alreadyIds.includes(u.id);
-          // console.log(`🔍 User ${u.id} (${u.name}) - Already included: ${isIncluded}`);
+          // print(`🔍 User ${u.id} (${u.name}) - Already included: ${isIncluded}`);
           return u.id && !isIncluded;
         });
 
-        // console.log("🔍 Final filtered count:", filtered.length); 
-        // console.log("Filtered users (not in sprint):", filtered);
+        // print("🔍 Final filtered count:", filtered.length); 
+        // print("Filtered users (not in sprint):", filtered);
         
         setUsers(filtered); 
       })
       .catch(e => {
-        console.error("Error loading users:", e);
+        printError("Error loading users:", e);
         setError(e.message);
       })
       .finally(() => setLoading(false));
@@ -87,7 +88,7 @@ export default function AddTeamMemberCard({ projectId, already, onAdd }: Props) 
   const handleAdd = () => {
     const u = users.find(x => x.id === selected);
     if (!u) {
-      console.error("User not found:", selected);
+      printError("User not found:", selected);
       return;
     }
     
@@ -100,10 +101,10 @@ export default function AddTeamMemberCard({ projectId, already, onAdd }: Props) 
       allocated: 0
     };
 
-    console.log("Adding new member:", newMember); 
+    print("Adding new member:", newMember); 
 
     const updatedMembers = [...already, newMember];
-    console.log("Team members after add:", updatedMembers);
+    print("Team members after add:", updatedMembers);
 
     onAdd(newMember);
     setSel("");

@@ -1,5 +1,6 @@
 'use client';
 
+import { print, printError } from '@/utils/debugLogger';
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 
 interface AvatarContextType {
@@ -32,7 +33,7 @@ export function AvatarProvider({ children }: { children: ReactNode }) {
       const response = await fetch(`${AVATAR_API}/users/${userId}`);
       
       if (response.status === 404) {
-        console.log(`Usuario ${userId} no encontrado en API de avatar`);
+        print(`Usuario ${userId} no encontrado en API de avatar`);
         setAvatarUrl(null);
         setGender(null);
         return null;
@@ -49,7 +50,7 @@ export function AvatarProvider({ children }: { children: ReactNode }) {
 
       return userData.avatar_url;
     } catch (err) {
-      console.error('Error fetching avatar:', err);
+      printError('Error fetching avatar:', err);
       return null;
     } finally {
       setIsLoading(false);

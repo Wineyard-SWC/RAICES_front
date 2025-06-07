@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import { useGLTF, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
+import { print } from "@/utils/debugLogger";
 
 // 🔥 USAR EXACTAMENTE LAS MISMAS EXPRESIONES QUE EN avatarAnimationsDashboard.tsx
 const EXPRESSIONS = {
@@ -115,7 +116,7 @@ function AvatarWithExpression({
   useEffect(() => {
     if (!scene) return;
     
-    console.log('🎭 EmotionalAvatarDisplay - Applying expression:', expression, 'with intensity:', expressionIntensity);
+    print('🎭 EmotionalAvatarDisplay - Applying expression:', expression, 'with intensity:', expressionIntensity);
     
     // Reset all blendshapes first
     scene.traverse((object) => {
@@ -128,7 +129,7 @@ function AvatarWithExpression({
     
     // Apply the selected expression
     if (expression && EXPRESSIONS[expression]) {
-      console.log('✅ Found expression definition for:', expression, EXPRESSIONS[expression]);
+      print('✅ Found expression definition for:', expression, EXPRESSIONS[expression]);
       
       scene.traverse((object) => {
         if (object instanceof THREE.Mesh && object.morphTargetDictionary && object.morphTargetInfluences) {
@@ -137,7 +138,7 @@ function AvatarWithExpression({
             if (index !== undefined) {
               // 🔥 APLICAR LA INTENSIDAD COMO EN EL DASHBOARD
               object.morphTargetInfluences[index] = value * expressionIntensity;
-              console.log(`✅ Applied ${blendshapeName}: ${value * expressionIntensity} at index ${index}`);
+              print(`✅ Applied ${blendshapeName}: ${value * expressionIntensity} at index ${index}`);
             } else {
               console.warn(`❌ Blendshape ${blendshapeName} not found in avatar`);
             }

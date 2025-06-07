@@ -9,6 +9,7 @@ import {
 } from 'firebase/auth'
 import { auth } from '@/utils/firebaseConfig'
 import { useUser } from '@/contexts/usercontext'
+import { print, printError } from '@/utils/debugLogger'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
@@ -60,13 +61,13 @@ export const useUpdateProfile = () => {
         return {success: false, errorMessage: 'User not authenticated'}
       }
 
-      console.log('🔍 [DEBUG] Attempting re-authentication for:', user.email)
+      print('🔍 [DEBUG] Attempting re-authentication for:', user.email)
       const credential = EmailAuthProvider.credential(user.email, currentPassword)
       await reauthenticateWithCredential(user, credential)
-      console.log('✅ [DEBUG] Re-authentication successful')
+      print('✅ [DEBUG] Re-authentication successful')
       return {success: true}
     } catch (error: any) {
-      console.error('❌ [DEBUG] Re-authentication failed:', error)
+      printError('❌ [DEBUG] Re-authentication failed:', error)
       
       let errorMessage: string
       if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
@@ -107,11 +108,11 @@ export const useUpdateProfile = () => {
 
       // 3. Actualizar contraseña en Firebase Auth
       await updatePassword(user, newPassword)
-      console.log('Password updated in Firebase Auth')
+      print('Password updated in Firebase Auth')
 
       return {success: true}
     } catch (error: any) {
-      console.error('Error updating password:', error)
+      printError('Error updating password:', error)
       
       let errorMessage: string
       if (error.code === 'auth/weak-password') {
@@ -127,7 +128,7 @@ export const useUpdateProfile = () => {
 
   // Actualizar nombre en Firebase Auth y nuestra base de datos
   const updateUserName = async (newName: string): Promise<UpdateProfileResult> => {
-    console.log('🔍 [DEBUG] Starting updateUserName with:', {
+    print('🔍 [DEBUG] Starting updateUserName with:', {
       newName,
       userId,
       API_URL,
@@ -140,7 +141,7 @@ export const useUpdateProfile = () => {
 
       // 1. Actualizar en Firebase Auth
       await updateFirebaseProfile(user, { displayName: newName }) 
-      console.log('Name updated in Firebase Auth')
+      print('Name updated in Firebase Auth')
 
       // 2. Actualizar en nuestra base de datos
       const token = localStorage.getItem('authToken')
@@ -166,18 +167,18 @@ export const useUpdateProfile = () => {
           const errorData = await response.json()
           errorMessage = errorData.detail || errorData.message || errorMessage
         } catch (e) {
-          console.error('Error parsing response:', e)
+          printError('Error parsing response:', e)
         }
         
         return {success: false, errorMessage}
       }
 
       const result = await response.json()
-      console.log('Name updated in database:', result)
+      print('Name updated in database:', result)
       
       return {success: true}
     } catch (error: any) {
-      console.error('Error updating name:', error)
+      printError('Error updating name:', error)
       setError(error.message || 'Failed to update name')
       return {success: false, errorMessage: error.message || 'Failed to update name'}
     }
@@ -219,7 +220,7 @@ export const useUpdateProfile = () => {
 
       return { success, errorMessage }
     } catch (error: any) {
-      console.error('Error updating profile:', error)
+      printError('Error updating profile:', error)
       const message = error.message || 'An unexpected error occurred'
       setError(message)
       return { success: false, errorMessage: message }

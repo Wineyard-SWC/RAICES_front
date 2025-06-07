@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from "react";
 import { useUserRoles } from "./userRolesContext";
 import { useUser } from "./usercontext";
+import { print, printError } from "@/utils/debugLogger";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -104,7 +105,7 @@ export const UserPermissionsProvider = ({ children }: { children: ReactNode }) =
         }
       });
 
-      console.log("Respuesta de la API para bitmask:----------------------------------", response);
+      print("Respuesta de la API para bitmask:----------------------------------", response);
       
       if (!response.ok) {
         throw new Error(`Error al obtener bitmask para rol ${roleName}: ${response.status}`);
@@ -112,7 +113,7 @@ export const UserPermissionsProvider = ({ children }: { children: ReactNode }) =
       
       return await response.json();
     } catch (error) {
-      console.error("Error obteniendo bitmask:", error);
+      printError("Error obteniendo bitmask:", error);
       return 0;
     }
   }, []);
@@ -164,9 +165,9 @@ export const UserPermissionsProvider = ({ children }: { children: ReactNode }) =
         
         // Si no se encuentra localmente, buscar en la API
         if (bitmask === 0 && role) {
-          console.log("Buscando bitmask en API para rol:", role);
+          print("Buscando bitmask en API para rol:", role);
           bitmask = await fetchRoleBitmask(role);
-          console.log("Bitmask encontrado:", bitmask);
+          print("Bitmask encontrado:", bitmask);
         }
         
         permissionsMap[projectRef] = {
@@ -183,10 +184,10 @@ export const UserPermissionsProvider = ({ children }: { children: ReactNode }) =
         ...permissionsMap
       }));
 
-      console.log("Permisos cargados:", permissionsMap);
+      print("Permisos cargados:", permissionsMap);
       
     } catch (error) {
-      console.error("Error cargando permisos del usuario:", error);
+      printError("Error cargando permisos del usuario:", error);
       setErrorState(prev => ({
         ...prev,
         [userId]: error instanceof Error ? error.message : "Error desconocido al cargar permisos"
@@ -234,7 +235,7 @@ export const UserPermissionsProvider = ({ children }: { children: ReactNode }) =
       setPermissionsByProject(permissionsMap);
       
     } catch (error) {
-      console.error("Error refrescando permisos del usuario:", error);
+      printError("Error refrescando permisos del usuario:", error);
       setErrorState(prev => ({
         ...prev,
         [userId]: error instanceof Error ? error.message : "Error desconocido al refrescar permisos"

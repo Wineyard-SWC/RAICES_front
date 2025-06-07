@@ -3,6 +3,7 @@ import { BurndownChart } from "@/components/burndownchart"
 import { VelocityTrendChart } from "@/components/velocitytrend"
 import { useParams } from "next/navigation"
 import { useSprintDataContext } from "@/contexts/sprintdatacontext"
+import { printError } from "@/utils/debugLogger"
 
 
 interface BurndownDataPoint {
@@ -46,7 +47,7 @@ const SprintChartsSection = () => {
       
       setChartData(generatedData)
     } catch (error) {
-      console.error("Error processing burndown data:", error)
+      printError("Error processing burndown data:", error)
     } finally {
       setLoading(false)
     }

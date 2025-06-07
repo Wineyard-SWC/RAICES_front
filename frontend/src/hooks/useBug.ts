@@ -1,4 +1,5 @@
 import { Bug } from "@/types/bug";
+import { printError } from "@/utils/debugLogger";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -13,7 +14,7 @@ export const getProjectBugs = async (projectId: string): Promise<Bug[]> => {
     
     return await response.json();
   } catch (error) {
-    console.error("Error fetching project bugs:", error);
+    printError("Error fetching project bugs:", error);
     throw error;
   }
 };
@@ -28,7 +29,7 @@ export const getBugById = async (bugId: string): Promise<Bug> => {
     
     return await response.json();
   } catch (error) {
-    console.error(`Error fetching bug ${bugId}:`, error);
+    printError(`Error fetching bug ${bugId}:`, error);
     throw error;
   }
 };
@@ -50,7 +51,7 @@ export const createBug = async (bugData: Bug): Promise<Bug> => {
     
     return await response.json();
   } catch (error) {
-    console.error("Error creating bug:", error);
+    printError("Error creating bug:", error);
     throw error;
   }
 };
@@ -72,7 +73,7 @@ export const updateBug = async (bugId: string, bugData: Partial<Bug>): Promise<B
     
     return await response.json();
   } catch (error) {
-    console.error(`Error updating bug ${bugId}:`, error);
+    printError(`Error updating bug ${bugId}:`, error);
     throw error;
   }
 };
@@ -98,7 +99,7 @@ export const updateBugKanbanStatus = async (
     
     return await response.json();
   } catch (error) {
-    console.error(`Error updating bug status ${bugId}:`, error);
+    printError(`Error updating bug status ${bugId}:`, error);
     throw error;
   }
 };
@@ -116,7 +117,7 @@ export const deleteBug = async (bugId: string): Promise<{ message: string }> => 
     
     return await response.json();
   } catch (error) {
-    console.error(`Error deleting bug ${bugId}:`, error);
+    printError(`Error deleting bug ${bugId}:`, error);
     throw error;
   }
 };

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useProjectUsers } from "@/contexts/ProjectusersContext";
 import { useUser } from "@/contexts/usercontext";
+import { printError } from "@/utils/debugLogger";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -48,7 +49,7 @@ export const useProjectMembers = () => {
       
       return await response.json();
     } catch (error) {
-      console.error('Error getting project-user relation:', error);
+      printError('Error getting project-user relation:', error);
       throw error;
     }
   }, []);

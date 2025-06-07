@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Project } from "@/types/project";
+import { printError } from "@/utils/debugLogger";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export const useProjects = (userId: string | undefined) => {
@@ -18,7 +19,7 @@ export const useProjects = (userId: string | undefined) => {
         const data: Project[] = await response.json();
         setProjects(data); 
       } catch (err) {
-        console.error("Failed to fetch projects", err);
+        printError("Failed to fetch projects", err);
       } finally {
         setLoading(false);
       }

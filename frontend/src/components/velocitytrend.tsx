@@ -1,5 +1,6 @@
 "use client"
 
+import { print } from "@/utils/debugLogger";
 import {
   BarChart, Bar, XAxis, YAxis,
   Tooltip, CartesianGrid, ResponsiveContainer, Legend
@@ -11,7 +12,7 @@ interface VelocityTrendChartProps {
 }
 
 export function VelocityTrendChart({ data, height = 250 }: VelocityTrendChartProps) {
-  console.log('VelocityTrendChart received data:', data)
+  print('VelocityTrendChart received data:', data)
   
   // Cambiar la lógica: mostrar el gráfico si hay sprints, aunque tengan valores 0
   const hasData = Array.isArray(data) && data.length > 0

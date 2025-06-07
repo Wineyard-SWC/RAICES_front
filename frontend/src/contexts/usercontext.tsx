@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useRef,
   ReactNode,useEffect,useCallback } from 'react';
 import { User } from '@/types/user';
+import { printError } from '@/utils/debugLogger';
 
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -47,7 +48,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       return await response.json();
     } catch (err: any) {
-      console.error('Error fetching user data:', err.message);
+      printError('Error fetching user data:', err.message);
       throw err;
     }
   });
@@ -64,7 +65,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUserData(data);
     } catch (err: any) {
       setError(err.message);
-      console.error('Error refreshing user data:', err);
+      printError('Error refreshing user data:', err);
     } finally {
       setIsLoading(false);
     }

@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { printError } from "@/utils/debugLogger";
 
 type TeamMember = {
   id: string;
@@ -115,7 +116,7 @@ export const TeamsProvider = ({ children }: { children: React.ReactNode }) => {
         sprintProgress: metrics.sprint_progress,
       });
     } catch (err) {
-      console.error("Error fetching team metrics:", err);
+      printError("Error fetching team metrics:", err);
     } finally {
       setLoading(false);
     }

@@ -4,6 +4,7 @@ import { useGLTF, useAnimations } from "@react-three/drei";
 import { motion } from "framer-motion";
 import * as THREE from "three";
 import { useRouter } from 'next/navigation';
+import { print } from "@/utils/debugLogger";
 
 type Phase = "walk" | "waitRight" | "return" | "expression";
 
@@ -67,11 +68,11 @@ function AvatarSequence({
     Object.values(jogActions).forEach((a) => a && a.stop());
     Object.values(exprActions).forEach((a) => a && a.stop());
     
-    console.log("el gender llega así: ", gender);
+    print("el gender llega así: ", gender);
 
     const genderVersion = ((gender === "F") ? "001" : "002");
 
-    console.log("-----------------Género detectado:", gender, "- Usando versión:", genderVersion);
+    print("-----------------Género detectado:", gender, "- Usando versión:", genderVersion);
 
     // Construir los nombres de las animaciones basados en el género
     const walkAnimName = `${gender}_Walk_Strafe_Left_${genderVersion}`;
@@ -80,7 +81,7 @@ function AvatarSequence({
     // La animación de expresión siempre es la misma
     const exprAnimName = "M_Standing_Expressions_001";
 
-    console.log("Usando animaciones:", { walkAnimName, jogAnimName, exprAnimName });
+    print("Usando animaciones:", { walkAnimName, jogAnimName, exprAnimName });
 
     if (phase === "walk") {
       walkActions[walkAnimName]
@@ -109,7 +110,7 @@ function AvatarSequence({
     if (phase === "walk") {
       setAvatarX((x) => {
         const next = x + delta * 1;
-        // console.log("Avatar X:", next);
+        // print("Avatar X:", next);
         if (next >= -0.09) {
           setPhase("waitRight");
           return 2;
@@ -122,10 +123,10 @@ function AvatarSequence({
       // Solo ejecuta el timeout una vez
       setPhase("waiting"); // Fase temporal para evitar múltiples timeouts
     } else if (phase === "return") {
-      console.log("Inicio en:", avatarX);
+      print("Inicio en:", avatarX);
       setAvatarX((x) => {
         const next = x - delta * 1;
-        console.log("Avatar X:", x);
+        print("Avatar X:", x);
         if (next <= 1.5) {
           setPhase("expression");
           return 0;
@@ -236,9 +237,9 @@ export default function WelcomeAnimation({
   // Determinar qué versión de animación usar según el género
   const versionGender = safeGender === "F" ? "001" : "002";
 
-  console.log("Género recibido:", gender);
-  console.log("Género normalizado:", normalizedGender);
-  console.log("Género para archivos:", safeGender, "- Usando versión:", versionGender);
+  print("Género recibido:", gender);
+  print("Género normalizado:", normalizedGender);
+  print("Género para archivos:", safeGender, "- Usando versión:", versionGender);
 
   useEffect(() => {
     if (assetsLoaded) {

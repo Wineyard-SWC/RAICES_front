@@ -1,5 +1,6 @@
 "use client";
 
+import { print } from "@/utils/debugLogger";
 import { useState, useEffect } from "react";
 
 export const useSessionRelation = () => {
@@ -15,7 +16,7 @@ export const useSessionRelation = () => {
     // Opcionalmente guardarlo en localStorage para persistencia
     localStorage.setItem('currentSessionRelationId', newId);
     
-    console.log("🔗 Generated new session relation ID:", newId);
+    print("🔗 Generated new session relation ID:", newId);
     return newId;
   };
 
@@ -24,7 +25,7 @@ export const useSessionRelation = () => {
     const existingId = localStorage.getItem('currentSessionRelationId');
     if (existingId) {
       setSessionRelationId(existingId);
-      console.log("🔗 Loaded existing session relation ID:", existingId);
+      print("🔗 Loaded existing session relation ID:", existingId);
     }
   }, []);
 
@@ -32,7 +33,7 @@ export const useSessionRelation = () => {
   const clearSessionRelation = () => {
     setSessionRelationId(null);
     localStorage.removeItem('currentSessionRelationId');
-    console.log("🧹 Cleared session relation ID");
+    print("🧹 Cleared session relation ID");
   };
 
   return {

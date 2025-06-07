@@ -1,5 +1,6 @@
 "use client";
 
+import { printError } from "@/utils/debugLogger";
 import { useState } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -68,7 +69,7 @@ export const useCreateProject = (userId: string | null) => {
 
       return newProject.id; // Devuelve el ID del proyecto
     } catch (err) {
-      console.error("Error al crear el proyecto:", err);
+      printError("Error al crear el proyecto:", err);
       setError("No se pudo crear el proyecto");
       return null;
     } finally {

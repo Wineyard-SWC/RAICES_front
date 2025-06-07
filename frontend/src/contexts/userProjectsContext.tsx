@@ -1,5 +1,6 @@
 'use client';
 import { Project } from '@/types/project';
+import { printError } from '@/utils/debugLogger';
 import { createContext, useContext, useState, useCallback,ReactNode } from "react"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
@@ -173,7 +174,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
         } 
         catch (err) 
         {
-            console.error("Error al crear el proyecto:", err)
+            printError("Error al crear el proyecto:", err)
             const errorMessage = err instanceof Error ? err.message : "No se pudo crear el proyecto"
             setErrorState(prev => ({ ...prev, [userId]: errorMessage }))
             return null
@@ -228,7 +229,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
         } 
         catch (err) 
         {
-            console.error("Error al actualizar el proyecto:", err)
+            printError("Error al actualizar el proyecto:", err)
             const errorMessage = err instanceof Error ? err.message : "No se pudo actualizar el proyecto"
             setErrorState(prev => ({ ...prev, [projectId]: errorMessage }))
             return projectsById[projectId]?.project || null
@@ -283,7 +284,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
         } 
         catch (err) 
         {
-            console.error("Error al eliminar el proyecto:", err)
+            printError("Error al eliminar el proyecto:", err)
             const errorMessage = err instanceof Error ? err.message : "No se pudo eliminar el proyecto"
             setErrorState(prev => ({ ...prev, [projectId]: errorMessage }))
             return false
@@ -368,7 +369,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
         } 
         catch (err) 
         {
-            console.error(`Error fetching project ${projectId}:`, err)
+            printError(`Error fetching project ${projectId}:`, err)
             const errorMessage = err instanceof Error ? err.message : "Failed to load project"
             setErrorState(prev => ({ ...prev, [projectId]: errorMessage }))
             return cachedData?.project || null
@@ -426,7 +427,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
         } 
         catch (err) 
         {
-            console.error(`Error fetching projects for user ${userId}:`, err)
+            printError(`Error fetching projects for user ${userId}:`, err)
             const errorMessage = err instanceof Error ? err.message : "Failed to load user projects"
             setErrorState(prev => ({ ...prev, [userId]: errorMessage }))
             return cachedData?.projectIds || []
@@ -461,7 +462,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
         } 
         catch (err) 
         {
-            console.error(`Error refreshing project ${projectId}:`, err)
+            printError(`Error refreshing project ${projectId}:`, err)
             const errorMessage = err instanceof Error ? err.message : "Failed to refresh project"
             setErrorState(prev => ({ ...prev, [projectId]: errorMessage }))
             return projectsById[projectId]?.project || null
@@ -510,7 +511,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
         } 
         catch (err) 
         {
-            console.error(`Error refreshing projects for user ${userId}:`, err)
+            printError(`Error refreshing projects for user ${userId}:`, err)
             const errorMessage = err instanceof Error ? err.message : "Failed to refresh user projects"
             setErrorState(prev => ({ ...prev, [userId]: errorMessage }))
             return projectsByUserId[userId]?.projectIds || []

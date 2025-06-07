@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, ReactNode } from "react"
 import { useUserRoles } from "./userRolesContext"
+import { print, printError } from "@/utils/debugLogger";
 
 // API URL para endpoints
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -147,7 +148,7 @@ export const ProjectUsersProvider: React.FC<{ children: ReactNode }> = ({ childr
 
       return enrichedUsers;
     } catch (error) {
-      console.error("Error loading all users:", error);
+      printError("Error loading all users:", error);
       setErrorState(prev => ({ ...prev, 'all_users': error instanceof Error ? error.message : "Failed to load users" }));
       return allUsersCache?.users || [];
     } finally {
@@ -194,12 +195,12 @@ export const ProjectUsersProvider: React.FC<{ children: ReactNode }> = ({ childr
           if (userDataResponse.ok) {
             const userData = await userDataResponse.json();
 
-            // console.log(`Datos obtenidos JSON para ${user.name}:`, userData);
+            // print(`Datos obtenidos JSON para ${user.name}:`, userData);
 
             avatarUrl = userData.avatar_url;
             gender = userData.gender;
             
-            // console.log(`Datos adicionales obtenidos para ${user.name}:`, { avatarUrl, gender });
+            // print(`Datos adicionales obtenidos para ${user.name}:`, { avatarUrl, gender });
           } else {
             console.warn(`No se pudieron obtener datos adicionales para el usuario ${user.userRef}`);
           }
@@ -248,7 +249,7 @@ export const ProjectUsersProvider: React.FC<{ children: ReactNode }> = ({ childr
 
       return enrichedUsers;
     } catch (error) {
-      console.error("Error loading project users:", error);
+      printError("Error loading project users:", error);
       throw error;
     }
   }, [userRoles]);
@@ -264,26 +265,26 @@ export const ProjectUsersProvider: React.FC<{ children: ReactNode }> = ({ childr
     const now = Date.now();
     
     // Mejorar el logging para depuración
-    // console.log(`Verificando caché para proyecto ${projectId}:`);
-    // console.log(`- Datos en caché:`, cachedData ? 'Sí' : 'No');
+    // print(`Verificando caché para proyecto ${projectId}:`);
+    // print(`- Datos en caché:`, cachedData ? 'Sí' : 'No');
     
     if (cachedData?.users.length > 0) {
       const cacheAge = now - cachedData.lastFetched;
-      // console.log(`- Edad de la caché: ${(cacheAge/1000).toFixed(1)}s (máx: ${(maxAgeMs/1000).toFixed(1)}s)`);
+      // print(`- Edad de la caché: ${(cacheAge/1000).toFixed(1)}s (máx: ${(maxAgeMs/1000).toFixed(1)}s)`);
       
       // Si tenemos datos en caché y no están expirados, los devolvemos
       if (cacheAge < maxAgeMs) {
-        // console.log(`- Usando datos en caché (${cachedData.users.length} usuarios)`);
+        // print(`- Usando datos en caché (${cachedData.users.length} usuarios)`);
         return cachedData.users;
       }
-      // console.log(`- Caché expirada, refrescando datos`);
+      // print(`- Caché expirada, refrescando datos`);
     } else {
-      console.log(`- No hay datos en caché, cargando por primera vez`);
+      print(`- No hay datos en caché, cargando por primera vez`);
     }
     
     // Evitar solicitudes duplicadas para el mismo projectId
     if (loadingState[projectId]) {
-      // console.log(`- Ya hay una solicitud en curso para este proyecto, esperando...`);
+      // print(`- Ya hay una solicitud en curso para este proyecto, esperando...`);
       // Esperar a que la solicitud existente termine
       const maxWait = 5000; // 5 segundos máximo de espera
       const startWait = Date.now();
@@ -302,7 +303,7 @@ export const ProjectUsersProvider: React.FC<{ children: ReactNode }> = ({ childr
     setErrorState(prev => ({ ...prev, [projectId]: null }));
 
     try {
-      // console.log(`- Iniciando carga de datos para proyecto ${projectId}`);
+      // print(`- Iniciando carga de datos para proyecto ${projectId}`);
       const fetchedUsers = await loadProjectUsers(projectId);
       
       setUsersByProject(prev => ({
@@ -313,10 +314,10 @@ export const ProjectUsersProvider: React.FC<{ children: ReactNode }> = ({ childr
         }
       }));
       
-      // console.log(`- Datos cargados: ${fetchedUsers.length} usuarios`);
+      // print(`- Datos cargados: ${fetchedUsers.length} usuarios`);
       return fetchedUsers;
     } catch (err) {
-      console.error(`Error fetching users for project ${projectId}:`, err);
+      printError(`Error fetching users for project ${projectId}:`, err);
       const errorMessage = err instanceof Error ? err.message : "Failed to load project users";
       setErrorState(prev => ({ ...prev, [projectId]: errorMessage }));
       return cachedData?.users || [];
@@ -345,7 +346,7 @@ export const ProjectUsersProvider: React.FC<{ children: ReactNode }> = ({ childr
       
       return fetchedUsers;
     } catch (err) {
-      console.error(`Error refreshing users for project ${projectId}:`, err);
+      printError(`Error refreshing users for project ${projectId}:`, err);
       const errorMessage = err instanceof Error ? err.message : "Failed to refresh project users";
       setErrorState(prev => ({ ...prev, [projectId]: errorMessage }));
       

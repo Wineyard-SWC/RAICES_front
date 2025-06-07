@@ -1,5 +1,6 @@
 import { Task, Workingusers } from "@/types/task";
 import { v4 as uuidv4} from 'uuid'
+import { printError } from "./debugLogger";
 
 // utils/parseTasksFromApi.ts
 export const parseTasksFromApi = (raw: string): Task[] => {
@@ -12,7 +13,7 @@ export const parseTasksFromApi = (raw: string): Task[] => {
   try {
     arr = JSON.parse(cleaned);
   } catch (e) {
-    console.error("JSON.parse failed", cleaned);
+    printError("JSON.parse failed", cleaned);
     return [];
   }
 

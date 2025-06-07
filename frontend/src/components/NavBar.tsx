@@ -11,6 +11,7 @@ import { useProjects } from "@/hooks/useProjects"
 import { useAvatar } from "@/contexts/AvatarContext"
 import AvatarProfileIcon from "./Avatar/AvatarDisplay"
 import { useUserPermissions } from "@/contexts/UserPermissions"
+import { print } from "@/utils/debugLogger"
 
 type NavbarProps = {
   projectSelected: boolean
@@ -160,7 +161,7 @@ const Navbar = ({ projectSelected = false }: NavbarProps) => {
     
     // Verificar permisos para Generate
     if (tab === "Generate" && !canManageItems) {
-      console.log("No tienes permiso para gestionar ítems");
+      print("No tienes permiso para gestionar ítems");
       return;
     }
 

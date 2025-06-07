@@ -8,6 +8,7 @@ import { useAvatar } from '@/contexts/AvatarContext';
 import WelcomeAnimation from '../../avatar_test/components/welcome-animation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { metadata } from '@/app/layout';
+import { print, printError } from '@/utils/debugLogger';
 
 const config: AvatarCreatorConfig = {
   clearCache: true,
@@ -98,14 +99,14 @@ export default function AvatarCreatorContent() {
               detectedGender = metadata.outfitGender;
             }
           } catch (e) {
-            console.error('Error fetching avatar metadata:', e);
+            printError('Error fetching avatar metadata:', e);
             // Continuar con el género por defecto si hay error
           }
      
           // Actualizar el estado con el género detectado
           setSelectedGender(detectedGender);
           
-          console.log("Avatar exported with normalized gender:", detectedGender);
+          print("Avatar exported with normalized gender:", detectedGender);
           
           try {
             // Solo actualizar la base de datos si tenemos un userId
@@ -117,7 +118,7 @@ export default function AvatarCreatorContent() {
               updateAvatarUrl(enhancedUrl, detectedGender);
             }
           } catch (e) {
-            console.error('Error updating profile:', e);
+            printError('Error updating profile:', e);
           }
           
           // Avanzar al siguiente paso con el género ya detectado y normalizado

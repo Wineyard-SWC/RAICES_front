@@ -28,6 +28,7 @@ import EditProjectModal from "./edit_project_modal"
 import DeleteProjectModal from "./delete_project_modal"
 import LeaveProjectModal from "./leave_project_modal"
 import { useProjectUsers } from "@/contexts/ProjectusersContext"
+import { print, printError } from "@/utils/debugLogger"
 
 
 // Modales
@@ -104,7 +105,7 @@ export default function ProjectCard({
     // Guardar el ID del proyecto actual en localStorage
     localStorage.setItem("currentProjectId", id)
 
-    console.log("id en project card", id)
+    print("id en project card", id)
     
     // Configurar el proyecto actual en el contexto de Kanban
     setCurrentProject(id)
@@ -112,18 +113,18 @@ export default function ProjectCard({
     
     // Cargar los usuarios del proyecto seleccionado
     loadUsersIfNeeded(id).then(users => {
-      console.log(`Cargados ${users.length} usuarios para el proyecto ${id}`);
+      print(`Cargados ${users.length} usuarios para el proyecto ${id}`);
     }).catch(err => {
-      console.error("Error al cargar los usuarios del proyecto:", err);
+      printError("Error al cargar los usuarios del proyecto:", err);
     });
     
     // Cargar los permisos del usuario para este proyecto
     if (userId) {
       loadUserPermissionsIfNeeded(userId).then(() => {
-        console.log(`Permisos cargados para el usuario en el proyecto ${id}`);
-        console.log("Permisos bitmask son ", localStorage.getItem("userPermissionsBitmask"));
+        print(`Permisos cargados para el usuario en el proyecto ${id}`);
+        print("Permisos bitmask son ", localStorage.getItem("userPermissionsBitmask"));
       }).catch(err => {
-        console.error("Error al cargar los permisos del usuario:", err);
+        printError("Error al cargar los permisos del usuario:", err);
       });
     }
     

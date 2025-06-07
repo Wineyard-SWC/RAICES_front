@@ -3,6 +3,7 @@
 import type React from "react";
 import { createContext, useContext, useState, useCallback } from "react";
 import type { UserStory } from "@/types/userstory";
+import { printError } from "@/utils/debugLogger";
 
 type UserStoriesByProjectId = Record<string, {
   userStories: UserStory[],
@@ -162,7 +163,7 @@ export const UserStoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       
       return fetchedUserStories
     } catch (err) {
-      console.error(`Error fetching user stories for project ${projectId}:`, err)
+      printError(`Error fetching user stories for project ${projectId}:`, err)
       const errorMessage = err instanceof Error ? err.message : "Failed to load user stories"
       setErrorState(prev => ({ ...prev, [projectId]: errorMessage }))
       return cachedData?.userStories || []
@@ -193,7 +194,7 @@ export const UserStoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       
       return fetchedUserStories
     } catch (err) {
-      console.error(`Error refreshing user stories for project ${projectId}:`, err)
+      printError(`Error refreshing user stories for project ${projectId}:`, err)
       const errorMessage = err instanceof Error ? err.message : "Failed to refresh user stories"
       setErrorState(prev => ({ ...prev, [projectId]: errorMessage }))
       

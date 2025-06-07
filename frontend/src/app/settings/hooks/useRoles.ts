@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useUserRoles } from "@/contexts/userRolesContext";
 import useToast from "@/hooks/useToast";
+import { printError } from "@/utils/debugLogger";
 
 // Tipos
 interface FrontendRole {
@@ -73,7 +74,7 @@ export const useRoles = () => {
         return false;
       }
     } catch (error) {
-      console.error("Error actualizando roles:", error);
+      printError("Error actualizando roles:", error);
       showToast("Error al actualizar roles", "error");
       return false;
     } finally {

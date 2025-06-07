@@ -8,6 +8,7 @@ import BrainwaveVisualizer from "../components/BrainwaveVisualizer"
 import ElectrodeQualityIndicator from "../components/ElectrodeQualityIndicator"
 import { useMuse } from "@/hooks/useMuse";
 import { useSessionData } from "@/hooks/useSessionData";
+import { print, printError } from "@/utils/debugLogger";
 
 interface TeamMember {
   id: string;
@@ -70,7 +71,7 @@ export default function Calibration({ participant, onComplete }: CalibrationProp
       await connect();
       
     } catch (error: any) {
-      console.error("Error connecting to Muse:", error);
+      printError("Error connecting to Muse:", error);
       
       // Handle specific user cancellation error
       if (error.message?.includes("User cancelled") || 
@@ -85,7 +86,7 @@ export default function Calibration({ participant, onComplete }: CalibrationProp
 
   // Start the calibration process
   const startCalibration = () => {
-    console.log("🚀 Starting info phase before calibration");
+    print("🚀 Starting info phase before calibration");
     setConnectionPhase(false);
     setShowInfoPhase(true);
     setIsInfoActive(true);
@@ -97,7 +98,7 @@ export default function Calibration({ participant, onComplete }: CalibrationProp
 
   // 🔥 NUEVA FUNCIÓN PARA COUNTDOWN DE INFORMACIÓN
   const startInfoCountdown = () => {
-    console.log("ℹ️ Starting info countdown");
+    print("ℹ️ Starting info countdown");
     
     // 🔥 ASEGURAR QUE NO HAY TIMERS PREVIOS
     if (intervalRef.current) {
@@ -107,7 +108,7 @@ export default function Calibration({ participant, onComplete }: CalibrationProp
     
     const infoInterval = setInterval(() => {
       setInfoTime((prevTime) => {
-        console.log(`ℹ️ Info time remaining: ${prevTime - 1}s`);
+        print(`ℹ️ Info time remaining: ${prevTime - 1}s`);
         
         if (prevTime <= 1) {
           clearInterval(infoInterval);
@@ -135,7 +136,7 @@ export default function Calibration({ participant, onComplete }: CalibrationProp
 
   // 🔥 TAMBIÉN MEJORAR startCountdown PARA ASEGURAR LIMPIEZA
   const startCountdown = () => {
-    console.log("⏱️ Iniciando countdown de calibración");
+    print("⏱️ Iniciando countdown de calibración");
     
     // 🔥 ASEGURAR QUE NO HAY TIMERS PREVIOS
     if (intervalRef.current) {
@@ -145,7 +146,7 @@ export default function Calibration({ participant, onComplete }: CalibrationProp
     
     intervalRef.current = setInterval(() => {
       setCalibrationTime((prevTime) => {
-        console.log(`⏱️ Calibration time remaining: ${prevTime - 1}s`);
+        print(`⏱️ Calibration time remaining: ${prevTime - 1}s`);
         
         if (prevTime <= 1) {
           // Tiempo terminado
@@ -168,15 +169,15 @@ export default function Calibration({ participant, onComplete }: CalibrationProp
   };
 
   const handleCalibrationComplete = () => {
-    console.log("⏱️ Calibración completada → capturando baseline");
+    print("⏱️ Calibración completada → capturando baseline");
     setIsCalibrating(false);
     
     // Pequeño delay para asegurar que todos los datos lleguen
     setTimeout(() => {
       try {
-        console.log("📊 Ejecutando captureRestData...");
+        print("📊 Ejecutando captureRestData...");
         const rest = captureRestData();
-        console.log("📊 Baseline capturado:", {
+        print("📊 Baseline capturado:", {
           eeg: rest?.eeg?.length || 0,
           ppg: rest?.ppg?.length || 0,
           hr: rest?.hr?.length || 0,
@@ -185,7 +186,7 @@ export default function Calibration({ participant, onComplete }: CalibrationProp
         setCalibrationComplete(true);
         setShowNeutralPoint(false);
       } catch (err) {
-        console.error("❌ Error en captureRestData:", err);
+        printError("❌ Error en captureRestData:", err);
       }
     }, 500);
   };
@@ -380,26 +381,59 @@ export default function Calibration({ participant, onComplete }: CalibrationProp
             </h3>
             
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-              <p className="text-lg text-blue-900 leading-relaxed">
-                We will now take your baseline measurements while you're at rest. This helps us establish 
-                your natural emotional and stress patterns, enabling more accurate analysis during task evaluation.
+              <p className="text-lg text-blue-900 leading-relaxed mb-4">
+                We need to establish your baseline biometric readings in a relaxed state. 
+                This helps us accurately measure changes during task evaluation.
               </p>
               
-              <div className="mt-4 text-sm text-blue-700">
-                <p className="mb-2">
-                  <strong>What to do:</strong> Sit comfortably, breathe naturally, and try to stay relaxed.
+              <div className="text-sm text-blue-700 space-y-2">
+                <p>
+                  <strong>What to do:</strong> Sit comfortably, breathe normally, and try to relax
                 </p>
                 <p>
-                  <strong>Duration:</strong> This will take about 30 seconds once we begin.
+                  <strong>Duration:</strong> 30 seconds of quiet baseline recording
+                </p>
+                <p>
+                  <strong>Tip:</strong> Close your eyes and think of something peaceful
                 </p>
               </div>
             </div>
             
             <div className="text-6xl font-bold text-blue-600 mb-4">{infoTime}s</div>
             
-            <p className="text-gray-600">
-              The baseline measurement will begin automatically when the countdown reaches zero.
+            <p className="text-gray-600 mb-6">
+              Calibration will begin automatically when the countdown reaches zero.
             </p>
+            
+            {/* 🔥 BOTÓN PARA SALTAR INSTRUCCIONES */}
+            <Button 
+              onClick={() => {
+                // Limpiar el timer actual
+                if (intervalRef.current) {
+                  clearInterval(intervalRef.current);
+                  intervalRef.current = null;
+                }
+                
+                // Ir directamente a calibración
+                setShowInfoPhase(false);
+                setIsInfoActive(false);
+                setIsCalibrating(true);
+                setCalibrationTime(30);
+                hasCalibrationCompleted.current = false;
+                
+                // Iniciar calibración real inmediatamente
+                setTimeout(() => {
+                  startCountdown();
+                }, 100);
+              }}
+              className="bg-blue-600 text-white hover:bg-blue-700 px-6 py-2"
+            >
+              Skip Instructions - Start Calibration Now
+            </Button>
+            
+            <div className="mt-4 text-sm text-gray-500">
+              Click above if you're familiar with the calibration process
+            </div>
           </div>
         </div>
       ) : (

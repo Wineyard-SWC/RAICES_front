@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTeams } from "@/contexts/teamscontext";
 import { useProjectUsers } from "@/contexts/ProjectusersContext";
 import TeamAvatarsDisplay from "./TeamAvatarDisplay";
+import { printError } from "@/utils/debugLogger";
 
 type TeamDetailsViewProps = {
   teamId: string;
@@ -44,7 +45,7 @@ const TeamDetailsView = ({ teamId }: TeamDetailsViewProps) => {
         setDataLoaded(prev => ({ ...prev, users: true }));
       }
     } catch (error) {
-      console.error("Error loading team data:", error);
+      printError("Error loading team data:", error);
     }
   }, [teamId, projectId, fetchTeam, getTeamMetrics, loadUsersIfNeeded, dataLoaded]);
 

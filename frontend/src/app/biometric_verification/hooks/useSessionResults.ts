@@ -1,5 +1,6 @@
 "use client";
 
+import { print, printError } from "@/utils/debugLogger";
 import { useState, useEffect, useCallback } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_AVATAR_API || 'http://localhost:8009';
@@ -55,7 +56,7 @@ export const useSessionResults = (sessionRelationId: string | null) => {
     // Evitar llamadas muy frecuentes (mínimo 2 segundos entre llamadas)
     const now = Date.now();
     if (!forceRefresh && now - lastFetchTime < 2000) {
-      console.log("🔄 Skipping fetch, too soon since last call");
+      print("🔄 Skipping fetch, too soon since last call");
       return;
     }
 
@@ -64,7 +65,7 @@ export const useSessionResults = (sessionRelationId: string | null) => {
     setLastFetchTime(now);
 
     try {
-      console.log(`🔍 Fetching session results for: ${sessionRelationId}`);
+      print(`🔍 Fetching session results for: ${sessionRelationId}`);
       
       const response = await fetch(`${API_URL}/sessions/by-relation/${sessionRelationId}`, {
         method: 'GET',
@@ -82,7 +83,7 @@ export const useSessionResults = (sessionRelationId: string | null) => {
 
       const results = await response.json();
       
-      console.log("📊 Session results loaded:", {
+      print("📊 Session results loaded:", {
         total_participants: results.total_participants,
         sessions_found: results.sessions?.length || 0,
         session_relation: results.session_relation
@@ -90,12 +91,12 @@ export const useSessionResults = (sessionRelationId: string | null) => {
       
       // Log de cada sesión para debug
       results.sessions?.forEach((session, index) => {
-        console.log(`📊 Session ${index + 1}: ${session.user_name} (${session.tasks.length} tasks)`);
+        print(`📊 Session ${index + 1}: ${session.user_name} (${session.tasks.length} tasks)`);
       });
       
       setData(results);
     } catch (err) {
-      console.error("❌ Error fetching session results:", err);
+      printError("❌ Error fetching session results:", err);
       setError(err instanceof Error ? err.message : "Failed to load session results");
     } finally {
       setLoading(false);
@@ -105,14 +106,14 @@ export const useSessionResults = (sessionRelationId: string | null) => {
   // Initial fetch
   useEffect(() => {
     if (sessionRelationId) {
-      console.log("🚀 Initial fetch for session:", sessionRelationId);
+      print("🚀 Initial fetch for session:", sessionRelationId);
       fetchSessionResults(true);
     }
   }, [sessionRelationId]);
 
   // Refetch function for manual calls
   const refetch = useCallback(() => {
-    console.log("🔄 Manual refetch triggered");
+    print("🔄 Manual refetch triggered");
     fetchSessionResults(true);
   }, [fetchSessionResults]);
 

@@ -3,6 +3,7 @@
 import type React from "react"
 import { createContext, useContext, useState, useCallback } from "react"
 import type { Task } from "@/types/task"
+import { printError } from "@/utils/debugLogger"
 
 type TasksByProjectId = Record<string, {
   tasks: Task[],
@@ -162,7 +163,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       return fetchedTasks
     } catch (err) {
-      console.error(`Error fetching tasks for project ${projectId}:`, err)
+      printError(`Error fetching tasks for project ${projectId}:`, err)
       const errorMessage = err instanceof Error ? err.message : "Failed to load tasks"
       setErrorState(prev => ({ ...prev, [projectId]: errorMessage }))
       return cachedData?.tasks || []
@@ -193,7 +194,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       return fetchedTasks
     } catch (err) {
-      console.error(`Error refreshing tasks for project ${projectId}:`, err)
+      printError(`Error refreshing tasks for project ${projectId}:`, err)
       const errorMessage = err instanceof Error ? err.message : "Failed to refresh tasks"
       setErrorState(prev => ({ ...prev, [projectId]: errorMessage }))
       

@@ -15,6 +15,7 @@ import { useUserStories } from "@/contexts/saveduserstoriescontext";
 import { useTasks } from "@/contexts/taskcontext"
 import { useUser } from "@/contexts/usercontext"
 import { useGeneratedTasks } from "@/contexts/generatedtaskscontext"
+import { printError } from "@/utils/debugLogger"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
@@ -84,7 +85,7 @@ export const useGenerateTasksLogic = () => {
       
       return await tasksContext.loadTasksIfNeeded(projectId, fetchFunction);
     } catch (error) {
-      console.error('Error loading tasks:', error);
+      printError('Error loading tasks:', error);
       return [];
     }
   };
@@ -184,7 +185,7 @@ export const useGenerateTasksLogic = () => {
       
 
       } catch (e: any) {
-        console.error(e);
+        printError(e);
         setError(e.message ?? "Failed to generate tasks.");
       } finally {
         setIsLoading(false);
@@ -211,7 +212,7 @@ export const useGenerateTasksLogic = () => {
       addTasks(transformedTasks);
       
     } catch (e: any) {
-      console.error('Error importing unassigned tasks:', e);
+      printError('Error importing unassigned tasks:', e);
       setError(e.message ?? "Failed to import unassigned tasks.");
     } finally {
       setIsLoadingUnassigned(false);
@@ -290,7 +291,7 @@ export const useGenerateTasksLogic = () => {
       
       router.push(`/sprint_planning?projectId=${projectId}`);
     } catch (e: any) {
-      console.error(e);
+      printError(e);
       setError("Failed to save tasks.");
     } finally {
       setIsSavingTasks(false);

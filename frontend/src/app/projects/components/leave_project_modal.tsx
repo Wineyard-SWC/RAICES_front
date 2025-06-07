@@ -4,6 +4,7 @@ import { useState } from "react"
 import { X, LogOut } from "lucide-react"
 import { useUser } from "@/contexts/usercontext"
 import { useLeaveProject } from "@/hooks/useLeaveProject"
+import { printError } from "@/utils/debugLogger"
 
 interface LeaveProjectModalProps {
   isOpen: boolean
@@ -38,7 +39,7 @@ export default function LeaveProjectModal({
         }, 1500)
       }
     } catch (err) {
-      console.error("Error leaving project:", err)
+      printError("Error leaving project:", err)
     } finally {
       setIsLeaving(false)
     }

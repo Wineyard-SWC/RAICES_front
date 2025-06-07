@@ -1,4 +1,5 @@
 import { Requirement } from "@/types/requirement";
+import { printError } from "@/utils/debugLogger";
 import { postRequirements } from "@/utils/postRequirements";
 
 export default async function handleSave(
@@ -21,6 +22,6 @@ export default async function handleSave(
 
     await postRequirements(cleaned, projectId!);
   } catch (error) {
-    console.error("Error while saving requirements:", error);
+    printError("Error while saving requirements:", error);
   }
 }

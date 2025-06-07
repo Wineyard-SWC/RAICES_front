@@ -12,6 +12,7 @@ import { RecurringMeetings } from './RecurringMeetings';
 import { EventCard } from './EventCard';
 import { useCalendar } from "@/contexts/CalendarContext"
 import { MeetingDetailsModal } from './testCalendar/MeetingDetailsModal';
+import { print } from '@/utils/debugLogger';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -56,12 +57,12 @@ export default function SprintCalendarView({ onBack }: { onBack?: () => void }) 
 
   const handlePrevious = () => {
     // Implement navigation to previous period
-    console.log('Navigate to previous period');
+    print('Navigate to previous period');
   };
 
   const handleNext = () => {
     // Implement navigation to next period
-    console.log('Navigate to next period');
+    print('Navigate to next period');
   };
 
   const handleAddEvent = async (formData: any) => {
@@ -97,7 +98,7 @@ export default function SprintCalendarView({ onBack }: { onBack?: () => void }) 
     const event = events.find(e => e.id === eventId);
     if (event) {
       // Show event details in a modal or side panel
-      console.log('Event details:', event);
+      print('Event details:', event);
     }
   };
 

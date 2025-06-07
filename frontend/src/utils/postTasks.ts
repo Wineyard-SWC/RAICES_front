@@ -1,5 +1,6 @@
 import type { Task, TaskFormData } from "@/types/task"
 import { TaskContextType } from "@/contexts/taskcontext"
+import { printError } from "./debugLogger";
 
 const apiURL = process.env.NEXT_PUBLIC_API_URL!
 
@@ -27,7 +28,7 @@ export const getProjectTasks = async (projectId: string): Promise<Task[]> => {
       }
       
     catch (error) {
-    console.error('Error loading tasks:', error);
+    printError('Error loading tasks:', error);
     return []; 
 }
 }
@@ -59,7 +60,7 @@ export const postTasks = async (
   }
 
   if (!res.ok) {
-    console.error(await res.text());
+    printError(await res.text());
     throw new Error("Failed to save tasks batch");
   }
 
@@ -81,7 +82,7 @@ export const createTask = async (
   });
 
   if (!res.ok) {
-    console.error(await res.text());
+    printError(await res.text());
     throw new Error("Failed to create task");
   }
 
@@ -115,7 +116,7 @@ export const updateTask = async (
   });
 
   if (!res.ok) {
-    console.error(await res.text());
+    printError(await res.text());
     throw new Error("Failed to update task");
   }
 
@@ -140,7 +141,7 @@ export const deleteTask = async (
   });
 
   if (!res.ok) {
-    console.error(await res.text());
+    printError(await res.text());
     throw new Error("Failed to delete task");
   }
 

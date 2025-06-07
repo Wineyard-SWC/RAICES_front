@@ -7,6 +7,7 @@ import { useUserStories } from "@/contexts/saveduserstoriescontext"
 import { useBugs } from "@/contexts/bugscontext"
 import { useUser } from "@/contexts/usercontext"
 import { UseKanbanLogicProps } from "../interfaces/kanbaninterfaces"
+import { printError } from "@/utils/debugLogger"
 
 export const useKanbanLogic = ({ projectId, view, filters }: UseKanbanLogicProps) => {
   const { searchTerm, typeFilter, priorityFilter } = filters
@@ -139,7 +140,7 @@ export const useKanbanLogic = ({ projectId, view, filters }: UseKanbanLogicProps
         }, 1000 * 60 * 5)
       ])
     } catch (error) {
-      console.error('Error refreshing kanban data:', error)
+      printError('Error refreshing kanban data:', error)
       throw error
     } finally {
       setIsRefreshing(false)
@@ -184,7 +185,7 @@ export const useKanbanLogic = ({ projectId, view, filters }: UseKanbanLogicProps
         if (!response.ok) throw new Error('Failed to update task status')
       }
     } catch (error) {
-      console.error('Error updating item status:', error)
+      printError('Error updating item status:', error)
       await refreshData()
       throw error
     }
@@ -218,7 +219,7 @@ export const useKanbanLogic = ({ projectId, view, filters }: UseKanbanLogicProps
         })
       }
     } catch (error) {
-      console.error('Error deleting item:', error)
+      printError('Error deleting item:', error)
       await refreshData()
       throw error
     }

@@ -10,6 +10,7 @@ import { useUserPermissions } from "@/contexts/UserPermissions";
 import { useUser } from "@/contexts/usercontext";
 import { useProjectUsers, ProjectUser } from "@/contexts/ProjectusersContext";
 import AvatarProfileIcon from "@/components/Avatar/AvatarDisplay";
+import { printError } from "@/utils/debugLogger";
 
 type TabState = {
   [key: string]: string;
@@ -56,7 +57,7 @@ const TeamsView = () => {
         .then((users) => {
           setProjectUsers(users);
         })
-        .catch((err) => console.error("Error cargando usuarios del proyecto:", err));
+        .catch((err) => printError("Error cargando usuarios del proyecto:", err));
     }
   }, [projectId, loadUsersIfNeeded]);
 
@@ -206,7 +207,7 @@ const TeamsView = () => {
             // console.log("[TEAM VIEW] Initial team created successfully");
             setInitialTeamCreated(true);
           } catch (err) {
-            console.error("Error creating initial team:", err);
+            printError("Error creating initial team:", err);
           }
         } else {
           // console.log("[TEAM VIEW] Initial team already exists");

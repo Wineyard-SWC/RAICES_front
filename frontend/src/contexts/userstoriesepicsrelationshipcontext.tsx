@@ -1,5 +1,6 @@
 'use client'
 
+import { printError } from '@/utils/debugLogger';
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
 type AssignmentMap = Record<string, string>;
@@ -34,7 +35,7 @@ export const AssignmentProvider: React.FC<{children: ReactNode}> = ({ children }
         const parsed = JSON.parse(savedAssignments);
         setAssignmentMap(parsed);
       } catch (error) {
-        console.error("Error al cargar asignaciones:", error);
+        printError("Error al cargar asignaciones:", error);
       }
     }
   }, []);

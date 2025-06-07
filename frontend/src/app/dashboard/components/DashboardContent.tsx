@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation"
 import { useUser } from "@/contexts/usercontext"
 import { useUserPermissions } from "@/contexts/UserPermissions"
 import { useAvatar } from "@/contexts/AvatarContext"
+import { print } from "@/utils/debugLogger"
 
 export default function DashboardContent() {
   const [activeView, setActiveView] = useState<"dashboard" | "details" | "planning" | "calendar">("dashboard")
@@ -37,10 +38,10 @@ export default function DashboardContent() {
   // Cargar datos iniciales: obtener proyecto
   useEffect(() => {
     // Use session.user.uid instead of localStorage
-    console.log("*****************************************************************************************************************************************")
-    //console.log(session.user.uid);
+    print("*****************************************************************************************************************************************")
+    //print(session.user.uid);
     if (session?.user?.uid && !userId) {
-      console.log("***************************************** No userId found, setting from session:", session.user.uid)
+      print("***************************************** No userId found, setting from session:", session.user.uid)
       setUserId(session.user.uid)
     }
     
@@ -66,7 +67,7 @@ export default function DashboardContent() {
       // Verificar si es diferente del proyecto actual en el contexto
       const currentContextProject = getCurrentProject()
       if (currentContextProject !== currentProjectId) {
-        console.log("Actualizando proyecto actual en contexto de permisos:", currentProjectId)
+        print("Actualizando proyecto actual en contexto de permisos:", currentProjectId)
         setCurrentProjectPermissions(currentProjectId)
       }
       

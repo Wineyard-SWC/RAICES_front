@@ -1,3 +1,5 @@
+import { printError } from "./debugLogger"
+
 export function formatDate(dateString: string): string {
   if (!dateString) return ''
   
@@ -9,7 +11,7 @@ export function formatDate(dateString: string): string {
       year: 'numeric' 
     })
   } catch (error) {
-    console.error('Error formatting date:', error)
+    printError('Error formatting date:', error)
     return dateString
   }
 }

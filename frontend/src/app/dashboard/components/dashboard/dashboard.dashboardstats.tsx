@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation"
 import dynamic from 'next/dynamic'
 import { Canvas } from '@react-three/fiber'
 import { useBiometricData } from "@/hooks/useBiometricData" // 🔥 AGREGAR IMPORT
+import { print, printError } from "@/utils/debugLogger"
 
 // Importación dinámica del componente Three.js para evitar errores de SSR
 const DynamicAnimatedAvatar = dynamic(
@@ -72,7 +73,7 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar }: Props) => {
   const { analytics } = useBiometricData(userId || "")
 
   const currentEmotion = analytics?.currentState?.emotion || "Neutral"
-  console.log("Current emotion from analytics:", currentEmotion)
+  print("Current emotion from analytics:", currentEmotion)
 
   // New state for today's meetings/events
   const [todayEvents, setTodayEvents] = useState<EventData[]>([])
@@ -117,12 +118,12 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar }: Props) => {
   // NUEVA FUNCIÓN PARA IR AL DASHBOARD BIOMÉTRICO
   const handleViewBiometricDashboard = () => {
     if (!userId) {
-      console.error("No user ID available for biometric dashboard")
+      printError("No user ID available for biometric dashboard")
       alert("Error: No se pudo obtener la información del usuario")
       return
     }
     
-    console.log("Navigating to biometric dashboard for user:", userId)
+    print("Navigating to biometric dashboard for user:", userId)
     router.push(`/biometrics_dashboard?userId=${userId}`)
   }
 
@@ -135,11 +136,11 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar }: Props) => {
       const projectId = getCurrentProject()
       
       if (!projectId) {
-        console.error("No project ID found in current context")
+        printError("No project ID found in current context")
         setLoadingEvents(false)
         return
       }
-      console.log("Fetching today's events for project ID:", projectId)
+      print("Fetching today's events for project ID:", projectId)
       const response = await fetch(`${API_URL}/projects/${projectId}/events/today`)
 
       if (!response.ok) {
@@ -147,11 +148,11 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar }: Props) => {
       }
       
       const data = await response.json()
-      console.log("Today's events data:", data)
+      print("Today's events data:", data)
 
       setTodayEvents(data)
     } catch (error) {
-      console.error("Error fetching today's events:", error)
+      printError("Error fetching today's events:", error)
     } finally {
       setLoadingEvents(false)
     }
@@ -164,24 +165,24 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar }: Props) => {
       try {
         const projectId = getCurrentProject()
         if (!projectId) {
-          console.log("No project ID available, skipping data load")
+          print("No project ID available, skipping data load")
           return
         }
 
-        console.log("Loading initial dashboard data for project:", projectId)
+        print("Loading initial dashboard data for project:", projectId)
         
         if (sprintComparison.length === 0 && !isLoadingComparison) {
-          console.log("Loading sprint comparison data...")
+          print("Loading sprint comparison data...")
           await refreshSprintComparison()
         }
 
-        console.log("Loading today's events...")
+        print("Loading today's events...")
         await fetchTodayEvents()
         
         setHasLoadedInitialData(true)
         
       } catch (error) {
-        console.error("Error loading initial dashboard data:", error)
+        printError("Error loading initial dashboard data:", error)
       }
     }
     
@@ -215,8 +216,8 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar }: Props) => {
 
   // DEBUG: Log del user ID para verificar
   useEffect(() => {
-    console.log("Session data:", session)
-    console.log("User ID from session:", userId)
+    print("Session data:", session)
+    print("User ID from session:", userId)
   }, [session, userId])
 
   // 🔥 FUNCIÓN PARA MAPEAR EMOCIONES A EMOJIS

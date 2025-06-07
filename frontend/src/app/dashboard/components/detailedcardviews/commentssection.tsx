@@ -3,6 +3,7 @@ import { MessageSquare, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TaskOrStory } from "@/types/taskkanban";
 import { Comments } from "@/types/userstory";
+import { printError } from "@/utils/debugLogger";
 
 interface CommentsSectionProps {
   task: TaskOrStory;
@@ -33,7 +34,7 @@ const CommentsSection = ({ task, userId, userData, onUpdateComments }: CommentsS
       await onUpdateComments(updatedComments);
       setNewComment("");
     } catch (error) {
-      console.error('Error adding comment:', error);
+      printError('Error adding comment:', error);
     }
   };
 
@@ -47,7 +48,7 @@ const CommentsSection = ({ task, userId, userData, onUpdateComments }: CommentsS
       
       await onUpdateComments(updatedComments);
     } catch (error) {
-      console.error('Error deleting comment:', error);
+      printError('Error deleting comment:', error);
     }
   };
 

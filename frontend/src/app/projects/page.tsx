@@ -13,6 +13,7 @@ import JoinProjectModal from "./components/join_project_modal"
 import Navbar from "@/components/NavBar"
 import { useRouter } from "next/navigation"
 import { useKanban } from "@/contexts/unifieddashboardcontext"
+import { print, printError } from "@/utils/debugLogger"
 
 export default function ProjectsPage() {
   // Obtén el userId desde el contexto de usuario
@@ -35,7 +36,7 @@ export default function ProjectsPage() {
   // Refrescar el contexto del avatar si no existe
   useEffect(() => {
     if (userId && !avatarUrl) {
-      console.log("No avatar URL found, refreshing avatar context")
+      print("No avatar URL found, refreshing avatar context")
       fetchAvatar(userId)
     }
   }, [userId, avatarUrl, fetchAvatar])
@@ -101,20 +102,20 @@ export default function ProjectsPage() {
 
   const handleCreateProject = async (projectData: any): Promise<string | null> => {
     try {
-      console.log("[PAGE] Creating project with data:", projectData);
+      print("[PAGE] Creating project with data:", projectData);
       const projectId = await createProject(projectData); // Devuelve el ID del proyecto
       if (projectId) {
-        console.log("[PAGE] Project created with ID:", projectId);
+        print("[PAGE] Project created with ID:", projectId);
         setProjects((prevProjects) => [
           ...prevProjects,
           { ...projectData, id: projectId },
         ]);
       } else {
-        console.error("[PAGE] Failed to create project or get projectId.");
+        printError("[PAGE] Failed to create project or get projectId.");
       }
       return projectId;
     } catch (error) {
-      console.error("[PAGE] Error creating project:", error);
+      printError("[PAGE] Error creating project:", error);
       return null;
     }
   }
