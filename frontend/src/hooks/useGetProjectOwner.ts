@@ -1,5 +1,6 @@
 "use client"
 
+import { printError } from "@/utils/debugLogger"
 import { useState, useEffect } from "react"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
@@ -51,7 +52,7 @@ export const useGetProjectOwner = (projectId: string | null) => {
           setError("Could not find project owner")
         }
       } catch (err) {
-        console.error("Error fetching project owner:", err)
+        printError("Error fetching project owner:", err)
         setError("Could not fetch project owner information")
       } finally {
         setLoading(false)

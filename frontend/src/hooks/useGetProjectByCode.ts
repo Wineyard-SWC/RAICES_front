@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import type { Project } from "@/types/project"
+import { printError } from "@/utils/debugLogger"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
@@ -41,7 +42,7 @@ export const useGetProjectByCode = (invitationCode: string) => {
           setError("Invalid invitation code")
         }
       } catch (err) {
-        console.error("Error fetching project:", err)
+        printError("Error fetching project:", err)
         setError("Could not find project with this invitation code")
       } finally {
         setLoading(false)

@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { useUser } from './usercontext';
-import { print } from '@/utils/debugLogger';
+import { print, printError } from '@/utils/debugLogger';
 
 // Tipos para los roles y documentos
 interface RoleDefinition {
@@ -92,7 +92,7 @@ export const UserRolesProvider: React.FC<{ children: ReactNode }> = ({ children 
       const data: UserRolesDocument = await response.json();
       setUserRoles(data);
     } catch (err: any) {
-      console.error('Error fetching user roles:', err);
+      printError('Error fetching user roles:', err);
       // No establecer error en el estado para no afectar la UI
     } finally {
       setIsLoading(false);
@@ -132,7 +132,7 @@ export const UserRolesProvider: React.FC<{ children: ReactNode }> = ({ children 
       setUserRoles(updatedRoles);
       return true;
     } catch (err: any) {
-      console.error('Error updating user roles:', err);
+      printError('Error updating user roles:', err);
       setError(err.message);
       return false;
     } finally {

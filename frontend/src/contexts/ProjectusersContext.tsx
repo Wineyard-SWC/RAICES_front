@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, ReactNode } from "react"
 import { useUserRoles } from "./userRolesContext"
-import { print } from "@/utils/debugLogger";
+import { print, printError } from "@/utils/debugLogger";
 
 // API URL para endpoints
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -148,7 +148,7 @@ export const ProjectUsersProvider: React.FC<{ children: ReactNode }> = ({ childr
 
       return enrichedUsers;
     } catch (error) {
-      console.error("Error loading all users:", error);
+      printError("Error loading all users:", error);
       setErrorState(prev => ({ ...prev, 'all_users': error instanceof Error ? error.message : "Failed to load users" }));
       return allUsersCache?.users || [];
     } finally {
@@ -249,7 +249,7 @@ export const ProjectUsersProvider: React.FC<{ children: ReactNode }> = ({ childr
 
       return enrichedUsers;
     } catch (error) {
-      console.error("Error loading project users:", error);
+      printError("Error loading project users:", error);
       throw error;
     }
   }, [userRoles]);
@@ -317,7 +317,7 @@ export const ProjectUsersProvider: React.FC<{ children: ReactNode }> = ({ childr
       // print(`- Datos cargados: ${fetchedUsers.length} usuarios`);
       return fetchedUsers;
     } catch (err) {
-      console.error(`Error fetching users for project ${projectId}:`, err);
+      printError(`Error fetching users for project ${projectId}:`, err);
       const errorMessage = err instanceof Error ? err.message : "Failed to load project users";
       setErrorState(prev => ({ ...prev, [projectId]: errorMessage }));
       return cachedData?.users || [];
@@ -346,7 +346,7 @@ export const ProjectUsersProvider: React.FC<{ children: ReactNode }> = ({ childr
       
       return fetchedUsers;
     } catch (err) {
-      console.error(`Error refreshing users for project ${projectId}:`, err);
+      printError(`Error refreshing users for project ${projectId}:`, err);
       const errorMessage = err instanceof Error ? err.message : "Failed to refresh project users";
       setErrorState(prev => ({ ...prev, [projectId]: errorMessage }));
       

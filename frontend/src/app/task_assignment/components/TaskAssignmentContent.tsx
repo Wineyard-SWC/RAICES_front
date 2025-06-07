@@ -15,7 +15,7 @@ import DefaultLoading from "@/components/animations/DefaultLoading"
 import { useTasks } from "@/contexts/taskcontext"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/app/settings/components/ui/dialog"
 import { useSessionRelation } from "@/hooks/useSessionRelation" // 👈 Agregar import
-import { print } from "@/utils/debugLogger"
+import { print, printError } from "@/utils/debugLogger"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL!
 
@@ -195,7 +195,7 @@ export default function TaskAssignmentContent() {
 
       if (!taskRes.ok) {
         const taskErrorText = await taskRes.text()
-        console.error("Error updating tasks:", taskErrorText)
+        printError("Error updating tasks:", taskErrorText)
         throw new Error(`Tasks update failed: ${taskRes.status} - ${taskErrorText}`)
       }
 
@@ -208,7 +208,7 @@ export default function TaskAssignmentContent() {
 
       print("Task assignments saved successfully")
     } catch (error) {
-      console.error("Error saving task assignments:", error)
+      printError("Error saving task assignments:", error)
       // Aún así permitir navegar de vuelta aunque falle el guardado
     } finally {
       setIsSaving(false)
@@ -273,7 +273,7 @@ export default function TaskAssignmentContent() {
             print("ℹ️ No reassignments found in localStorage")
           }
         } catch (error) {
-          console.error("❌ Error parsing biometric reassignments:", error)
+          printError("❌ Error parsing biometric reassignments:", error)
           localStorage.removeItem("biometricReassignments") // Limpiar datos corruptos
         }
       } else {

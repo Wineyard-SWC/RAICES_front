@@ -7,6 +7,7 @@ import { useSearchUsersProject } from "@/hooks/useSearchUsersProject";
 import type { User as UserType } from "@/hooks/useUsers";
 import { useProjectUsers } from "@/contexts/ProjectusersContext"
 import AvatarProfileIcon from "@/components/Avatar/AvatarDisplay"
+import { printError } from "@/utils/debugLogger";
 
 interface EditTeamModalProps {
   isOpen: boolean;
@@ -160,7 +161,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({
       );
       onClose();
     } catch (err) {
-      console.error("Error updating team:", err);
+      printError("Error updating team:", err);
     } finally {
       setIsSubmitting(false);
     }

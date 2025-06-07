@@ -7,6 +7,7 @@ import { useSearchUsersProject } from "@/hooks/useSearchUsersProject";
 import type { User as UserType } from "@/hooks/useUsers";
 import { useProjectUsers } from "@/contexts/ProjectusersContext"
 import AvatarProfileIcon from "@/components/Avatar/AvatarDisplay"
+import { printError } from "@/utils/debugLogger";
 
 
 interface CreateTeamModalProps {
@@ -119,7 +120,7 @@ export const CreateTeamModal: React.FC<CreateTeamModalProps> = ({
       setDescription("");
       setSelectedUsers([]);
     } catch (err) {
-      console.error("Error creating team:", err);
+      printError("Error creating team:", err);
     } finally {
       setIsSubmitting(false);
     }

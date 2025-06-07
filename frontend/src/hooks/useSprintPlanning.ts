@@ -7,6 +7,7 @@ import type { Task } from "@/types/task"
 import type { UserStory } from "@/types/userstory"
 import { getProjectUserStories } from "@/utils/getProjectUserStories"
 import { getProjectTasks } from "@/utils/getProjectTasks"
+import { printError } from "@/utils/debugLogger"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ""
 
@@ -84,7 +85,7 @@ export const useSprintPlanning = () => {
           setSprint(newSprint)
         }
       } catch (err) {
-        console.error("Error fetching sprint data:", err)
+        printError("Error fetching sprint data:", err)
         setError("Failed to load sprint data. Please try again.")
       } finally {
         setIsLoading(false)
@@ -197,7 +198,7 @@ export const useSprintPlanning = () => {
 
       return savedSprint
     } catch (err) {
-      console.error("Error saving sprint:", err)
+      printError("Error saving sprint:", err)
       setError("Failed to save sprint. Please try again.")
       return null
     } finally {

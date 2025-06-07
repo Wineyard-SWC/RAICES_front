@@ -1,6 +1,6 @@
 "use client";
 
-import { print } from "@/utils/debugLogger";
+import { print, printError } from "@/utils/debugLogger";
 import { useState, useEffect, useCallback } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_AVATAR_API || 'http://localhost:8009';
@@ -96,7 +96,7 @@ export const useSessionResults = (sessionRelationId: string | null) => {
       
       setData(results);
     } catch (err) {
-      console.error("❌ Error fetching session results:", err);
+      printError("❌ Error fetching session results:", err);
       setError(err instanceof Error ? err.message : "Failed to load session results");
     } finally {
       setLoading(false);

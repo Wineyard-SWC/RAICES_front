@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from "react";
 import { useUserRoles } from "./userRolesContext";
 import { useUser } from "./usercontext";
-import { print } from "@/utils/debugLogger";
+import { print, printError } from "@/utils/debugLogger";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -113,7 +113,7 @@ export const UserPermissionsProvider = ({ children }: { children: ReactNode }) =
       
       return await response.json();
     } catch (error) {
-      console.error("Error obteniendo bitmask:", error);
+      printError("Error obteniendo bitmask:", error);
       return 0;
     }
   }, []);
@@ -187,7 +187,7 @@ export const UserPermissionsProvider = ({ children }: { children: ReactNode }) =
       print("Permisos cargados:", permissionsMap);
       
     } catch (error) {
-      console.error("Error cargando permisos del usuario:", error);
+      printError("Error cargando permisos del usuario:", error);
       setErrorState(prev => ({
         ...prev,
         [userId]: error instanceof Error ? error.message : "Error desconocido al cargar permisos"
@@ -235,7 +235,7 @@ export const UserPermissionsProvider = ({ children }: { children: ReactNode }) =
       setPermissionsByProject(permissionsMap);
       
     } catch (error) {
-      console.error("Error refrescando permisos del usuario:", error);
+      printError("Error refrescando permisos del usuario:", error);
       setErrorState(prev => ({
         ...prev,
         [userId]: error instanceof Error ? error.message : "Error desconocido al refrescar permisos"

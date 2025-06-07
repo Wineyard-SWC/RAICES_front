@@ -5,6 +5,7 @@ import { useState, useEffect } from "react"
 import { X } from "lucide-react"
 import type { Project } from "@/types/project"
 import { useUpdateProject } from "@/hooks/useUpdateProjects"
+import { printError } from "@/utils/debugLogger"
 
 interface EditProjectModalProps {
   isOpen: boolean
@@ -87,7 +88,7 @@ const EditProjectModal = ({ isOpen, onClose, project }: EditProjectModalProps) =
         }, 1500)
       }
     } catch (error) {
-      console.error("Error updating project:", error)
+      printError("Error updating project:", error)
     } finally {
       setIsSubmitting(false)
     }

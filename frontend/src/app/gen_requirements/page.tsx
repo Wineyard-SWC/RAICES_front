@@ -18,6 +18,7 @@ import ConfirmDialog from '@/components/confimDialog';
 import { useRouter } from 'next/navigation';
 import useToast from '@/hooks/useToast';
 import Toast from '@/components/toast';
+import { printError } from '@/utils/debugLogger';
 
 export default function RequirementsPage() {
   const { projectDescription, setProjectDescription } = useProjectContext();
@@ -52,7 +53,7 @@ export default function RequirementsPage() {
       await handleSave(requirements, selectedIds, selectedProject);
       showToast('Requirements saved successfully!', 'success');
     } catch (error) {
-      console.error('Error saving requirements:', error);
+      printError('Error saving requirements:', error);
       showToast('Error saving requirements. Please try again.', 'error');
     } finally {
       setIsSaving(false);

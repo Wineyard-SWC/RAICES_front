@@ -1,5 +1,6 @@
 "use client"
 
+import { printError } from "@/utils/debugLogger"
 import { useState } from "react"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
@@ -69,7 +70,7 @@ export const useJoinProject = (userId: string | null) => {
 
       return true
     } catch (err) {
-      console.error("Error joining project:", err)
+      printError("Error joining project:", err)
       setError("Could not join the project")
       return false
     } finally {

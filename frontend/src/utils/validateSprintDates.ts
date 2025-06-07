@@ -1,5 +1,6 @@
 import type { Sprint } from "@/types/sprint";
 import { getProjectSprints } from "@/utils/getProjectSprints";
+import { printError } from "./debugLogger";
 
 export interface DateValidation {
   isValid: boolean;
@@ -75,7 +76,7 @@ export async function validateSprintDates(
     };
 
   } catch (error) {
-    console.error("Error validating sprint dates:", error);
+    printError("Error validating sprint dates:", error);
     return {
       isValid: true,
       message: "Warning: Could not validate against existing sprints."

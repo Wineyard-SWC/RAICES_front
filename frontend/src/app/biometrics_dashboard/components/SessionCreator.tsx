@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/card";
 import { Label, Select, Textarea } from "@headlessui/react";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@radix-ui/react-checkbox";
+import { printError } from "@/utils/debugLogger";
 
 interface SessionCreatorProps {
   onBack: () => void;
@@ -54,7 +55,7 @@ export default function SessionCreator({ onBack, onCreateSession }: SessionCreat
       setQuestions(generatedQuestions);
       setStep("review");
     } catch (error) {
-      console.error("Error generating questions:", error);
+      printError("Error generating questions:", error);
     }
   };
 

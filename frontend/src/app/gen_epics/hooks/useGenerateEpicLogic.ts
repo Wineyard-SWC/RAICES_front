@@ -16,6 +16,7 @@ import { useSelectedUserStoriesContext } from '@/contexts/selecteduserstories';
 import { useUserStoryContext } from '@/contexts/userstorycontext';
 import saveRequirements from '@/app/gen_requirements/utils/handleSave';
 import { useAssignmentContext } from '@/contexts/userstoriesepicsrelationshipcontext';
+import { printError } from '@/utils/debugLogger';
 
 
 
@@ -211,7 +212,7 @@ export const useGenerateEpicsLogic = (
         await postEpics(cleaned, selectedProject!);
       }
     } catch (err) {
-      console.error('Error while saving the epics:');
+      printError('Error while saving the epics:');
     }
   };
 
@@ -275,7 +276,7 @@ export const useGenerateEpicsLogic = (
         setSelectedIds(importedReqs.map(r => r.uuid));
       }
     } catch (err) {
-      console.error("Error while importing requirements", err);
+      printError("Error while importing requirements", err);
     }
   };
   

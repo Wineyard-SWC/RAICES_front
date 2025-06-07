@@ -21,6 +21,7 @@ import saveRequirements from '@/app/gen_requirements/utils/handleSave';
 import { useUserStories} from "@/contexts/saveduserstoriescontext";
 import { useAssignmentContext } from '@/contexts/userstoriesepicsrelationshipcontext';
 import { getProjectUserStories } from '@/utils/getProjectUserStories';
+import { printError } from '@/utils/debugLogger';
  
 
 export const useGenerateUserStoriesLogic = () => {
@@ -97,7 +98,7 @@ export const useGenerateUserStoriesLogic = () => {
       setRequirements(importedReqs);
       setSelectedIds(importedReqs.map(r => r.uuid));
     } catch (err) {
-      console.error("Error while importing requirements");
+      printError("Error while importing requirements");
     }
   };
 
@@ -243,7 +244,7 @@ export const useGenerateUserStoriesLogic = () => {
       setUserStories(parsed);
       userStoryContext.setUserStoriesForProject(selectedProject!, userStoriesResponse);
   } catch (err) {
-    console.error("Error while fetching user stories:", err);
+    printError("Error while fetching user stories:", err);
   }
   }
 
@@ -311,7 +312,7 @@ export const useGenerateUserStoriesLogic = () => {
       
       shouldRestoreAssignments.current = true;
     } catch (err) {
-      console.error("Error while importing epics and requirements:", err);
+      printError("Error while importing epics and requirements:", err);
     }
   };
 

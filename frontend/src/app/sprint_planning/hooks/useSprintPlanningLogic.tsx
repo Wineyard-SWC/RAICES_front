@@ -12,7 +12,7 @@ import { useAvatar } from "@/contexts/AvatarContext";
 import { UserRolesProvider } from "@/contexts/userRolesContext";
 import { getProjectSprints } from "@/utils/getProjectSprints";
 import { validateSprintDates } from "@/utils/validateSprintDates";
-import { print } from "@/utils/debugLogger";
+import { print, printError } from "@/utils/debugLogger";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 const AVATAR_API = process.env.NEXT_PUBLIC_AVATAR_API!;
@@ -39,7 +39,7 @@ async function fetchAvatar(userId: string): Promise<string | null> {
     print(`✅ Avatar fetched for user: ${userId}`, avatarUrl);
     return avatarUrl;
   } catch (err) {
-    console.error(`❌ Error fetching avatar for user: ${userId}`, err);
+    printError(`❌ Error fetching avatar for user: ${userId}`, err);
     return null;
   }
 }
@@ -52,7 +52,7 @@ async function enrichMemberWithAvatar(member: SprintMember): Promise<SprintMembe
       avatar: avatarUrl || member.avatar || null,
     };
   } catch (error) {
-    console.error(`Error enriching member ${member.id}:`, error);
+    printError(`Error enriching member ${member.id}:`, error);
     return member;
   }
 }
@@ -68,7 +68,7 @@ async function fetchProjectOwner(projectId: string): Promise<SprintMember | null
   try {
     const res = await fetch(`${API_URL}/project_users/project/${projectId}`);
     if (!res.ok) {
-      console.error("Error fetching project users:", res.status);
+      printError("Error fetching project users:", res.status);
       return null;
     }
 
@@ -89,7 +89,7 @@ async function fetchProjectOwner(projectId: string): Promise<SprintMember | null
 
     return baseMember;
   } catch (error) {
-    console.error("Error in fetchProjectOwner:", error);
+    printError("Error in fetchProjectOwner:", error);
     return null;
   }
 }
@@ -225,7 +225,7 @@ export function useSprintPlanningLogic() {
             30 * 60 * 1000  
           );            
         } catch (err) {
-          console.error("Error loading tasks from context:", err);
+          printError("Error loading tasks from context:", err);
           projectTasks = await getProjectTasks(projectId);
         }
         
@@ -412,7 +412,7 @@ export function useSprintPlanningLogic() {
         }
 
       } catch (e: any) {
-        console.error("❌ [DEBUG] Error in load process:", e);
+        printError("❌ [DEBUG] Error in load process:", e);
         setError(e.message);
       } finally {
         setLoading(false);
@@ -495,7 +495,7 @@ export function useSprintPlanningLogic() {
         });
         if (!taskRes.ok) {
           const taskErrorText = await taskRes.text();
-          console.error("Error updating tasks:", taskErrorText);
+          printError("Error updating tasks:", taskErrorText);
           throw new Error(`Tasks update failed: ${taskRes.status} - ${taskErrorText}`);
         }
         const updatedFromServer: Task[] = await taskRes.json();
@@ -506,7 +506,7 @@ export function useSprintPlanningLogic() {
         // print("Tasks updated before saving sprint");
       }
     } catch (err) {
-      console.error("Error updating tasks before saving sprint:", err);
+      printError("Error updating tasks before saving sprint:", err);
       // Puedes decidir si quieres continuar o abortar el guardado del sprint
     }
 
@@ -588,7 +588,7 @@ export function useSprintPlanningLogic() {
 
       if (!res.ok) {
         const errorText = await res.text();
-        console.error("Server response:", errorText);
+        printError("Server response:", errorText);
         throw new Error(`Save failed: ${res.status} - ${errorText}`);
       }
 
@@ -600,7 +600,7 @@ export function useSprintPlanningLogic() {
       return saved;
 
     } catch (e: any) {
-      console.error("Error saving sprint:", e);
+      printError("Error saving sprint:", e);
       setError(e.message);
       return null;
     } finally {

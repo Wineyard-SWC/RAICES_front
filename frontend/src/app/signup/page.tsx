@@ -13,7 +13,7 @@ import { useAuth } from "@/hooks/useAuth"
 import { registerAvatarUser } from '@/utils/Avatar/userConfig';
 import { useAvatar } from '@/contexts/AvatarContext'; // Importar contexto de avatar
 import { useInitializeUserRoles } from '@/hooks/usePostDefaultRoles'; // Importar inicialización de roles
-import { print } from '@/utils/debugLogger';
+import { print, printError } from '@/utils/debugLogger';
 
 export default function CreateAccountPage() {
   const [firstName, setFirstName] = useState('');
@@ -116,7 +116,7 @@ export default function CreateAccountPage() {
       }, 3000);
   
     } catch (err) {
-      console.error("Signup error:", err);
+      printError("Signup error:", err);
       setError('Error creating account: ' + (err as Error).message);
     } finally {
       setTimeout(() => setIsSubmitting(false), 3000); // Rehabilitar botón después de 3s

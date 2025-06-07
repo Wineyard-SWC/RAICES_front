@@ -10,6 +10,7 @@ import { Comments } from "@/types/userstory"
 import { useKanban } from "@/contexts/unifieddashboardcontext"
 import { isUserStory, isBug } from "@/types/taskkanban"
 import { useUser } from "@/contexts/usercontext"
+import { printError } from "@/utils/debugLogger"
 
 interface AddCommentModalProps {
   onClose: () => void
@@ -94,7 +95,7 @@ export default function AddCommentModal({
       onCommentsChange(updatedComments)
       setComment("")
     } catch (error) {
-      console.error("Error adding comment:", error)
+      printError("Error adding comment:", error)
     }
   }
 
@@ -114,7 +115,7 @@ export default function AddCommentModal({
 
       onCommentsChange(updatedComments)
     } catch (error) {
-      console.error("Error deleting comment:", error)
+      printError("Error deleting comment:", error)
     }
   }
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { printError } from "@/utils/debugLogger";
 import { useState } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -47,7 +48,7 @@ export const useCreateProjectUsers = () => {
 
       const failedResponses = responses.filter((res) => !res.ok);
       if (failedResponses.length > 0) {
-        console.error("Failed responses:", failedResponses);
+        printError("Failed responses:", failedResponses);
         throw new Error(
           `Failed to create ${failedResponses.length} project-user relations`
         );
@@ -56,7 +57,7 @@ export const useCreateProjectUsers = () => {
     //   console.log("[CREATE PROJECT USERS] All relations created successfully.");
       return true;
     } catch (err) {
-      console.error("Error creating project-user relations:", err);
+      printError("Error creating project-user relations:", err);
       setError(err instanceof Error ? err.message : "Unknown error");
       return false;
     } finally {

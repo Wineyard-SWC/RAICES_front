@@ -5,6 +5,7 @@ import { getProjectSprints } from "@/utils/getProjectSprints";
 import { getProjectUserStories } from "@/utils/getProjectUserStories";
 import { getProjectTasks } from "@/utils/getProjectTasks";
 import { getProjectBugs } from "@/utils/getProjectBugs";
+import { printError } from "./debugLogger";
 
 export interface SprintMetric {
   sprintId: string;
@@ -164,7 +165,7 @@ export async function getProjectSprintMetrics(projectId: string): Promise<Sprint
     return sprintMetrics;
     
   } catch (error) {
-    console.error("Error obteniendo métricas de los sprints:", error);
+    printError("Error obteniendo métricas de los sprints:", error);
     return [];
   }
 }

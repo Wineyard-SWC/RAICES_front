@@ -29,6 +29,8 @@ export function printWarn(...args: any[]) {
  * Same as print but for errors (often you'll want these regardless of debug setting)
  */
 export function printError(...args: any[]) {
-  // You might want errors to always show, but you can make this conditional too
-  console.error(...args);
+  // You might want errors to always show, but you can make this conditional too}
+  if (isDebugEnabled) {
+    console.error(...args);
+  }
 }

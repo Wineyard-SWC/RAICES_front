@@ -1,4 +1,5 @@
 import { Bug} from "@/types/bug"
+import { printError } from "./debugLogger";
 
 const apiURL = process.env.NEXT_PUBLIC_API_URL!
 
@@ -20,7 +21,7 @@ export const getProjectBugs = async (projectId: string): Promise<Bug[]> => {
       }
       
     catch (error) {
-    console.error('Error loading bugs:', error);
+    printError('Error loading bugs:', error);
     return []; 
 }
 }

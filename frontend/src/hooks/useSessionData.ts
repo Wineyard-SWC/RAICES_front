@@ -7,7 +7,7 @@ import { CHANNELS } from "@/utils/muse/channels";
 import { useBiometricContext } from "@/contexts/BiometricContext";
 import { useSessionRelation } from "./useSessionRelation";
 import { useKanban } from "@/contexts/unifieddashboardcontext"; // 👈 Agregar este import
-import { print } from "@/utils/debugLogger";
+import { print, printError } from "@/utils/debugLogger";
 
 const AVATAR_API = process.env.NEXT_PUBLIC_AVATAR_API;
 
@@ -100,7 +100,7 @@ export function useSessionData() {
         });
         
         if (!res.ok) {
-            console.error("Error submitting session:", res.status, res.statusText);
+            printError("Error submitting session:", res.status, res.statusText);
             print("Error payload:", payload);
             print("Detalles de validación:", await res.json());
         }

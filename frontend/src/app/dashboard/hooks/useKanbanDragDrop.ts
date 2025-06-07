@@ -3,6 +3,7 @@ import { useCallback } from "react"
 import { TaskColumns } from "@/types/taskkanban"
 import { KanbanStatus } from "@/types/task"
 import { UseKanbanDragDropProps } from "../interfaces/kanbaninterfaces"
+import { printError } from "@/utils/debugLogger"
 
 
 const kanbanStatusMap: Record<string, KanbanStatus> = {
@@ -31,7 +32,7 @@ export const useKanbanDragDrop = ({ kanbanData, onStatusUpdate }: UseKanbanDragD
     const draggedItem = kanbanData[sourceCol][source.index]
     
     if (!draggedItem) {
-      console.error('Dragged item not found')
+      printError('Dragged item not found')
       return
     }
 
@@ -39,14 +40,14 @@ export const useKanbanDragDrop = ({ kanbanData, onStatusUpdate }: UseKanbanDragD
       const newStatus = kanbanStatusMap[destCol]
       
       if (!newStatus) {
-        console.error('Invalid destination column:', destCol)
+        printError('Invalid destination column:', destCol)
         return
       }
 
       try {
         await onStatusUpdate(draggedItem, newStatus)
       } catch (error) {
-        console.error('Error updating item status during drag:', error)
+        printError('Error updating item status during drag:', error)
       }
     }
   }, [kanbanData, onStatusUpdate])

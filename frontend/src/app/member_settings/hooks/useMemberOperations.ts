@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import useToast from "@/hooks/useToast";
+import { printError } from "@/utils/debugLogger";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -47,7 +48,7 @@ export const useMemberOperations = ({
       await refreshMembers();
       return true;
     } catch (error) {
-      console.error('Error updating role:', error);
+      printError('Error updating role:', error);
       showToast("Failed to update role", "error");
       return false;
     } finally {
@@ -80,7 +81,7 @@ export const useMemberOperations = ({
       await refreshMembers();
       return true;
     } catch (error) {
-      console.error('Error deleting member:', error);
+      printError('Error deleting member:', error);
       showToast("Failed to remove member", "error");
       return false;
     } finally {

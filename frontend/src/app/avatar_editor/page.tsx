@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAvatar } from '@/contexts/AvatarContext';
 import { CheckCircle, ArrowLeft } from 'lucide-react';
 import { useUpdateAvatar } from '../avatar_creator/hooks/useUpdateAvatar';
-import { print } from '@/utils/debugLogger';
+import { print, printError } from '@/utils/debugLogger';
 
 // Estilo para el iframe del editor
 const editorStyle = { width: '100%', height: '100vh', border: 'none' };
@@ -100,7 +100,7 @@ function AvatarEditorContent() {
       }, 1500);
       
     } catch (error) {
-      console.error('Error updating avatar:', error);
+      printError('Error updating avatar:', error);
       alert('There was an error updating your avatar. Please try again.');
       router.push('/settings?tab=profile');
     }

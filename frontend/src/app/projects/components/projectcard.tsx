@@ -28,7 +28,7 @@ import EditProjectModal from "./edit_project_modal"
 import DeleteProjectModal from "./delete_project_modal"
 import LeaveProjectModal from "./leave_project_modal"
 import { useProjectUsers } from "@/contexts/ProjectusersContext"
-import { print } from "@/utils/debugLogger"
+import { print, printError } from "@/utils/debugLogger"
 
 
 // Modales
@@ -115,7 +115,7 @@ export default function ProjectCard({
     loadUsersIfNeeded(id).then(users => {
       print(`Cargados ${users.length} usuarios para el proyecto ${id}`);
     }).catch(err => {
-      console.error("Error al cargar los usuarios del proyecto:", err);
+      printError("Error al cargar los usuarios del proyecto:", err);
     });
     
     // Cargar los permisos del usuario para este proyecto
@@ -124,7 +124,7 @@ export default function ProjectCard({
         print(`Permisos cargados para el usuario en el proyecto ${id}`);
         print("Permisos bitmask son ", localStorage.getItem("userPermissionsBitmask"));
       }).catch(err => {
-        console.error("Error al cargar los permisos del usuario:", err);
+        printError("Error al cargar los permisos del usuario:", err);
       });
     }
     

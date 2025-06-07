@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { TaskColumns } from "@/types/taskkanban";
 import { Task } from "@/types/task";
+import { printError } from "@/utils/debugLogger";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -47,7 +48,7 @@ export const useProjectTasks = (projectId: string | null) => {
 
       setTasks(grouped);
     } catch (err) {
-      console.error("Error fetching tasks:", err);
+      printError("Error fetching tasks:", err);
     } finally {
       setLoading(false);
     }

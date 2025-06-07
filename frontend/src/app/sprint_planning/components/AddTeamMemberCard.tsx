@@ -6,7 +6,7 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { SprintMember } from "@/types/sprint";
 import DefaultLoading from "@/components/animations/DefaultLoading";
-import { print } from "@/utils/debugLogger";
+import { print, printError } from "@/utils/debugLogger";
 
 interface ProjectUser {
   id: string;
@@ -79,7 +79,7 @@ export default function AddTeamMemberCard({ projectId, already, onAdd }: Props) 
         setUsers(filtered); 
       })
       .catch(e => {
-        console.error("Error loading users:", e);
+        printError("Error loading users:", e);
         setError(e.message);
       })
       .finally(() => setLoading(false));
@@ -88,7 +88,7 @@ export default function AddTeamMemberCard({ projectId, already, onAdd }: Props) 
   const handleAdd = () => {
     const u = users.find(x => x.id === selected);
     if (!u) {
-      console.error("User not found:", selected);
+      printError("User not found:", selected);
       return;
     }
     

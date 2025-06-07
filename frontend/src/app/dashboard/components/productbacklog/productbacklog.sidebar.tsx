@@ -19,6 +19,7 @@ import CommentsSection from "../detailedcardviews/commentssection";
 import { useUserStories } from "@/contexts/saveduserstoriescontext";
 import { useTasks } from "@/contexts/taskcontext";
 import { Sprint } from "@/types/sprint";
+import { printError } from "@/utils/debugLogger";
 
 // Definir constante para el permiso REQ_MANAGE
 const PERMISSION_REQ_MANAGE = 1 << 2;
@@ -122,7 +123,7 @@ const TaskSidebar = ({ isOpen, onClose, task }: TaskSidebarProps) => {
           
           setAvailableUsers(formattedUsers);
         } catch (error) {
-          console.error("Error fetching data:", error);
+          printError("Error fetching data:", error);
           setAvailableSprints([]);
           setAvailableEpics([]);
           setAvailableUsers([]);
@@ -187,7 +188,7 @@ const TaskSidebar = ({ isOpen, onClose, task }: TaskSidebarProps) => {
       setIsEditMode(false);
       setValidationErrors({}); // Clear any previous errors on successful save
     } catch (error) {
-      console.error('Error updating task:', error);
+      printError('Error updating task:', error);
     }
   };
 

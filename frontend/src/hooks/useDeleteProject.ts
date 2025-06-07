@@ -1,5 +1,6 @@
 "use client"
 
+import { printError } from "@/utils/debugLogger"
 import { useState } from "react"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
@@ -28,7 +29,7 @@ export const useDeleteProject = () => {
 
       return true
     } catch (err) {
-      console.error("Error al eliminar el proyecto:", err)
+      printError("Error al eliminar el proyecto:", err)
       setError("No se pudo eliminar el proyecto")
       return false
     } finally {

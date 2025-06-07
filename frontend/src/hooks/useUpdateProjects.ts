@@ -1,5 +1,6 @@
 "use client"
 
+import { printError } from "@/utils/debugLogger"
 import { useState } from "react"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
@@ -48,7 +49,7 @@ export const useUpdateProject = () => {
       const updatedProject = await response.json()
       return updatedProject
     } catch (err) {
-      console.error("Error al actualizar el proyecto:", err)
+      printError("Error al actualizar el proyecto:", err)
       setError("No se pudo actualizar el proyecto")
       return null
     } finally {

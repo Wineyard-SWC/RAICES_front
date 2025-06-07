@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button"
 import ConfirmDialog from "@/components/confimDialog";
 import { useKanban } from "@/contexts/unifieddashboardcontext";
 import { isUserStory,isBug } from "@/types/taskkanban";
+import { printError } from "@/utils/debugLogger";
 
 
 interface User {
@@ -156,7 +157,7 @@ export default function BacklogCard({
       }
       setConfirmState({ open: false, action: null });
     } catch (error) {
-      console.error("Error updating status:", error);
+      printError("Error updating status:", error);
     }
   };
 
@@ -187,7 +188,7 @@ export default function BacklogCard({
       
       return userData;
     } catch (error) {
-      console.error(`Error fetching user ${userId}:`, error);
+      printError(`Error fetching user ${userId}:`, error);
       return null;
     }
   };

@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useCallback } from "react";
 import type { RoadmapItem, SavedRoadmap } from "@/types/roadmap";
 import { deleteRoadmap as deleteRoadmapFromDB } from "@/app/roadmap/utils/endpointsDB/deleteRoadmap";
 import { getRoadmaps } from "@/app/roadmap/utils/endpointsDB/getRoadmaps";
+import { printError } from "@/utils/debugLogger";
 
 type RoadmapsByProjectId = Record<string, {
   roadmaps: SavedRoadmap[],
@@ -79,7 +80,7 @@ export const RoadmapProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }));
       return fetchedRoadmaps;
     } catch (err) {
-      console.error(`Error fetching roadmaps for project ${projectId}:`, err);
+      printError(`Error fetching roadmaps for project ${projectId}:`, err);
       const errorMessage = err instanceof Error ? err.message : "Failed to load roadmaps";
       setErrorState(prev => ({ ...prev, [projectId]: errorMessage }));
       return cachedData?.roadmaps || [];
@@ -108,7 +109,7 @@ export const RoadmapProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }));
       return fetchedRoadmaps;
     } catch (err) {
-      console.error(`Error refreshing roadmaps for current project`);
+      printError(`Error refreshing roadmaps for current project`);
       const errorMessage = err instanceof Error ? err.message : "Failed to refresh roadmaps";
       setErrorState(prev => ({ ...prev, [projectId]: errorMessage }));
       return roadmapsByProject[projectId]?.roadmaps || [];
@@ -132,7 +133,7 @@ export const RoadmapProvider: React.FC<{ children: React.ReactNode }> = ({ child
         };
       });
     } catch (err) {
-      console.error(`Error deleting roadmap`);
+      printError(`Error deleting roadmap`);
     }
   }, []);
 

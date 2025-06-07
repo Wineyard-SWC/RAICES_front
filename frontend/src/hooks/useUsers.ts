@@ -1,5 +1,6 @@
 "use client"
 
+import { printError } from "@/utils/debugLogger"
 import { useState, useEffect, useRef, useCallback } from "react"
 
 export interface User {
@@ -76,7 +77,7 @@ export const useUsers = () => {
       } catch (err) {
         // Solo establecer error si no es cancelación
         if (!(err instanceof DOMException && err.name === "AbortError")) {
-          console.error("Error al buscar usuarios:", err)
+          printError("Error al buscar usuarios:", err)
           setError("No se pudieron cargar los usuarios")
           setUsers([])
         }

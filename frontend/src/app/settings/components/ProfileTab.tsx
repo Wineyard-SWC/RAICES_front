@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input"
 import SettingsAvatar from "./avatar/SettingsAvatar"
 import { Label } from "./ui/label"
 import Toast from "@/components/toast"  
-import { print } from "@/utils/debugLogger"
+import { print, printError } from "@/utils/debugLogger"
 
 export default function ProfileTab() {
   // Contextos
@@ -79,7 +79,7 @@ export default function ProfileTab() {
     if (userId && (!avatarUrl || avatarUrl === '')) {
       print("Avatar no encontrado en contexto, cargando para usuario:", userId);
       fetchAvatar(userId).catch(err => {
-        console.error("Error cargando avatar:", err);
+        printError("Error cargando avatar:", err);
       });
     }
   }, [userId, avatarUrl, fetchAvatar]);

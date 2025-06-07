@@ -8,6 +8,7 @@ import { useSelectedUserStoriesContext } from '@/contexts/selecteduserstories';
 import { Requirement } from '@/types/requirement';
 import { useGenerateRequirements } from '@/hooks/useGenerateRequirements';
 import { parseRequirementsFromAPI } from '@/utils/parseRequirementsFromApi';
+import { printError } from '@/utils/debugLogger';
 
 export const useRequirementsLogic = ({
   projectDescription,
@@ -47,7 +48,7 @@ export const useRequirementsLogic = ({
         const parsed = parseRequirementsFromAPI(generatedOutput);
         setRequirements(parsed);
       } catch (err) {
-        console.error("Error parsing generated requirements", err);
+        printError("Error parsing generated requirements", err);
       }
     }
   }, [generatedOutput, setRequirements]);

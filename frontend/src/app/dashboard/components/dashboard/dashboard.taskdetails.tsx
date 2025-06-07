@@ -8,6 +8,7 @@ import { useKanban } from "@/contexts/unifieddashboardcontext"
 import { useMemo } from "react"
 import { Comment, Task } from "@/types/task"
 import { UserStory } from "@/types/userstory"
+import { printError } from "@/utils/debugLogger"
 
 
 interface TaskDetailModalProps {
@@ -85,7 +86,7 @@ const TaskDetailModal = ({ open, onClose, task }: TaskDetailModalProps) => {
       
       setNewComment("")
     } catch (error) {
-      console.error('Error adding comment:', error)
+      printError('Error adding comment:', error)
     }
   }
 
@@ -113,7 +114,7 @@ const TaskDetailModal = ({ open, onClose, task }: TaskDetailModalProps) => {
         })
       }
     } catch (error) {
-      console.error('Error deleting comment:', error)
+      printError('Error deleting comment:', error)
     }
   }
 

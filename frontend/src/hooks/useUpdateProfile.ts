@@ -9,7 +9,7 @@ import {
 } from 'firebase/auth'
 import { auth } from '@/utils/firebaseConfig'
 import { useUser } from '@/contexts/usercontext'
-import { print } from '@/utils/debugLogger'
+import { print, printError } from '@/utils/debugLogger'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
@@ -67,7 +67,7 @@ export const useUpdateProfile = () => {
       print('✅ [DEBUG] Re-authentication successful')
       return {success: true}
     } catch (error: any) {
-      console.error('❌ [DEBUG] Re-authentication failed:', error)
+      printError('❌ [DEBUG] Re-authentication failed:', error)
       
       let errorMessage: string
       if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
@@ -112,7 +112,7 @@ export const useUpdateProfile = () => {
 
       return {success: true}
     } catch (error: any) {
-      console.error('Error updating password:', error)
+      printError('Error updating password:', error)
       
       let errorMessage: string
       if (error.code === 'auth/weak-password') {
@@ -167,7 +167,7 @@ export const useUpdateProfile = () => {
           const errorData = await response.json()
           errorMessage = errorData.detail || errorData.message || errorMessage
         } catch (e) {
-          console.error('Error parsing response:', e)
+          printError('Error parsing response:', e)
         }
         
         return {success: false, errorMessage}
@@ -178,7 +178,7 @@ export const useUpdateProfile = () => {
       
       return {success: true}
     } catch (error: any) {
-      console.error('Error updating name:', error)
+      printError('Error updating name:', error)
       setError(error.message || 'Failed to update name')
       return {success: false, errorMessage: error.message || 'Failed to update name'}
     }
@@ -220,7 +220,7 @@ export const useUpdateProfile = () => {
 
       return { success, errorMessage }
     } catch (error: any) {
-      console.error('Error updating profile:', error)
+      printError('Error updating profile:', error)
       const message = error.message || 'An unexpected error occurred'
       setError(message)
       return { success: false, errorMessage: message }

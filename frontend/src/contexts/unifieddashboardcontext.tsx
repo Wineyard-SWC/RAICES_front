@@ -13,7 +13,7 @@ import { getProjectTasks } from "@/utils/postTasks"
 import { getProjectBugs } from "@/utils/getProjectBugs" 
 import { useBugs } from "./bugscontext"
 import { Bug } from "@/types/bug"
-import { print } from "@/utils/debugLogger"
+import { print, printError } from "@/utils/debugLogger"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
@@ -324,7 +324,7 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       if (!response.ok) {
         const errorData = await response.text()
-        console.error('Backend error:', errorData)
+        printError('Backend error:', errorData)
         throw new Error(`Failed to update task: ${response.status} ${errorData}`)
       }
 
@@ -342,14 +342,14 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to update bug'))
-      console.error('Error updating bug:', err)
+      printError('Error updating bug:', err)
       
       // Revert optimistic update by fetching fresh data
       try {
         const freshData = await getProjectBugs(currentProjectId)
         bugsContext.setBugsForProject(currentProjectId, freshData)
       } catch (refreshErr) {
-        console.error('Error refreshing after failed update:', refreshErr)
+        printError('Error refreshing after failed update:', refreshErr)
       }
     }
   }, [currentProjectId, getUserInfo, storiesContext])
@@ -383,13 +383,13 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to update task status'))
-      console.error('Error updating task status:', err)
+      printError('Error updating task status:', err)
       
       try {
         const freshData = await getProjectBugs(currentProjectId)
         bugsContext.setBugsForProject(currentProjectId, freshData)
       } catch (refreshErr) {
-        console.error('Error refreshing after failed update:', refreshErr)
+        printError('Error refreshing after failed update:', refreshErr)
       }
     }
   }, [currentProjectId, bugsContext])
@@ -437,7 +437,7 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     );
     if (!response.ok) {
       const errorData = await response.text();
-      console.error('Backend error:', errorData);
+      printError('Backend error:', errorData);
       throw new Error(`Failed to update task: ${response.status} ${errorData}`);
     }
 
@@ -455,14 +455,14 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   } catch (err) {
     setError(err instanceof Error ? err : new Error('Failed to update task'));
-    console.error('Error updating task:', err);
+    printError('Error updating task:', err);
 
     // fallback: recargar todo si algo falla
     try {
       const freshData = await getProjectTasks(currentProjectId);
       tasksContext.setTasksForProject(currentProjectId, freshData);
     } catch (refreshErr) {
-      console.error('Error refreshing after failed update:', refreshErr);
+      printError('Error refreshing after failed update:', refreshErr);
     }
   }
 }, [currentProjectId, getUserInfo, tasksContext]);
@@ -514,7 +514,7 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       await updateTask(taskId, fullTaskData)
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to update comments'))
-      console.error('Error updating comments:', err)
+      printError('Error updating comments:', err)
     }
   }, [currentProjectId, tasksContext, updateTask, getUserInfo, isTask])
 
@@ -550,13 +550,13 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to update task status'))
-      console.error('Error updating task status:', err)
+      printError('Error updating task status:', err)
       
       try {
         const freshData = await getProjectTasks(currentProjectId)
         tasksContext.setTasksForProject(currentProjectId, freshData)
       } catch (refreshErr) {
-        console.error('Error refreshing after failed update:', refreshErr)
+        printError('Error refreshing after failed update:', refreshErr)
       }
     }
   }, [currentProjectId, getUserInfo, tasksContext])
@@ -585,7 +585,7 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       if (!response.ok) {
         const errorData = await response.text()
-        console.error('Backend error:', errorData)
+        printError('Backend error:', errorData)
         throw new Error(`Failed to update task: ${response.status} ${errorData}`)
       }
 
@@ -603,14 +603,14 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to update task'))
-      console.error('Error updating task:', err)
+      printError('Error updating task:', err)
       
       // Revert optimistic update by fetching fresh data
       try {
         const freshData = await getProjectUserStories(currentProjectId)
         storiesContext.setUserStoriesForProject(currentProjectId, freshData)
       } catch (refreshErr) {
-        console.error('Error refreshing after failed update:', refreshErr)
+        printError('Error refreshing after failed update:', refreshErr)
       }
     }
   }, [currentProjectId, getUserInfo, storiesContext])
@@ -641,14 +641,14 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to update story status'))
-      console.error('Error updating story status:', err)
+      printError('Error updating story status:', err)
       
       // Revert optimistic update
       try {
         const freshData = await getProjectUserStories(currentProjectId)
         storiesContext.setUserStoriesForProject(currentProjectId, freshData)
       } catch (refreshErr) {
-        console.error('Error refreshing after failed update:', refreshErr)
+        printError('Error refreshing after failed update:', refreshErr)
       }
     }
   }, [currentProjectId, storiesContext])
@@ -677,7 +677,7 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to update story comments'))
-      console.error('Error updating story comments:', err)
+      printError('Error updating story comments:', err)
     }
   }, [currentProjectId, storiesContext])
 
@@ -708,7 +708,7 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       if (!response.ok) {
         const errorData = await response.text()
-        console.error('Backend error:', errorData)
+        printError('Backend error:', errorData)
         throw new Error(`Failed to create task: ${response.status} ${errorData}`)
       }
 
@@ -754,7 +754,7 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to delete item'))
-      console.error('Error deleting item:', err)
+      printError('Error deleting item:', err)
     }
   }, [currentProjectId, tasksContext, storiesContext, bugsContext])
 
@@ -774,7 +774,7 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to delete story'))
-      console.error('Error deleting story:', err)
+      printError('Error deleting story:', err)
     }
   }, [currentProjectId, storiesContext])
 
@@ -839,7 +839,7 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       await tasksContext.loadTasksIfNeeded(projectId, fetchTasks, 1000 * 60 * 5)
     } catch (err) {
-      console.error('Error refreshing tasks:', err)
+      printError('Error refreshing tasks:', err)
       setError(err instanceof Error ? err : new Error('Failed to refresh tasks'))
     }
   }, [tasksContext, fetchTasks, loadingProjectId])
@@ -853,7 +853,7 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       await storiesContext.loadUserStoriesIfNeeded(projectId, getProjectUserStories, 1000 * 60 * 5)
     } catch (err) {
-      console.error('Error refreshing stories:', err)
+      printError('Error refreshing stories:', err)
       setError(err instanceof Error ? err : new Error('Failed to refresh stories'))
     }
   }, [storiesContext, loadingProjectId])
@@ -863,7 +863,7 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       await bugsContext.loadBugsIfNeeded(projectId, getProjectBugs, 1000 * 60 * 5)
     } catch (err) {
-      console.error('Error refreshing bugs:', err)
+      printError('Error refreshing bugs:', err)
       setError(err instanceof Error ? err : new Error('Failed to refresh bugs'))
     }
   }, [bugsContext, loadingProjectId])

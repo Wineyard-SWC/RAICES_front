@@ -1,6 +1,6 @@
 'use client';
 
-import { print } from '@/utils/debugLogger';
+import { print, printError } from '@/utils/debugLogger';
 import { useState } from 'react';
 
 // Tipos
@@ -61,7 +61,7 @@ export const useInitializeUserRoles = () => {
       print('Roles inicializados correctamente:', data);
       return data;
     } catch (err: any) {
-      console.error('Error initializing user roles:', err);
+      printError('Error initializing user roles:', err);
       setError(err.message);
       return null;
     } finally {

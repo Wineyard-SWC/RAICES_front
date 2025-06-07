@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useGenerativeAISession } from "@/contexts/generativeAISessionContext"; // Updated import
 import { useLanguageContext } from "@/contexts/languagecontext";
+import { printError } from "@/utils/debugLogger";
 
 
 export const useGenerateRequirements = () => {
@@ -58,7 +59,7 @@ export const useGenerateRequirements = () => {
             });
             
         } catch (err: any) {
-            console.error("Error in API call:", err);
+            printError("Error in API call:", err);
             setError(err.message || "Failed to communicate with the API");
         } finally {
             setIsLoading(false);

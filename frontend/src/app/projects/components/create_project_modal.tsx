@@ -8,7 +8,7 @@ import type { User as UserType } from "@/hooks/useUsers";
 import { useProjectUsers } from "@/contexts/ProjectusersContext"
 import AvatarProfileIcon from "@/components/Avatar/AvatarDisplay"
 import { useCreateProjectUsers } from "@/hooks/useCreateProjectUsers";
-import { print } from "@/utils/debugLogger";
+import { print, printError } from "@/utils/debugLogger";
 
 interface CreateProjectModalProps {
   isOpen: boolean;
@@ -153,12 +153,12 @@ const CreateProjectModal = ({
         const success = await createProjectUsers(projectId, usersWithRoles);
 
         if (!success) {
-          console.error("Failed to create project-user relations");
+          printError("Failed to create project-user relations");
         } else {
           print("All project-user relations created successfully.");
         }
       } else {
-        console.error("Failed to create project or get projectId.");
+        printError("Failed to create project or get projectId.");
       }
 
       // Resetear el formulario
@@ -169,7 +169,7 @@ const CreateProjectModal = ({
       setSelectedUsers([]);
       onClose();
     } catch (error) {
-      console.error("[CREATE PROJECT MODAL] Error creating project:", error);
+      printError("[CREATE PROJECT MODAL] Error creating project:", error);
     } finally {
       setIsSubmitting(false);
     }

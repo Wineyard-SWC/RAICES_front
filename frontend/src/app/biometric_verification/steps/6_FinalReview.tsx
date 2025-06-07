@@ -9,7 +9,7 @@ import { useSessionResults } from "../hooks/useSessionResults"
 import { useEmotionUtils } from "../hooks/useEmotionUtils"
 import AvatarProfileIcon from "@/components/Avatar/AvatarDisplay"
 import type { Session } from "../hooks/useSessionResults"
-import { print } from "@/utils/debugLogger"
+import { print, printError } from "@/utils/debugLogger"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL!
 
@@ -268,7 +268,7 @@ export default function FinalReview({
         print(`🎯 Generated ${sortedRecommendations.length} unique recommendations for tasks needing reassignment`)
         
       } catch (error) {
-        console.error("Error generating recommendations:", error)
+        printError("Error generating recommendations:", error)
       } finally {
         setLoadingRecommendations(false)
       }
@@ -363,7 +363,7 @@ export default function FinalReview({
       }, 1500)
       
     } catch (error) {
-      console.error("Error preparing reassignments:", error)
+      printError("Error preparing reassignments:", error)
       onFinish()
     } finally {
       setIsApplying(false)

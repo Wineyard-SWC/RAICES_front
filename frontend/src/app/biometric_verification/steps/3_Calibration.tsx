@@ -8,7 +8,7 @@ import BrainwaveVisualizer from "../components/BrainwaveVisualizer"
 import ElectrodeQualityIndicator from "../components/ElectrodeQualityIndicator"
 import { useMuse } from "@/hooks/useMuse";
 import { useSessionData } from "@/hooks/useSessionData";
-import { print } from "@/utils/debugLogger";
+import { print, printError } from "@/utils/debugLogger";
 
 interface TeamMember {
   id: string;
@@ -71,7 +71,7 @@ export default function Calibration({ participant, onComplete }: CalibrationProp
       await connect();
       
     } catch (error: any) {
-      console.error("Error connecting to Muse:", error);
+      printError("Error connecting to Muse:", error);
       
       // Handle specific user cancellation error
       if (error.message?.includes("User cancelled") || 
@@ -186,7 +186,7 @@ export default function Calibration({ participant, onComplete }: CalibrationProp
         setCalibrationComplete(true);
         setShowNeutralPoint(false);
       } catch (err) {
-        console.error("❌ Error en captureRestData:", err);
+        printError("❌ Error en captureRestData:", err);
       }
     }, 500);
   };

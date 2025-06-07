@@ -8,7 +8,7 @@ import MembersTabWrapper from "./MembersTabWrapper"
 import { useRouter } from "next/navigation"
 import { useUserRoles } from "@/contexts/userRolesContext"
 import { useProjectUsers } from "@/contexts/ProjectusersContext"
-import { print } from "@/utils/debugLogger"
+import { print, printError } from "@/utils/debugLogger"
 
 // Componente cliente que contiene toda la lógica de la página
 export default function MemberSettingsContent() {
@@ -46,7 +46,7 @@ export default function MemberSettingsContent() {
         
         setIsLoading(false);
       } catch (error) {
-        console.error("Error cargando datos:", error);
+        printError("Error cargando datos:", error);
         setIsLoading(false);
       }
     };

@@ -15,6 +15,7 @@ import ConfirmDialog from '@/components/confimDialog';
 import { useRouter } from 'next/navigation';
 import Toast from '@/components/toast';
 import useToast from '@/hooks/useToast';
+import { printError } from '@/utils/debugLogger';
 
 export default function GenerateUserStoriesPage() {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -68,7 +69,7 @@ export default function GenerateUserStoriesPage() {
       await handleSave();
       showToast('User stories saved successfully!', 'success');
     } catch (error) {
-      console.error('Error saving user stories:', error);
+      printError('Error saving user stories:', error);
       showToast('Error saving user stories. Please try again.', 'error');
     } finally {
       setShowSaveConfirm(false);
@@ -80,7 +81,7 @@ export default function GenerateUserStoriesPage() {
       await handleImportEpics();
       showToast('Epics and requirements imported successfully!', 'success');
     } catch (error) {
-      console.error('Error importing epics:', error);
+      printError('Error importing epics:', error);
       showToast('Error importing epics. Please try again.', 'error');
     } finally {
       setShowImportConfirm(false);
@@ -92,7 +93,7 @@ export default function GenerateUserStoriesPage() {
       await handleImportUserStories();
       showToast('User stories imported successfully!', 'success');
     } catch (error) {
-      console.error('Error importing user stories:', error);
+      printError('Error importing user stories:', error);
       showToast('Error importing user stories. Please try again.', 'error');
     } finally {
       setShowImportUSConfirm(false);

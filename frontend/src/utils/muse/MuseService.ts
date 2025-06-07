@@ -2,6 +2,7 @@ import { MuseClient } from "muse-js";
 import { BehaviorSubject } from "rxjs";
 import { createRing } from "../ringBuffer";
 import { CHANNELS, EEGChannel } from "./channels";
+import { printError } from "../debugLogger";
 
 export type ConnectionStatus =
   | "disconnected"
@@ -51,7 +52,7 @@ export class MuseService {
       this.connectionStatus$.next("connected");
       this.connectionStart = Date.now();
     } catch (e) {
-      console.error("Muse-connect error:", e);
+      printError("Muse-connect error:", e);
       this.connectionStatus$.next("error");
     }
   }

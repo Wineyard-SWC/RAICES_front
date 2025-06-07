@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Search, CalendarClock, FileText, Bug, Users, PenSquare } from "lucide-react"
 import { Progress } from "@/components/progress"
 import { useUserPermissions } from "@/contexts/UserPermissions"
+import { printError } from "@/utils/debugLogger"
 
 // Definir las constantes de permisos
 const PERMISSIONS = {
@@ -58,7 +59,7 @@ export default function MySpritsContent() {
                             (sprintMetrics.length > 0 ? sprintMetrics[0] : null)
         setCurrentSprint(activeSprint)
       } catch (error) {
-        console.error("Error cargando sprints:", error)
+        printError("Error cargando sprints:", error)
       } finally {
         setLoading(false)
       }

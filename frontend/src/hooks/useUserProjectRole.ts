@@ -1,5 +1,6 @@
 "use client"
 
+import { printError } from "@/utils/debugLogger"
 import { useState, useEffect } from "react"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
@@ -29,7 +30,7 @@ export const useUserProjectRole = (userId: string | null, projectId: string) => 
         // data.role es el rol guardado en Firestore
         setRole(data.role || null)
       } catch (err) {
-        console.error("Error fetching user-project relation:", err)
+        printError("Error fetching user-project relation:", err)
         setError("Could not determine user role in project")
       } finally {
         setLoading(false)

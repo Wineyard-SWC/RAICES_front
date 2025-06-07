@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation"
 import dynamic from 'next/dynamic'
 import { Canvas } from '@react-three/fiber'
 import { useBiometricData } from "@/hooks/useBiometricData" // 🔥 AGREGAR IMPORT
-import { print } from "@/utils/debugLogger"
+import { print, printError } from "@/utils/debugLogger"
 
 // Importación dinámica del componente Three.js para evitar errores de SSR
 const DynamicAnimatedAvatar = dynamic(
@@ -118,7 +118,7 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar }: Props) => {
   // NUEVA FUNCIÓN PARA IR AL DASHBOARD BIOMÉTRICO
   const handleViewBiometricDashboard = () => {
     if (!userId) {
-      console.error("No user ID available for biometric dashboard")
+      printError("No user ID available for biometric dashboard")
       alert("Error: No se pudo obtener la información del usuario")
       return
     }
@@ -136,7 +136,7 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar }: Props) => {
       const projectId = getCurrentProject()
       
       if (!projectId) {
-        console.error("No project ID found in current context")
+        printError("No project ID found in current context")
         setLoadingEvents(false)
         return
       }
@@ -152,7 +152,7 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar }: Props) => {
 
       setTodayEvents(data)
     } catch (error) {
-      console.error("Error fetching today's events:", error)
+      printError("Error fetching today's events:", error)
     } finally {
       setLoadingEvents(false)
     }
@@ -182,7 +182,7 @@ const DashboardStats = ({ onViewSprintDetails, onViewCalendar }: Props) => {
         setHasLoadedInitialData(true)
         
       } catch (error) {
-        console.error("Error loading initial dashboard data:", error)
+        printError("Error loading initial dashboard data:", error)
       }
     }
     

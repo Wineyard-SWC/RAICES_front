@@ -13,7 +13,7 @@ import JoinProjectModal from "./components/join_project_modal"
 import Navbar from "@/components/NavBar"
 import { useRouter } from "next/navigation"
 import { useKanban } from "@/contexts/unifieddashboardcontext"
-import { print } from "@/utils/debugLogger"
+import { print, printError } from "@/utils/debugLogger"
 
 export default function ProjectsPage() {
   // Obtén el userId desde el contexto de usuario
@@ -111,11 +111,11 @@ export default function ProjectsPage() {
           { ...projectData, id: projectId },
         ]);
       } else {
-        console.error("[PAGE] Failed to create project or get projectId.");
+        printError("[PAGE] Failed to create project or get projectId.");
       }
       return projectId;
     } catch (error) {
-      console.error("[PAGE] Error creating project:", error);
+      printError("[PAGE] Error creating project:", error);
       return null;
     }
   }

@@ -1,6 +1,6 @@
 // src/utils/avatarApi.ts
 
-import { print } from "../debugLogger";
+import { print, printError } from "../debugLogger";
 
 interface RegisterUserPayload {
   firebase_id: string;
@@ -33,7 +33,7 @@ export async function registerAvatarUser({
 
   if (!res.ok) {
     const err = await res.json();
-    console.error("Error registering user in Avatar API:", err);
+    printError("Error registering user in Avatar API:", err);
     throw new Error(`Avatar API error (${res.status}): ${err}`);
   }
 

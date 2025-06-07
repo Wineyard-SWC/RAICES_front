@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react"
 import { useTasks } from "@/contexts/taskcontext"
-import { print } from "@/utils/debugLogger"
+import { print, printError } from "@/utils/debugLogger"
 
 interface BurndownDataPoint {
   day: string
@@ -167,13 +167,13 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
       const data = await response.json()
       
       if (data.error) {
-        console.error(data.error)
+        printError(data.error)
         return
       }
       print('BURNDOWN CHART DATA:', JSON.parse(JSON.stringify(data)))
       setBurndownData(data)
     } catch (error) {
-      console.error("Error fetching burndown data:", error)
+      printError("Error fetching burndown data:", error)
     } finally {
       setIsLoadingBurndown(false)
     }
@@ -199,7 +199,7 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
       print('VELOCITY DATA:', JSON.parse(JSON.stringify(data)))
       setVelocityData(data)
     } catch (error) {
-      console.error("Error fetching velocity data:", error)
+      printError("Error fetching velocity data:", error)
     } finally {
       setIsLoadingVelocity(false)
     }
@@ -226,7 +226,7 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
       setSprintComparison(data)
       setLastFetchedProjectId(project_id)
     } catch (error) {
-      console.error("Error fetching sprint comparison:", error)
+      printError("Error fetching sprint comparison:", error)
     } finally {
       setIsLoadingComparison(false)
     }

@@ -1,5 +1,6 @@
 "use client";
 
+import { printError } from "@/utils/debugLogger";
 import { useState } from "react";
 
 export interface Question {
@@ -111,12 +112,12 @@ export const parseQuestionsFromApi = (raw: string): Question[] => {
   try {
     data = JSON.parse(cleaned);
   } catch (e) {
-    console.error("JSON.parse failed for questions", cleaned);
+    printError("JSON.parse failed for questions", cleaned);
     return [];
   }
 
   if (!data.questions || !Array.isArray(data.questions)) {
-    console.error("Invalid questions format", data);
+    printError("Invalid questions format", data);
     return [];
   }
 
@@ -171,7 +172,7 @@ export const useGenerateQuestions = () => {
 
       return questions;
     } catch (err) {
-      console.error("Error generating questions:", err);
+      printError("Error generating questions:", err);
       const errorMessage = err instanceof Error ? err.message : "Failed to generate questions";
       setError(errorMessage);
       throw new Error(errorMessage);

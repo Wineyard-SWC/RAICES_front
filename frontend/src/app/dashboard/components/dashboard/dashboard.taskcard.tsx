@@ -22,6 +22,7 @@ import { useState, useEffect, useRef } from "react"
 import { isUserStory } from "@/types/taskkanban"
 import { useKanban } from "@/contexts/unifieddashboardcontext"
 import { useUserPermissions } from "@/contexts/UserPermissions" // Importar hook de permisos
+import { printError } from "@/utils/debugLogger"
 
 // Definir constantes para los permisos
 const PERMISSION_REQ_MANAGE = 1 << 2;  // Gestión de items (crear/editar/eliminar)
@@ -506,7 +507,7 @@ export const TaskCard = ({ task, columnId, view, usertype, onDelete,onChangeStat
                       setShowChangeStatusModal(false)
                       setWarningMessage(null)
                     } catch (err) {
-                      console.error("Error updating status:", err)
+                      printError("Error updating status:", err)
                     }
                   }}
                 >

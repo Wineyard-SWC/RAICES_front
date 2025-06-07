@@ -1,5 +1,6 @@
 "use client";
 
+import { printError } from "@/utils/debugLogger";
 import { useState } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -28,7 +29,7 @@ export const useDeleteProjectUsers = () => {
 
       return true;
     } catch (err) {
-      console.error("Error:", err);
+      printError("Error:", err);
       setError(err instanceof Error ? err.message : "Unknown error");
       return false;
     } finally {

@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import saveRequirements  from '../gen_requirements/utils/handleSave';
 import Toast from '@/components/toast';
 import useToast from '@/hooks/useToast';
+import { printError } from '@/utils/debugLogger';
 
 export default function GenerateEpicsPage() {
   const [reqDescription, setReqDescription] = useState('');
@@ -60,7 +61,7 @@ export default function GenerateEpicsPage() {
       await handleSave();
       showToast('Epics saved successfully!', 'success');
     } catch (error) {
-      console.error('Error saving epics:', error);
+      printError('Error saving epics:', error);
       showToast('Error saving epics. Please try again.', 'error');
     } finally {
       setIsSaving(false);
@@ -74,7 +75,7 @@ export default function GenerateEpicsPage() {
       await handleImportRequirements();
       showToast('Requirements imported successfully!', 'success');
     } catch (error) {
-      console.error('Error importing requirements:', error);
+      printError('Error importing requirements:', error);
       showToast('Error importing requirements. Please try again.', 'error');
     } finally {
       setIsImporting(false);

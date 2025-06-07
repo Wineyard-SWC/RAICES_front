@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X, AlertTriangle } from "lucide-react";
 import { useDeleteProject } from "@/hooks/useDeleteProject";
 import { useDeleteProjectUsers } from "@/hooks/useDeleteProjectUsers";
+import { printError } from "@/utils/debugLogger";
 
 interface DeleteProjectModalProps {
   isOpen: boolean;
@@ -26,7 +27,7 @@ const DeleteProjectModal = ({ isOpen, onClose, projectId, projectTitle }: Delete
       // Eliminar las relaciones de project_users
       const relationsDeleted = await deleteProjectUsers(projectId);
       if (!relationsDeleted) {
-        console.error("Failed to delete project-user relations");
+        printError("Failed to delete project-user relations");
         return;
       }
 
@@ -43,7 +44,7 @@ const DeleteProjectModal = ({ isOpen, onClose, projectId, projectTitle }: Delete
         }, 1500);
       }
     } catch (error) {
-      console.error("Error deleting project:", error);
+      printError("Error deleting project:", error);
     } finally {
       setIsDeleting(false);
     }

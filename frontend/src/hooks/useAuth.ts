@@ -21,7 +21,7 @@ import { useProjectUsers } from '@/contexts/ProjectusersContext';
 import { useUserPermissions } from '@/contexts/UserPermissions';
 import { signIn } from "next-auth/react";
 import { signOut } from "next-auth/react";
-import { print } from '@/utils/debugLogger';
+import { print, printError } from '@/utils/debugLogger';
 
 export const useAuth = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -96,7 +96,7 @@ export const useAuth = () => {
       print(`Usuario ${userId} existe. Tiene avatar: ${hasAvatar}`);
       return { exists: true, hasAvatar };
     } catch (error) {
-      console.error("Error al verificar usuario y avatar:", error);
+      printError("Error al verificar usuario y avatar:", error);
       return { exists: false, hasAvatar: false };
     }
   };
@@ -140,7 +140,7 @@ export const useAuth = () => {
         router.push('/avatar_creator');
       }
     } catch (error) {
-      console.error("Error en post-autenticación:", error);
+      printError("Error en post-autenticación:", error);
       setError("Error preparing your account. Please try again.");
     }
   };

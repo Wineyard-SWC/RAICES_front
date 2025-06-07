@@ -1,6 +1,6 @@
 'use client';
 
-import { print } from '@/utils/debugLogger';
+import { print, printError } from '@/utils/debugLogger';
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 
 interface AvatarContextType {
@@ -50,7 +50,7 @@ export function AvatarProvider({ children }: { children: ReactNode }) {
 
       return userData.avatar_url;
     } catch (err) {
-      console.error('Error fetching avatar:', err);
+      printError('Error fetching avatar:', err);
       return null;
     } finally {
       setIsLoading(false);

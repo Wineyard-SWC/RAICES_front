@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useKanban } from "@/contexts/unifieddashboardcontext"; // 👈 Agregar este import
-import { print } from "@/utils/debugLogger";
+import { print, printError } from "@/utils/debugLogger";
 
 const API_URL = process.env.NEXT_PUBLIC_AVATAR_API || 'http://localhost:8009';
 
@@ -111,7 +111,7 @@ export const useBiometricData = (userId: string) => {
       setAnalytics(processedAnalytics);
       
     } catch (err) {
-      console.error("Error fetching biometric data:", err);
+      printError("Error fetching biometric data:", err);
       setError(err instanceof Error ? err.message : "Failed to load biometric data");
     } finally {
       setLoading(false);
