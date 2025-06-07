@@ -9,6 +9,7 @@ import { useEmotionUtils } from "../hooks/useEmotionUtils"
 import ParticipantCard from "../components/ParticipantCard"
 import EmotionalAvatarDisplay from "../components/EmotionalAvatarDisplay"
 import type { Session, Task } from "../hooks/useSessionResults"
+import { print } from "@/utils/debugLogger"
 
 interface ResultsAndPoolProps {
   participantResults: any[]
@@ -41,10 +42,10 @@ export default function ResultsAndPool({
     const expectedSessions = participantResults.length;
     const actualSessions = data.sessions.length;
     
-    console.log(`📊 Expected: ${expectedSessions}, Actual: ${actualSessions}, Auto-refresh count: ${autoRefreshCount}`);
+    print(`📊 Expected: ${expectedSessions}, Actual: ${actualSessions}, Auto-refresh count: ${autoRefreshCount}`);
     
     if (actualSessions < expectedSessions && autoRefreshCount < 10) { // Máximo 10 intentos
-      console.log("🔄 Auto-refreshing in 3 seconds...");
+      print("🔄 Auto-refreshing in 3 seconds...");
       setIsWaitingForData(true);
       
       const timeout = setTimeout(() => {

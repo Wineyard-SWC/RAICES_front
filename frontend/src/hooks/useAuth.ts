@@ -21,6 +21,7 @@ import { useProjectUsers } from '@/contexts/ProjectusersContext';
 import { useUserPermissions } from '@/contexts/UserPermissions';
 import { signIn } from "next-auth/react";
 import { signOut } from "next-auth/react";
+import { print } from '@/utils/debugLogger';
 
 export const useAuth = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -70,7 +71,7 @@ export const useAuth = () => {
   // Función para verificar si un usuario existe y tiene avatar
   const checkUserAvatar = async (userId: string): Promise<{ exists: boolean, hasAvatar: boolean }> => {
     try {
-      console.log(`Verificando si el usuario ${userId} existe y tiene avatar...`);
+      print(`Verificando si el usuario ${userId} existe y tiene avatar...`);
       const token = localStorage.getItem('authToken');
       
       // Verificar si el usuario existe en la API de avatar
@@ -82,7 +83,7 @@ export const useAuth = () => {
       
       if (!response.ok) {
         if (response.status === 404) {
-          console.log(`Usuario ${userId} no existe en la API de avatar`);
+          print(`Usuario ${userId} no existe en la API de avatar`);
           return { exists: false, hasAvatar: false };
         }
         
@@ -92,7 +93,7 @@ export const useAuth = () => {
       const userData = await response.json();
       const hasAvatar = !!userData.avatar_url; // Convierte a booleano
       
-      console.log(`Usuario ${userId} existe. Tiene avatar: ${hasAvatar}`);
+      print(`Usuario ${userId} existe. Tiene avatar: ${hasAvatar}`);
       return { exists: true, hasAvatar };
     } catch (error) {
       console.error("Error al verificar usuario y avatar:", error);
@@ -103,15 +104,15 @@ export const useAuth = () => {
   // Función común para manejar la post-autenticación
   const handlePostAuthentication = async (userId: string, isNewUser = false) => {
     try {
-      console.log(`Manejando post-autenticación para usuario ${userId}. ¿Es nuevo? ${isNewUser}`);
+      print(`Manejando post-autenticación para usuario ${userId}. ¿Es nuevo? ${isNewUser}`);
       
       // Siempre establecer ID de usuario en el contexto
       setUserId(userId);
       
       // Si es un usuario nuevo, inicializar roles
       if (isNewUser) {
-        console.log("Inicializando roles para usuario nuevo...");
-        console.log("usuario a inicializar", userId);
+        print("Inicializando roles para usuario nuevo...");
+        print("usuario a inicializar", userId);
         await initializeUserRoles(userId);
       }
       
@@ -121,7 +122,7 @@ export const useAuth = () => {
       // Solo si tiene avatar, cargar datos en contextos
       // De lo contrario, ir directamente a crear avatar
       if (exists && hasAvatar) {
-        console.log("Usuario con avatar, cargando datos en contextos...");
+        print("Usuario con avatar, cargando datos en contextos...");
         try {
           // Intentar cargar datos en contextos (si falla, no debe interrumpir el flujo)
           await fetchAvatar(userId);
@@ -130,12 +131,12 @@ export const useAuth = () => {
           console.warn("Error cargando datos en contextos:", err);
         }
 
-        console.log("avatar obtenido del avatar context: " + userData.avatar_url);
+        print("avatar obtenido del avatar context: " + userData.avatar_url);
         
-        console.log("Redirigiendo a proyectos...");
+        print("Redirigiendo a proyectos...");
         router.push('/projects');
       } else {
-        console.log("Usuario sin avatar, redirigiendo a creador de avatar...");
+        print("Usuario sin avatar, redirigiendo a creador de avatar...");
         router.push('/avatar_creator');
       }
     } catch (error) {
@@ -229,7 +230,7 @@ export const useAuth = () => {
       
       if (!exists) {
         // Es un usuario nuevo, registrarlo
-        console.log("Registrando nuevo usuario de Google en la API de avatar...");
+        print("Registrando nuevo usuario de Google en la API de avatar...");
         await registerAvatarUser({
           firebase_id: user.uid,
           name: user.displayName || user.email?.split('@')[0] || 'Google User',
@@ -269,7 +270,7 @@ export const useAuth = () => {
       
       if (!exists) {
         // Es un usuario nuevo, registrarlo
-        console.log("Registrando nuevo usuario de GitHub en la API de avatar...");
+        print("Registrando nuevo usuario de GitHub en la API de avatar...");
         await registerAvatarUser({
           firebase_id: user.uid,
           name: user.displayName || user.email?.split('@')[0] || 'GitHub User',

@@ -11,6 +11,7 @@ import ComplexitySlider from "../components/ComplexitySlider"
 import { TaskPacket, useSessionData } from "@/hooks/useSessionData"
 import { useMuse } from "@/hooks/useMuse"
 import { useBiometricContext } from "@/contexts/BiometricContext"
+import { print, printError } from "@/utils/debugLogger"
 
 interface TeamMember {
   id: string
@@ -96,7 +97,7 @@ export default function TaskEvaluation({
     if (isInfoActive && infoTime > 0) {
       const timer = setTimeout(() => {
         setInfoTime((prevTime) => {
-          console.log(`ℹ️ Task info time remaining: ${prevTime - 1}s`);
+          print(`ℹ️ Task info time remaining: ${prevTime - 1}s`);
           
           if (prevTime <= 1) {
             // Terminar fase informativa y empezar evaluación
@@ -168,12 +169,12 @@ export default function TaskEvaluation({
       
       if (isOwnTask) {
         setTasksForNextParticipants(prev => [...prev, currentTask.id]);
-        console.log(`📋 Task "${currentTask.title}" added to review pool (rating: ${currentTaskRating}) - Will be evaluated by next participants`);
+        print(`📋 Task "${currentTask.title}" added to review pool (rating: ${currentTaskRating}) - Will be evaluated by next participants`);
       } else {
-        console.log(`📋 Pool task "${currentTask.title}" still needs review (rating: ${currentTaskRating}) - Already in pool`);
+        print(`📋 Pool task "${currentTask.title}" still needs review (rating: ${currentTaskRating}) - Already in pool`);
       }
     } else {
-      console.log(`✅ Task "${currentTask.title}" well assigned (rating: ${currentTaskRating}) - No further review needed`);
+      print(`✅ Task "${currentTask.title}" well assigned (rating: ${currentTaskRating}) - No further review needed`);
     }
 
     // Capturar datos biométricos
@@ -241,9 +242,9 @@ export default function TaskEvaluation({
     const success = await submitParticipantSession(participant.id, capturedData);
     
     if (success) {
-      console.log(`✅ Biometric data submitted for participant ${participant.name}`);
+      print(`✅ Biometric data submitted for participant ${participant.name}`);
     } else {
-      console.error(`❌ Failed to submit biometric data for participant ${participant.name}`);
+      printError(`❌ Failed to submit biometric data for participant ${participant.name}`);
     }
 
     // 🔥 FILTRAR SOLO TAREAS QUE AÚN NECESITAN REVISIÓN
@@ -262,9 +263,9 @@ export default function TaskEvaluation({
     }
     
     resetRestBaseline();
-    console.log("🔄 Biometric context reset for next participant");
-    console.log(`📋 Tasks still needing review for next participants: ${tasksStillNeedingReview.length} tasks`);
-    console.log(`📊 Breakdown: ${tasksForNextParticipants.length} new + ${tasksStillNeedingReview.length - tasksForNextParticipants.length} from previous pool`);
+    print("🔄 Biometric context reset for next participant");
+    print(`📋 Tasks still needing review for next participants: ${tasksStillNeedingReview.length} tasks`);
+    print(`📊 Breakdown: ${tasksForNextParticipants.length} new + ${tasksStillNeedingReview.length - tasksForNextParticipants.length} from previous pool`);
     
     onComplete(participantResult);
   }
@@ -334,12 +335,30 @@ export default function TaskEvaluation({
             
             <div className="text-6xl font-bold text-purple-600 mb-4">{infoTime}s</div>
             
-            <p className="text-gray-600">
+            <p className="text-gray-600 mb-6">
               Task evaluation will begin automatically when the countdown reaches zero.
             </p>
             
+            {/* 🔥 BOTÓN PARA SALTAR INSTRUCCIONES */}
+            <Button 
+              onClick={() => {
+                // Terminar fase informativa inmediatamente
+                setShowInfoPhase(false);
+                setIsInfoActive(false);
+                setTaskReadingTime(10);
+                setInfoTime(0);
+              }}
+              className="bg-purple-600 text-white hover:bg-purple-700 px-6 py-2"
+            >
+              Skip Instructions - Start Task Evaluation Now
+            </Button>
+            
             <div className="mt-6 text-sm text-gray-500">
               Total tasks to evaluate: <strong>{allTasksToEvaluate.length}</strong>
+            </div>
+            
+            <div className="mt-2 text-sm text-gray-400">
+              Click above if you're familiar with the evaluation process
             </div>
           </div>
         </div>

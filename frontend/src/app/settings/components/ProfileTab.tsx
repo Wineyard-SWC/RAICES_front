@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import SettingsAvatar from "./avatar/SettingsAvatar"
 import { Label } from "./ui/label"
 import Toast from "@/components/toast"  
+import { print } from "@/utils/debugLogger"
 
 export default function ProfileTab() {
   // Contextos
@@ -56,7 +57,7 @@ export default function ProfileTab() {
   useEffect(() => {
     if (error) {
       setLastError(error)
-      console.log('🔍 [DEBUG] Captured error:', error)
+      print('🔍 [DEBUG] Captured error:', error)
     }
   }, [error])
 
@@ -76,7 +77,7 @@ export default function ProfileTab() {
   // Cargar avatar si no está disponible
   useEffect(() => {
     if (userId && (!avatarUrl || avatarUrl === '')) {
-      console.log("Avatar no encontrado en contexto, cargando para usuario:", userId);
+      print("Avatar no encontrado en contexto, cargando para usuario:", userId);
       fetchAvatar(userId).catch(err => {
         console.error("Error cargando avatar:", err);
       });
@@ -164,13 +165,13 @@ export default function ProfileTab() {
     } else {
       // 🔥 FIX: Esta línea es necesaria para usar showToast
       showToast("Name updated successfully!", "success")
-      console.log("✅ Name updated successfully")
+      print("✅ Name updated successfully")
     }
   }
 
   // Guardar cambios de contraseña simplificado
   const handleSavePassword = async () => {
-    console.log('🔍 [DEBUG] Starting handleSavePassword');
+    print('🔍 [DEBUG] Starting handleSavePassword');
     setPasswordError(null);
     setLastError(null);
 
@@ -190,28 +191,28 @@ export default function ProfileTab() {
       return;
     }
 
-    console.log('🔍 [DEBUG] Calling updateProfile...');
+    print('🔍 [DEBUG] Calling updateProfile...');
     
     const result = await updateProfile({
       currentPassword: passwordForm.currentPassword,
       newPassword: passwordForm.newPassword
     });
     
-    console.log('🔍 [DEBUG] updateProfile direct result:', result);
+    print('🔍 [DEBUG] updateProfile direct result:', result);
 
     if (!result.success) {
       // 🔥 FIX: Usar el error directo del resultado
       const errorMessage = result.errorMessage || "Failed to update password. Please try again.";
-      console.log('🔍 [DEBUG] Error from result:', errorMessage);
+      print('🔍 [DEBUG] Error from result:', errorMessage);
       
       if (errorMessage.includes('password is incorrect') || 
           errorMessage.includes('invalid-credential') || 
           errorMessage.includes('wrong-password')) {
         setPasswordError(errorMessage);
-        console.log('🔍 [DEBUG] Set passwordError to:', errorMessage);
+        print('🔍 [DEBUG] Set passwordError to:', errorMessage);
       } else {
         showToast(errorMessage, "error");
-        console.log('🔍 [DEBUG] Showed toast with error:', errorMessage);
+        print('🔍 [DEBUG] Showed toast with error:', errorMessage);
       }
       
       setError(null);
@@ -224,7 +225,7 @@ export default function ProfileTab() {
         confirmPassword: ""
       });
       showToast("Password updated successfully!", "success");
-      console.log("✅ Password updated successfully")
+      print("✅ Password updated successfully")
       setError(null);
       setLastError(null);
     }
@@ -240,7 +241,7 @@ export default function ProfileTab() {
 
   // 🔥 DEBUG: Mejorar el monitoring de errores
   useEffect(() => {
-    console.log('🔍 [DEBUG] Error state changed:', { 
+    print('🔍 [DEBUG] Error state changed:', { 
       globalError: error, 
       profileError, 
       passwordError,
@@ -249,7 +250,7 @@ export default function ProfileTab() {
   }, [error, profileError, passwordError])
 
   useEffect(() => {
-    console.log('🔍 [DEBUG] isLoading state changed:', isLoading)
+    print('🔍 [DEBUG] isLoading state changed:', isLoading)
   }, [isLoading])
 
   return (

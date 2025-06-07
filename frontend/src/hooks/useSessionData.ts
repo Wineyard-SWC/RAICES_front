@@ -39,7 +39,7 @@ export function useSessionData() {
     print("si estoy llegando acá -----------------------", raw);
     setRestBaseline(raw);
  
-    console.log("🔍 captureRestData: Captured baseline data", JSON.stringify(raw));
+    print("🔍 captureRestData: Captured baseline data", JSON.stringify(raw));
 
     resume();
     return raw;
@@ -58,19 +58,19 @@ export function useSessionData() {
   const submitParticipantSession = useCallback(
     async (participantId: string, tasks: TaskPacket[]) => {
       if (!session?.user?.uid) {
-        console.log("no user id", session?.user?.uid);
+        print("no user id", session?.user?.uid);
         return false;
       }
 
       if (!restBaseline) {
-        console.log("⚠️ No rest baseline data captured.", restBaseline);
+        print("⚠️ No rest baseline data captured.", restBaseline);
         return false;
       }
 
       // 👈 Obtener projectId del contexto o localStorage como fallback
       const projectId = currentProject || localStorage.getItem("currentProjectId") || "default_project";
       
-      console.log("🏗️ Using projectId for session:", projectId);
+      print("🏗️ Using projectId for session:", projectId);
 
       setSubmitting(true);
       try {
@@ -88,10 +88,10 @@ export function useSessionData() {
           projectId, // 👈 También enviarlo como campo separado para mayor claridad
         };
 
-        console.log("📤 Sending biometric session payload:");
-        console.log("🏗️ ProjectId included:", projectId);
-        console.log("🆔 SessionId format:", sessionId);
-        console.log(JSON.stringify(payload, null, 2));
+        print("📤 Sending biometric session payload:");
+        print("🏗️ ProjectId included:", projectId);
+        print("🆔 SessionId format:", sessionId);
+        print(JSON.stringify(payload, null, 2));
 
         const res = await fetch(`${AVATAR_API}/biometrics/process`, {
             method: "POST",
@@ -101,8 +101,8 @@ export function useSessionData() {
         
         if (!res.ok) {
             console.error("Error submitting session:", res.status, res.statusText);
-            console.log("Error payload:", payload);
-            console.log("Detalles de validación:", await res.json());
+            print("Error payload:", payload);
+            print("Detalles de validación:", await res.json());
         }
 
         return res.ok;

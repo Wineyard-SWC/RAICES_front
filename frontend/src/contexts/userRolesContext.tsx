@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { useUser } from './usercontext';
+import { print } from '@/utils/debugLogger';
 
 // Tipos para los roles y documentos
 interface RoleDefinition {
@@ -51,14 +52,14 @@ export const UserRolesProvider: React.FC<{ children: ReactNode }> = ({ children 
     setUserRoles(null);
     setError(null);
     setIsLoading(false);
-    console.log('Roles de usuario reseteados');
+    print('Roles de usuario reseteados');
   }, []);
 
   // Función para obtener los roles del usuario
   const fetchUserRoles = useCallback(async () => {
     // No intentar cargar roles si no hay userId o token
     if (!userId || !localStorage.getItem('authToken')) {
-      console.log('No se pueden cargar roles: falta userId o token');
+      print('No se pueden cargar roles: falta userId o token');
       return;
     }
 
@@ -68,7 +69,7 @@ export const UserRolesProvider: React.FC<{ children: ReactNode }> = ({ children 
     try {
       const token = localStorage.getItem('authToken');
       
-      console.log(`Intentando cargar roles para usuario ${userId}`);
+      print(`Intentando cargar roles para usuario ${userId}`);
       
       const response = await fetch(`${API_URL}/user-roles/${userId}`, {
         method: 'GET',
@@ -79,7 +80,7 @@ export const UserRolesProvider: React.FC<{ children: ReactNode }> = ({ children 
       });
 
       if (response.status === 404) {
-        console.log('No se encontraron roles para el usuario, estableciendo array vacío');
+        print('No se encontraron roles para el usuario, estableciendo array vacío');
         setUserRoles({ userRef: userId, roles: [] });
         return;
       }

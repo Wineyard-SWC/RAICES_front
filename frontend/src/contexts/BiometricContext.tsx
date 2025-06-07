@@ -4,6 +4,7 @@
 
 import { createContext, useContext, useState, ReactNode } from "react";
 import { CHANNELS } from "@/utils/muse/channels";
+import { print } from "@/utils/debugLogger";
 
 interface RestData {
   eeg: { channel: (typeof CHANNELS)[number]; values: number[] }[];
@@ -24,7 +25,7 @@ export function BiometricProvider({ children }: { children: ReactNode }) {
 
   // Función para resetear los datos cuando cambias de participante
   const resetRestBaseline = () => {
-    console.log("🔄 Resetting biometric baseline data");
+    print("🔄 Resetting biometric baseline data");
     setRestBaseline(null);
   };
 

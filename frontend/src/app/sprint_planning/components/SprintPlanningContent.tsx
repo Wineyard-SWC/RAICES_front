@@ -9,6 +9,7 @@ import SprintSidebar from "./SprintSidebar";
 import DefaultLoading from "@/components/animations/DefaultLoading";
 import { useSprintPlanningLogic } from "../hooks/useSprintPlanningLogic";
 import { useTasks } from "@/contexts/taskcontext";
+import { print } from "@/utils/debugLogger";
 
 export default function SprintPlanningContent() {
   const router = useRouter();
@@ -33,8 +34,8 @@ export default function SprintPlanningContent() {
 
   const currenttasks = getTasksForProject(projectId!);
 
-  console.log("Sprint actual:", sprint);
-  console.log("Tareas actuales:", currenttasks);
+  print("Sprint actual:", sprint);
+  print("Tareas actuales:", currenttasks);
 
   if (loading) return <DefaultLoading text="sprint" />;
   

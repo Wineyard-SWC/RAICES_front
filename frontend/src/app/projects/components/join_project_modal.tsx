@@ -11,6 +11,7 @@ import { useGetProjectOwner } from "@/hooks/useGetProjectOwner"
 import { useJoinProject } from "@/hooks/useJoinProject"
 import { useAvatar } from "@/contexts/AvatarContext"
 import AvatarProfileIcon from "@/components/Avatar/AvatarDisplay"
+import { print } from "@/utils/debugLogger"
 
 
 interface JoinProjectModalProps {
@@ -42,7 +43,7 @@ const JoinProjectModal = ({ isOpen, onClose, onSuccess }: JoinProjectModalProps)
           console.error(`Error fetching avatar for owner ${owner.id}:`, error);
         });
     } else {
-      console.log('No owner ID available yet');
+      print('No owner ID available yet');
     }
   }, [owner, fetchAvatar]);
   

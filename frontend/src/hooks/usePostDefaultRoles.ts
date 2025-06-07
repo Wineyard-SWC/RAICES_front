@@ -1,5 +1,6 @@
 'use client';
 
+import { print } from '@/utils/debugLogger';
 import { useState } from 'react';
 
 // Tipos
@@ -36,7 +37,7 @@ export const useInitializeUserRoles = () => {
       }
 
       // Llamar al endpoint de inicialización - no necesita enviar los roles
-      console.log(`Inicializando roles para usuario ${userId}`);
+      print(`Inicializando roles para usuario ${userId}`);
       const response = await fetch(`${API_URL}/user-roles/initialize/${userId}`, {
         method: 'POST',
         headers: {
@@ -57,7 +58,7 @@ export const useInitializeUserRoles = () => {
       }
 
       const data = await response.json();
-      console.log('Roles inicializados correctamente:', data);
+      print('Roles inicializados correctamente:', data);
       return data;
     } catch (err: any) {
       console.error('Error initializing user roles:', err);

@@ -5,6 +5,7 @@ import { useRef, useEffect, useState } from "react"
 import { useGLTF, useAnimations } from "@react-three/drei"
 import * as THREE from "three"
 import { EmotionKey, getExpressionFromEmotion, applyExpressionToMesh } from "@/utils/avatarExpressions"
+import { print } from "@/utils/debugLogger"
 
 interface AvatarAnimationOptions {
   minDelay?: number
@@ -139,7 +140,7 @@ export function AnimatedAvatar({
       }
     });
 
-    console.log(`🎭 Applied expression: ${targetExpression} for emotion: ${emotion} with intensity: ${expressionIntensity}`);
+    print(`🎭 Applied expression: ${targetExpression} for emotion: ${emotion} with intensity: ${expressionIntensity}`);
   }, [avatarScene, emotion, expressionIntensity]);
 
   // 🔥 ESTABLECER LA ESCENA DEL AVATAR CUANDO SE CARGA
@@ -178,7 +179,7 @@ export function AnimatedAvatar({
       varAction.clampWhenFinished = true
       varAction.fadeIn(0.5).play()
 
-      console.log("🎬 Playing animation variation:", variation)
+      print("🎬 Playing animation variation:", variation)
 
       // programa el retorno al idle usando la duración real
       const durationMs = (varAction.getClip().duration || 3) * 1000

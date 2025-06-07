@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useKanban } from "@/contexts/unifieddashboardcontext"; // 👈 Agregar este import
+import { print } from "@/utils/debugLogger";
 
 const API_URL = process.env.NEXT_PUBLIC_AVATAR_API || 'http://localhost:8009';
 
@@ -87,12 +88,12 @@ export const useBiometricData = (userId: string) => {
       let url = `${API_URL}/sessions/user/${userId}`;
       if (projectId) {
         url += `?project_id=${projectId}`;
-        console.log("🔍 Fetching biometric sessions for project:", projectId);
+        print("🔍 Fetching biometric sessions for project:", projectId);
       } else {
-        console.log("🔍 Fetching all biometric sessions (no project filter)");
+        print("🔍 Fetching all biometric sessions (no project filter)");
       }
 
-      console.log("📡 API URL:", url);
+      print("📡 API URL:", url);
 
       const response = await fetch(url);
       
@@ -101,7 +102,7 @@ export const useBiometricData = (userId: string) => {
       }
 
       const data: BiometricSession[] = await response.json();
-      console.log("📊 Received biometric sessions:", data.length);
+      print("📊 Received biometric sessions:", data.length);
       
       setSessions(data);
       

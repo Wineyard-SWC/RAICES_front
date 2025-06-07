@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth"
 import { registerAvatarUser } from '@/utils/Avatar/userConfig';
 import { useAvatar } from '@/contexts/AvatarContext'; // Importar contexto de avatar
 import { useInitializeUserRoles } from '@/hooks/usePostDefaultRoles'; // Importar inicialización de roles
+import { print } from '@/utils/debugLogger';
 
 export default function CreateAccountPage() {
   const [firstName, setFirstName] = useState('');
@@ -72,7 +73,7 @@ export default function CreateAccountPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       
-      console.log("User created with ID:", user.uid);
+      print("User created with ID:", user.uid);
       
       // 2. Actualizar perfil con nombre y apellido
       await updateProfile(user, {
@@ -87,7 +88,7 @@ export default function CreateAccountPage() {
       localStorage.setItem('authToken', token); // Necesario para las llamadas de API
       
       // 5. Registrar usuario en el backend de avatar
-      console.log("Registering avatar user in backend...");
+      print("Registering avatar user in backend...");
       await registerAvatarUser({
         firebase_id: user.uid,
         name: `${firstName} ${lastName}`,
@@ -96,11 +97,11 @@ export default function CreateAccountPage() {
       });
       
       // 6. Inicializar roles predeterminados
-      console.log("Initializing default user roles...");
+      print("Initializing default user roles...");
       await new Promise(resolve => setTimeout(resolve, 500)); // Pequeño retraso para asegurar que el backend procesó el usuario
       
       const rolesResult = await initializeUserRoles(user.uid);
-      console.log("User roles initialization result:", rolesResult);
+      print("User roles initialization result:", rolesResult);
       
       // 7. Mostrar mensaje de éxito
       setSuccessMessage('Account created successfully! Verification email sent. Please check your inbox.');

@@ -4,6 +4,7 @@ import { useRef, useEffect, useState, Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import { useGLTF, useAnimations, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
+import { print } from "@/utils/debugLogger";
 
 function AvatarWithExpression({
   avatarUrl,
@@ -25,7 +26,7 @@ function AvatarWithExpression({
   useEffect(() => {
     const name = "M_Standing_Expressions_002";
     const action = actions[name];
-    console.log("Intentando reproducir animación:", name, "Existe:", !!action);
+    print("Intentando reproducir animación:", name, "Existe:", !!action);
     if (play && action) {
       action.reset();
       action.setLoop(THREE.LoopOnce, 1);

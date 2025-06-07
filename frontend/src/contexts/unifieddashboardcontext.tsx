@@ -13,6 +13,7 @@ import { getProjectTasks } from "@/utils/postTasks"
 import { getProjectBugs } from "@/utils/getProjectBugs" 
 import { useBugs } from "./bugscontext"
 import { Bug } from "@/types/bug"
+import { print } from "@/utils/debugLogger"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
@@ -308,12 +309,12 @@ export const KanbanProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const updateData = {
       ...bugData,
     }
-    console.log("UPDATE",updateData)
+    print("UPDATE",updateData)
     try {
       // Prepare data for backend
       const backendData = prepareBugDataForBackend(updateData)
 
-      console.log(backendData)
+      print(backendData)
       // Backend call - using PUT for full bug update
       const response = await fetch(`${API_URL}/bugs/${bug_id}`, {
         method: 'PUT',

@@ -8,6 +8,7 @@ import type { User as UserType } from "@/hooks/useUsers";
 import { useProjectUsers } from "@/contexts/ProjectusersContext"
 import AvatarProfileIcon from "@/components/Avatar/AvatarDisplay"
 import { useCreateProjectUsers } from "@/hooks/useCreateProjectUsers";
+import { print } from "@/utils/debugLogger";
 
 interface CreateProjectModalProps {
   isOpen: boolean;
@@ -133,13 +134,13 @@ const CreateProjectModal = ({
         members: selectedUsers.map((user) => user.id),
       };
 
-      // console.log("[CREATE PROJECT MODAL] Project data to create:", projectData);
+      // print("[CREATE PROJECT MODAL] Project data to create:", projectData);
 
       // Llamar a onCreateProject y obtener el projectId
       const projectId = await onCreateProject(projectData);
 
       if (projectId) {
-        // console.log("[CREATE PROJECT MODAL] Project created with ID:", projectId);
+        // print("[CREATE PROJECT MODAL] Project created with ID:", projectId);
 
         // Crear relaciones con los usuarios seleccionados
         const usersWithRoles = selectedUsers.map((user) => ({
@@ -147,14 +148,14 @@ const CreateProjectModal = ({
           role: "Developer", // Ajusta el rol según sea necesario
         }));
 
-        // console.log("[CREATE PROJECT MODAL] Users to create relations for:", usersWithRoles);
+        // print("[CREATE PROJECT MODAL] Users to create relations for:", usersWithRoles);
 
         const success = await createProjectUsers(projectId, usersWithRoles);
 
         if (!success) {
           console.error("Failed to create project-user relations");
         } else {
-          console.log("All project-user relations created successfully.");
+          print("All project-user relations created successfully.");
         }
       } else {
         console.error("Failed to create project or get projectId.");

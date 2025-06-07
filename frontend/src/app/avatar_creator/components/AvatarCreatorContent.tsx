@@ -8,6 +8,7 @@ import { useAvatar } from '@/contexts/AvatarContext';
 import WelcomeAnimation from '../../avatar_test/components/welcome-animation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { metadata } from '@/app/layout';
+import { print } from '@/utils/debugLogger';
 
 const config: AvatarCreatorConfig = {
   clearCache: true,
@@ -105,7 +106,7 @@ export default function AvatarCreatorContent() {
           // Actualizar el estado con el género detectado
           setSelectedGender(detectedGender);
           
-          console.log("Avatar exported with normalized gender:", detectedGender);
+          print("Avatar exported with normalized gender:", detectedGender);
           
           try {
             // Solo actualizar la base de datos si tenemos un userId

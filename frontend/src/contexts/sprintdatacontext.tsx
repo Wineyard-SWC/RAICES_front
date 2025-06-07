@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react"
 import { useTasks } from "@/contexts/taskcontext"
+import { print } from "@/utils/debugLogger"
 
 interface BurndownDataPoint {
   day: string
@@ -106,7 +107,7 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     setIsClient(true)
     const storedProjectId = localStorage.getItem("currentProjectId")
-    console.log('🔍 [SPRINT CONTEXT] Initial project ID:', storedProjectId)
+    print('🔍 [SPRINT CONTEXT] Initial project ID:', storedProjectId)
     setProjectId(storedProjectId)
   }, [])
 
@@ -115,7 +116,7 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
 
     const handleStorageChange = () => {
       const newProjectId = localStorage.getItem("currentProjectId")
-      console.log('🔄 [SPRINT CONTEXT] Storage changed, new project ID:', newProjectId)
+      print('🔄 [SPRINT CONTEXT] Storage changed, new project ID:', newProjectId)
       if (newProjectId !== project_id) {
         setProjectId(newProjectId)
       }
@@ -126,7 +127,7 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
     const interval = setInterval(() => {
       const currentProjectId = localStorage.getItem("currentProjectId")
       if (currentProjectId !== project_id) {
-        console.log('🔄 [SPRINT CONTEXT] Polling detected change:', currentProjectId)
+        print('🔄 [SPRINT CONTEXT] Polling detected change:', currentProjectId)
         setProjectId(currentProjectId)
       }
     }, 1000)
@@ -169,7 +170,7 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
         console.error(data.error)
         return
       }
-      console.log('BURNDOWN CHART DATA:', JSON.parse(JSON.stringify(data)))
+      print('BURNDOWN CHART DATA:', JSON.parse(JSON.stringify(data)))
       setBurndownData(data)
     } catch (error) {
       console.error("Error fetching burndown data:", error)
@@ -195,7 +196,7 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
       })
 
       const data = await response.json()
-      console.log('VELOCITY DATA:', JSON.parse(JSON.stringify(data)))
+      print('VELOCITY DATA:', JSON.parse(JSON.stringify(data)))
       setVelocityData(data)
     } catch (error) {
       console.error("Error fetching velocity data:", error)
@@ -206,12 +207,12 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
 
   const fetchSprintComparison = async () => {
     if (!project_id || !apiURL) {
-      console.log("Missing project_id or apiURL", { project_id, apiURL })
+      print("Missing project_id or apiURL", { project_id, apiURL })
       return
     }
     
     if (isLoadingComparison || lastFetchedProjectId === project_id) {
-      console.log("Already loading or already fetched for this project")
+      print("Already loading or already fetched for this project")
       return
     }
     
@@ -221,7 +222,7 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
       const url = `${apiURL}/api/sprints/comparison?projectId=${project_id}`
       const response = await fetch(url)
       const data = await response.json()
-      console.log('SPRINT COMPARISON DATA:', JSON.parse(JSON.stringify(data)))  
+      print('SPRINT COMPARISON DATA:', JSON.parse(JSON.stringify(data)))  
       setSprintComparison(data)
       setLastFetchedProjectId(project_id)
     } catch (error) {
@@ -232,7 +233,7 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
   }
 
   useEffect(() => {
-    console.log('🧹 [SPRINT CONTEXT] Project changed to:', project_id, '- Clearing data')
+    print('🧹 [SPRINT CONTEXT] Project changed to:', project_id, '- Clearing data')
     setBurndownData(null)
     setTeamMembers([])
     setVelocityData([])
@@ -242,7 +243,7 @@ export const SprintDataProvider = ({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     if (isClient && project_id && project_id !== lastFetchedProjectId) {
-      console.log('🔄 [SPRINT CONTEXT] Fetching data for project:', project_id)
+      print('🔄 [SPRINT CONTEXT] Fetching data for project:', project_id)
       fetchBurndownData()
       fetchVelocityData()
       fetchSprintComparison()

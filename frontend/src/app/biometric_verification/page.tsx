@@ -17,6 +17,7 @@ import ResultsAndPool from "./steps/5_ResultsAndPool"
 import FinalReview from "./steps/6_FinalReview"
 import ParticipantTransition from "./components/ParticipantTransition"
 import Navbar from "@/components/NavBar"
+import { print } from "@/utils/debugLogger"
 
 // Types
 export interface BiometricData {
@@ -117,14 +118,14 @@ function BiometricVerificationContent() {
 
   const finishAndReturn = (reassignments?: TaskReassignment[]) => {
     if (reassignments && reassignments.length > 0) {
-      console.log("🔄 Biometric verification completed with reassignments:", reassignments)
+      print("🔄 Biometric verification completed with reassignments:", reassignments)
       setFinalReassignments(reassignments)
       
       localStorage.setItem("biometricReassignments", JSON.stringify(reassignments))
       
       router.push(`/sprint_planning?projectId=${projectId}&sprintId=${sprintId}&biometricChanges=true`)
     } else {
-      console.log("✅ Biometric verification completed without changes")
+      print("✅ Biometric verification completed without changes")
       router.push(`/sprint_planning?projectId=${projectId}&sprintId=${sprintId}`)
     }
   }
