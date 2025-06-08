@@ -11,6 +11,8 @@ import { useUser } from "@/contexts/usercontext";
 import { useProjectUsers, ProjectUser } from "@/contexts/ProjectusersContext";
 import AvatarProfileIcon from "@/components/Avatar/AvatarDisplay";
 import { printError } from "@/utils/debugLogger";
+import ProjectTeamDisplay from "./SimpleTeamAvatar";
+import ProjectMoodIndicator from "./ProjectMoodIndicator";
 
 type TabState = {
   [key: string]: string;
@@ -42,6 +44,10 @@ const TeamsView = () => {
   const canManageTeams = hasPermission(PERMISSIONS.TEAM_MANAGE);
 
   const [initialTeamCreated, setInitialTeamCreated] = useState(false);
+  const [showAvatars, setShowAvatars] = useState(true); // 🔥 NUEVO: Estado para toggle de avatares
+
+  // 🔥 NUEVO: Obtener el Project Team principal
+  const projectTeam = teams.find((team) => team.isInitial === true);
 
   // Cargar permisos al iniciar
   useEffect(() => {
@@ -223,7 +229,10 @@ const TeamsView = () => {
     return (
       <main className="min-h-screen py-10 bg-[#EBE5EB]/30">
         <div className="container mx-auto px-4">
-          <p>Loading teams...</p>
+          <div className="flex justify-center items-center py-16">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#4a2b4a]"></div>
+            <p className="ml-3 text-lg text-[#4a2b4a]">Loading teams...</p>
+          </div>
         </div>
       </main>
     );
@@ -243,7 +252,7 @@ const TeamsView = () => {
     return (
       <main className="min-h-screen py-10 bg-[#EBE5EB]/30">
         <div className="container mx-auto px-4">
-          <h1 className="text-4xl font-bold text[1e1e1e]">Teams</h1>
+          <h1 className="text-4xl font-bold text-[#1e1e1e]">Teams</h1>
           <p className="text-lg font-semibold text-[#694969] mt-2 mb-2">
             Manage your teams and track their current contribution
           </p>
@@ -304,286 +313,271 @@ const TeamsView = () => {
   return (
     <main className="min-h-screen py-10 bg-[#EBE5EB]/30">
       <div className="container mx-auto px-4">
-        <h1 className="text-4xl font-bold text[1e1e1e]">Teams</h1>
-        <p className="text-lg font-semibold text-[#694969] mt-2 mb-2">
+        <h1 className="text-4xl font-bold text-[#1e1e1e] mb-2">Teams</h1>
+        <p className="text-lg font-semibold text-[#694969] mb-6">
           {canManageTeams
             ? "Manage your teams and track their current contribution"
             : "View teams and track their current contribution"}
         </p>
-        <div className="flex justify-between items-center mt-6">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <svg
-                className="w-4 h-4 text-gray-500"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+
+        {/* 🔥 NUEVO LAYOUT: Grid con Project Team a la izquierda y lista a la derecha */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* 🔥 PROJECT TEAM DISPLAY - 2/3 del ancho */}
+          <div className="lg:col-span-2">
+            {projectTeam && projectUsers.length > 0 ? (
+              <ProjectTeamDisplay
+                projectTeam={projectTeam}
+                projectUsers={projectUsers}
+              />
+            ) : (
+              <div className="bg-white rounded-lg shadow-md p-6 h-full flex items-center justify-center">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#4a2b4a] mx-auto"></div>
+                  <p className="mt-4 text-lg text-[#4a2b4a]">Loading project team...</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 🔥 TEAMS LIST - 1/3 del ancho */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg shadow-md p-6 h-full">
+              
+              {/* Header de la lista con toggle */}
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-[#1e1e1e]">All Teams</h2>
+                <div className="flex items-center gap-2">
+                  {/* 🔥 NUEVO: Toggle para mostrar avatares */}
+                  <button
+                    onClick={() => setShowAvatars(!showAvatars)}
+                    className={`p-2 rounded-md transition-colors ${
+                      showAvatars 
+                        ? "bg-[#4a2b4a] text-white" 
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                    title={showAvatars ? "Hide member avatars" : "Show member avatars"}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        strokeWidth={2} 
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" 
+                      />
+                    </svg>
+                  </button>
+                  
+                  {canManageTeams && (
+                    <button
+                      className="flex items-center px-3 py-1 bg-[#4a2b4a] text-white rounded-md text-sm hover:bg-[#694969] transition-colors"
+                      onClick={handleCreateTeam}
+                    >
+                      <svg
+                        className="w-4 h-4 mr-1"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                        />
+                      </svg>
+                      New
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Search bar */}
+              <div className="relative mb-4">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                  <svg
+                    className="w-4 h-4 text-gray-500"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4a2b4a] focus:border-transparent text-sm"
+                  placeholder="Search teams..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
-              </svg>
+              </div>
+
+              {/* 🔥 LISTA ACTUALIZADA CON AVATARES OPCIONALES */}
+              <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                {filteredTeams.map((team) => (
+                  <div
+                    key={team.id}
+                    className={`border rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow ${
+                      team.isInitial
+                        ? "border-[#4a2b4a] bg-[#4a2b4a]/5"
+                        : "border-gray-200 hover:border-[#c7a0b8]"
+                    }`}
+                    onClick={() => navigateToTeamDetails(team.id)}
+                  >
+                    {/* Header row */}
+                    <div className="flex justify-between items-start mb-2">
+                      {/* 🔥 TAMAÑO AUMENTADO: de text-sm a text-base */}
+                      <h3 className="font-semibold text-[#4a2b4a] text-base">
+                        {team.name}
+                        {team.isInitial && (
+                          <span className="ml-2 text-xs bg-[#4a2b4a] text-white px-2 py-0.5 rounded-full">
+                            Main
+                          </span>
+                        )}
+                      </h3>
+
+                      {canManageTeams && !team.isInitial && (
+                        <div className="flex space-x-1">
+                          <button
+                            className="text-gray-400 hover:text-[#4a2b4a] p-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditTeam(team);
+                            }}
+                          >
+                            <svg
+                              className="w-3 h-3"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                              />
+                            </svg>
+                          </button>
+                          <button
+                            className="text-gray-400 hover:text-red-500 p-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteTeam(team);
+                            }}
+                          >
+                            <svg
+                              className="w-3 h-3"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Description - 🔥 TAMAÑO AUMENTADO: de text-xs a text-sm */}
+                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                      {team.description}
+                    </p>
+
+                    {/* 🔥 CONTENT ROW: Stats + Avatares (si están habilitados) */}
+                    <div className={`flex ${showAvatars ? "justify-between items-center" : "justify-between"}`}>
+                      
+                      {/* Stats compactos - 🔥 TAMAÑO AUMENTADO: de text-xs a text-sm */}
+                      <div className="flex gap-4 text-sm">
+                        <span className="text-gray-500">
+                          {team.members.length} members
+                        </span>
+                        <span className="text-[#4a2b4a] font-medium">
+                          {team.members.reduce(
+                            (sum, member) => sum + (member.tasksCompleted || 0),
+                            0
+                          )}{" "}
+                          tasks
+                        </span>
+                      </div>
+
+                      {/* 🔥 AVATARES A LA DERECHA (si están habilitados) */}
+                      {showAvatars && (
+                        <div className="flex -space-x-1">
+                          {team.members.slice(0, 4).map((member, index) => {
+                            const enrichedMember = getEnrichedMemberData(member);
+                            return (
+                              <div
+                                key={member.id || index}
+                                className="relative"
+                                title={enrichedMember.name}
+                              >
+                                {enrichedMember.avatarUrl ? (
+                                  <AvatarProfileIcon
+                                    avatarUrl={enrichedMember.avatarUrl}
+                                    gender={enrichedMember.gender}
+                                    size={24}
+                                    emotion="Happy"
+                                    expressionIntensity={0.6}
+                                  />
+                                ) : (
+                                  <div className="w-6 h-6 rounded-full bg-[#c7a0b8] border-2 border-white flex items-center justify-center">
+                                    <span className="text-white text-xs font-medium">
+                                      {enrichedMember.name?.charAt(0)?.toUpperCase() || '?'}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                          
+                          {/* Mostrar "+X" si hay más miembros */}
+                          {team.members.length > 4 && (
+                            <div 
+                              className="w-6 h-6 rounded-full bg-gray-400 border-2 border-white flex items-center justify-center"
+                              title={`+${team.members.length - 4} more members`}
+                            >
+                              <span className="text-white text-xs font-medium">
+                                +{team.members.length - 4}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <input
-              type="text"
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4a2b4a] focus:border-transparent"
-              placeholder="Search team name..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+          </div>
+        </div>
+
+        {/* 🔥 PROJECT MOOD INDICATOR - Debajo de las tarjetas */}
+        {projectTeam && projectUsers.length > 0 && (
+          <div className="mt-6">
+            <ProjectMoodIndicator
+              teamMembers={projectTeam.members}
+              projectId={projectId}
             />
           </div>
-          {canManageTeams && (
-            <button
-              className="flex items-center px-4 py-2 bg-[#4a2b4a] text-white rounded-md"
-              onClick={handleCreateTeam}
-            >
-              <svg
-                className="w-5 h-5 mr-2"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                />
-              </svg>
-              Create Team
-            </button>
-          )}
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-          {filteredTeams.map((team) => (
-            <div
-              key={team.id}
-              className={`bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow ${
-                team.isInitial ? "border-2 border-[#4a2b4a]" : ""
-              }`}
-              onClick={() => navigateToTeamDetails(team.id)}
-            >
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">
-                  Team - {team.name}
-                </h2>
-                {canManageTeams && !team.isInitial && (
-                  <div className="flex space-x-2">
-                    <button
-                      className="text-gray-500 hover:text-[#4a2b4a]"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditTeam(team);
-                      }}
-                    >
-                      <svg
-                        className="w-5 h-5"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                        />
-                      </svg>
-                    </button>
-                    <button
-                      className="text-gray-500 hover:text-red-500"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteTeam(team);
-                      }}
-                    >
-                      <svg
-                        className="w-5 h-5"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                )}
-              </div>
-              <div className="flex border-b mb-4">
-                <button
-                  className={`py-2 px-4 ${
-                    activeTab[team.id] === "overview"
-                      ? "border-b-2 border-[#4a2b4a] font-medium"
-                      : "text-gray-500"
-                  }`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleTab(team.id, "overview");
-                  }}
-                >
-                  Overview
-                </button>
-                <button
-                  className={`py-2 px-4 ${
-                    activeTab[team.id] === "members"
-                      ? "border-b-2 border-[#4a2b4a] font-medium"
-                      : "text-gray-500"
-                  }`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleTab(team.id, "members");
-                  }}
-                >
-                  Members
-                </button>
-              </div>
-              {(activeTab[team.id] === "overview" || !activeTab[team.id]) && (
-                <>
-                  <p className="text-sm text-gray-600 mb-6">{team.description}</p>
-                  <div className="flex justify-between items-center">
-                    <div className="flex flex-col items-center">
-                      <div className="p-3 bg-[#ebe5eb] rounded-full mb-2">
-                        <svg
-                          className="w-6 h-6 text-[#4a2b4a]"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                          />
-                        </svg>
-                      </div>
-                      <span className="text-2xl font-bold">{team.members.length}</span>
-                      <span className="text-xs text-gray-500">Members</span>
-                    </div>
-                    <div className="flex flex-col items-center">
-                      <div className="p-3 bg-[#ebe5eb] rounded-full mb-2">
-                        <svg
-                          className="w-6 h-6 text-[#4a2b4a]"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                      </div>
-                      <span className="text-2xl font-bold">
-                        {team.members.reduce(
-                          (sum, member) => sum + member.tasksCompleted,
-                          0
-                        )}
-                      </span>
-                      <span className="text-xs text-gray-500">Completed</span>
-                    </div>
-                    <div className="flex flex-col items-center">
-                      <div className="p-3 bg-[#ebe5eb] rounded-full mb-2">
-                        <svg
-                          className="w-6 h-6 text-[#4a2b4a]"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                      </div>
-                      <span className="text-2xl font-bold">
-                        {team.members.reduce(
-                          (sum, member) => sum + member.currentTasks,
-                          0
-                        )}
-                      </span>
-                      <span className="text-xs text-gray-500">Upcoming</span>
-                    </div>
-                  </div>
-                </>
-              )}
-              {activeTab[team.id] === "members" && (
-                <div className="space-y-4">
-                  {team.members.map((member) => {
-                    const enrichedMember = getEnrichedMemberData(member);
-                    return (
-                      <div key={member.id} className="bg-gray-50 rounded-md p-4">
-                        <div className="flex items-center">
-                          <div className="relative w-10 h-10 mr-3">
-                            {enrichedMember.avatarUrl ? (
-                              <AvatarProfileIcon
-                                avatarUrl={enrichedMember.avatarUrl}
-                                size={40}
-                                borderWidth={2}
-                                borderColor="#C7A0B8"
-                                backgroundColor="#ebe5eb"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 bg-[#ebe5eb] rounded-full flex items-center justify-center text-[#4a2b4a] font-bold">
-                                {member.name.charAt(0)}
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-medium">{member.name}</h4>
-                            <p className="text-sm text-gray-600">{member.role}</p>
-                            <div className="flex items-center mt-1 text-xs text-gray-500">
-                              <span>{member.tasksCompleted} tasks completed</span>
-                              <span className="mx-2">•</span>
-                              <span>{member.currentTasks} current tasks</span>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div
-                              className="inline-block px-2 py-1 rounded-full text-xs font-medium"
-                              style={{
-                                backgroundColor:
-                                  member.availability >= 80
-                                    ? "rgba(34, 197, 94, 0.1)"
-                                    : "rgba(234, 179, 8, 0.1)",
-                                color:
-                                  member.availability >= 80
-                                    ? "rgb(22, 163, 74)"
-                                    : "rgb(202, 138, 4)",
-                              }}
-                            >
-                              {member.availability}% available
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+        )}
       </div>
+
+      {/* Modales existentes */}
       <CreateTeamModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
