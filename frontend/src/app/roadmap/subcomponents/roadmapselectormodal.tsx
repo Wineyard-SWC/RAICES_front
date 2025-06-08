@@ -69,8 +69,8 @@ export default function RoadmapSelectorModal({
         <div className="p-6 border-b bg-gradient-to-r from-[#f5f0f1] to-[#ebe5eb]">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-2xl font-bold text-[#4a2b4a]">Select Roadmap</h2>
-              <p className="text-[#694969]">Choose an existing roadmap to work with</p>
+              <h2 className="text-2xl font-bold text-[#4a2b4a]">Select Map</h2>
+              <p className="text-[#694969]">Choose an existing dependency map to work with</p>
             </div>
             <button
               aria-label="exit"
