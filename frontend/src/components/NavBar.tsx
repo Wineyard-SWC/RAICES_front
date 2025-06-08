@@ -411,23 +411,6 @@ function NavbarContent({ projectSelected = false }: NavbarProps) {
 
       {/* Casa (Virtual Office) y Avatar */}
       <div className="flex items-center space-x-4 flex-shrink-0 w-1/4 justify-end">
-        <button
-        className="relative"
-        onClick={() => router.push("/virtual_office")}
-        aria-label="Go to Virtual Office"
-        >
-          <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-6 w-6 text-[#4a2b4a]"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={1.5}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l9-9 9 9M4 10v10h16V10" />
-          </svg>
-        </button>
-
         <div className="relative avatar-menu">
           <button 
             className="flex items-center" 
