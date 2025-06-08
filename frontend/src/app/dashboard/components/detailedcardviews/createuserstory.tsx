@@ -3,6 +3,7 @@ import { Save, X, Plus, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/contexts/usercontext";
 import { v4 as uuidv4 } from "uuid"
+import { getAssigneeId, getAssigneeName } from "../../utils/secureAssigneeFormat";
 
 interface CreateUserStoryFormProps {
   onSave: (data: any) => void;
@@ -52,7 +53,7 @@ const CreateUserStoryForm = ({ onSave,
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleAddAssignee = () => {
-    if (newAssignee && !formData.assignee.some(a => a.users[0] === newAssignee)) {
+    if (newAssignee && !formData.assignee.some(a => getAssigneeId(a) === newAssignee)) {
       const user = availableUsers.find(u => u.id === newAssignee);
       if (user) {
         setFormData({
@@ -67,7 +68,7 @@ const CreateUserStoryForm = ({ onSave,
   const handleRemoveAssignee = (userId: string) => {
     setFormData({
       ...formData,
-      assignee: formData.assignee.filter(a => a.users[0] !== userId),
+      assignee: formData.assignee.filter(a => getAssigneeId(a) !== userId),
     });
   };
 
@@ -284,10 +285,10 @@ const CreateUserStoryForm = ({ onSave,
           <div className="mb-3 space-y-2">
             {formData.assignee.map((assignee, index) => (
               <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded-md">
-                <span className="text-lg">{assignee.users[1]}</span>
+                <span className="text-lg">{getAssigneeName(assignee)}</span>
                 <Button
                   type="button"
-                  onClick={() => handleRemoveAssignee(assignee.users[0])}
+                  onClick={() => handleRemoveAssignee(getAssigneeId(assignee))}
                   variant="ghost"
                   size="sm"
                   className="text-red-500 hover:text-red-700"
@@ -309,7 +310,7 @@ const CreateUserStoryForm = ({ onSave,
           >
             <option value="">Select user to assign</option>
             {availableUsers
-              .filter(u => !formData.assignee.some(a => a.users[0] === u.id))
+              .filter(u => !formData.assignee.some(a => getAssigneeId(a) === u.id))
               .map(user => (
                 <option key={user.id} value={user.id}>
                   {user.name}

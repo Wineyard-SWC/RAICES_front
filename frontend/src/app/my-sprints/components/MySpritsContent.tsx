@@ -129,7 +129,6 @@ export default function MySpritsContent() {
                     <StatusBadge status={currentSprint.status} />
                     <h3 className="text-2xl font-bold ml-4">Sprint {currentSprint.sprintName.split(' ').pop()}</h3>
                   </div>
-                  <p className="text-[#694969] mt-3 mb-2">{currentSprint.selectedStories[0]?.description || "Focus on user authentication and dashboard improvements"}</p>
                   
                   <div className="mt-4 mb-6 flex items-center text-[#694969]">
                     <CalendarClock size={16} className="mr-2" />
@@ -152,7 +151,7 @@ export default function MySpritsContent() {
                         <Bug size={20} className="text-white" />
                       </div>
                       <div className="ml-4">
-                        <div className="text-2xl font-bold">3</div>
+                        <div className="text-2xl font-bold">{currentSprint.bugsCount || 0}</div>
                         <div className="text-sm text-[#694969]">Bugs</div>
                       </div>
                     </div>

@@ -2,6 +2,7 @@ import { Clock, Calendar, User, Users, BookOpen, Hash, GitBranch } from "lucide-
 import { Task } from "@/types/task";
 import { useKanban } from "@/contexts/unifieddashboardcontext";
 import { getUserStoryTitleByTaskId2 } from "@/utils/kanbanUtils";
+import { getAssigneeName,getAssigneeId } from "../../utils/secureAssigneeFormat";
 
 interface TaskViewFormProps {
   task: Task;
@@ -98,7 +99,7 @@ const TaskViewForm = ({ task }: TaskViewFormProps) => {
             {task.assignee.map((assignee, index) => (
               <div key={index} className="flex items-center">
                 <User className="h-4 w-4 mr-2 text-gray-500" />
-                <p className="text-black text-lg">{assignee.users[1]}</p>
+                <p className="text-black text-lg">{getAssigneeName(assignee)}</p>
               </div>
             ))}
           </div>
