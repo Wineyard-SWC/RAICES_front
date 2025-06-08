@@ -17,7 +17,7 @@ import { print } from "@/utils/debugLogger"
 import { useSearchParams } from "next/navigation"
 
 // Definimos las pestañas como constantes para evitar errores de tipeo
-const TABS = ["Dashboard", "Sprints", "Dependencies", "Team", "Generate"] as const
+const TABS = ["Dashboard", "Sprints", "Dependency Map", "Team", "Generate"] as const
 type TabType = (typeof TABS)[number]
 
 // Definir constantes de permisos
@@ -29,7 +29,7 @@ const PERMISSIONS = {
 const PATH_TO_TAB: Record<string, TabType> = {
   "/dashboard": "Dashboard",
   "/my-sprints": "Sprints",
-  "/roadmap": "Dependencies",
+  "/roadmap": "Dependency Map",
   "/team": "Team",
   "/generate": "Generate",
   "/gen_requirements": "Generate",
@@ -202,7 +202,7 @@ function NavbarContent({ projectSelected = false }: NavbarProps) {
           router.push(`/dashboard?projectId=${currentProjectId}`)
         }
         break
-      case "Dependencies":
+      case "Dependency Map":
         if (currentProjectId) {
           router.push(`/roadmap?projectId=${currentProjectId}`)
         }
@@ -266,9 +266,9 @@ function NavbarContent({ projectSelected = false }: NavbarProps) {
         <Link href="/projects" className="mr-4 flex items-center">
           <div className="flex items-center">
             <Image
-              src="/img/raicesinvertido.png"
+              src="/img/LogoAlone.png"
               alt="Logo RAICES"
-              width={110}
+              width={70}
               height={40}
               className="object-contain max-w-[110px] h-auto"
             />

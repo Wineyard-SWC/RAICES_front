@@ -6,147 +6,125 @@ import * as THREE from "three";
 import { useRouter } from 'next/navigation';
 import { print } from "@/utils/debugLogger";
 
-type Phase = "walk" | "waitRight" | "return" | "expression";
-
-function AvatarSequence({
+function SimpleAvatarGreeting({
   avatarUrl,
   gender,
-  walkAnimUrl,
-  jogAnimUrl,
   expressionAnimUrl,
   onLoad
 }: {
   avatarUrl: string;
   gender: string;
-  walkAnimUrl: string;
-  jogAnimUrl: string;
   expressionAnimUrl: string;
   onLoad?: () => void;
 }) {
   const group = useRef<THREE.Group>(null!);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [phase, setPhase] = useState<Phase>("walk");
-  const [avatarX, setAvatarX] = useState(-2);
+  const [showGreeting, setShowGreeting] = useState(false);
 
-  // Precarga de modelos
+  // Prefijo según género
+  const prefix = gender === "F" ? "F" : "M";
+
+  // 🔥 CARGAR IDLE Y EXPRESIÓN SEPARADAMENTE
   const avatarGltf = useGLTF(avatarUrl);
-  const walkGltf = useGLTF(walkAnimUrl);
-  const jogGltf = useGLTF(jogAnimUrl);
+  const idlePath = `/animation/avatarAnimations/idle/${prefix}_Standing_Idle_001.glb`;
+  const idleGltf = useGLTF(idlePath);
   const expressionGltf = useGLTF(expressionAnimUrl);
 
-  const { actions: walkActions } = useAnimations(walkGltf.animations, group);
-  const { actions: jogActions } = useAnimations(jogGltf.animations, group);
-  const { actions: exprActions } = useAnimations(expressionGltf.animations, group);
+  // 🔥 COMBINAR TODAS LAS ANIMACIONES
+  const allClips = [
+    ...idleGltf.animations,
+    ...expressionGltf.animations
+  ];
 
-  // Verificar que todo esté cargado antes de iniciar
+  const { actions } = useAnimations(allClips, group);
+
+  // 🔥 INICIAR IDLE INMEDIATAMENTE CUANDO LAS ACCIONES ESTÉN LISTAS
   useEffect(() => {
-    Promise.all([
-      new Promise(resolve => {
-        if (avatarGltf.scene) resolve(true);
-      }),
-      new Promise(resolve => {
-        if (walkGltf.animations.length > 0) resolve(true);
-      }),
-      new Promise(resolve => {
-        if (jogGltf.animations.length > 0) resolve(true);
-      }),
-      new Promise(resolve => {
-        if (expressionGltf.animations.length > 0) resolve(true);
-      })
-    ]).then(() => {
-      setIsLoaded(true);
-      onLoad?.();
-    });
-  }, [avatarGltf, walkGltf, jogGltf, expressionGltf, onLoad]);
+    if (!actions) return;
 
-  // Solo ejecutar animaciones cuando todo esté cargado
+    const idleName = `${prefix}_Standing_Idle_001`;
+    const idleAction = actions[idleName];
+
+    if (idleAction) {
+      // 🔥 EMPEZAR IDLE INMEDIATAMENTE PARA EVITAR T-POSE
+      idleAction
+        .reset()
+        .setLoop(THREE.LoopRepeat, Infinity)
+        .play();
+      
+      print("🎬 Started idle animation immediately:", idleName);
+    }
+  }, [actions, prefix]);
+
+  // 🔥 VERIFICAR QUE TODO ESTÉ CARGADO
   useEffect(() => {
-    if (!isLoaded) return;
-
-    // Detener todas las animaciones actuales
-    Object.values(walkActions).forEach((a) => a && a.stop());
-    Object.values(jogActions).forEach((a) => a && a.stop());
-    Object.values(exprActions).forEach((a) => a && a.stop());
-    
-    print("el gender llega así: ", gender);
-
-    const genderVersion = ((gender === "F") ? "001" : "002");
-
-    print("-----------------Género detectado:", gender, "- Usando versión:", genderVersion);
-
-    // Construir los nombres de las animaciones basados en el género
-    const walkAnimName = `${gender}_Walk_Strafe_Left_${genderVersion}`;
-    const jogAnimName = `${gender}_Walk_Strafe_Right_${genderVersion}`;
-
-    // La animación de expresión siempre es la misma
-    const exprAnimName = "M_Standing_Expressions_001";
-
-    print("Usando animaciones:", { walkAnimName, jogAnimName, exprAnimName });
-
-    if (phase === "walk") {
-      walkActions[walkAnimName]
-        ?.reset()
-        .fadeIn(0.3)
-        .play();
-    } else if (phase === "return") {
-      jogActions[jogAnimName]
-        ?.reset()
-        .fadeIn(0.3)
-        .play();
-    } else if (phase === "expression") {
-      exprActions[exprAnimName]
-        ?.reset()
-        .setLoop(THREE.LoopOnce, 1)
-        .fadeIn(0.3)
-        .play();
-      if (exprActions[exprAnimName]) {
-        exprActions[exprAnimName].clampWhenFinished = true;
+    const checkAssetsLoaded = () => {
+      if (avatarGltf.scene && idleGltf.animations.length > 0 && expressionGltf.animations.length > 0) {
+        print("✅ Avatar, idle y expresiones cargados completamente");
+        setIsLoaded(true);
+        onLoad?.();
+        
+        // 🔥 ESPERAR 3 SEGUNDOS ANTES DE HACER EL SALUDO
+        setTimeout(() => {
+          setShowGreeting(true);
+        }, 3000);
       }
-    }
-  }, [phase, walkActions, jogActions, exprActions, isLoaded, gender]);
+    };
 
-  // Controla el movimiento y las fases
-  useFrame((_, delta) => {
-    if (phase === "walk") {
-      setAvatarX((x) => {
-        const next = x + delta * 1;
-        // print("Avatar X:", next);
-        if (next >= -0.09) {
-          setPhase("waitRight");
-          return 2;
-        }
-        return next;
-      });
-    } else if (phase === "waitRight") {
-      // Espera 2 segundos y luego cambia a "return"
-      setTimeout(() => setPhase("return"), 2000);
-      // Solo ejecuta el timeout una vez
-      setPhase("waiting"); // Fase temporal para evitar múltiples timeouts
-    } else if (phase === "return") {
-      print("Inicio en:", avatarX);
-      setAvatarX((x) => {
-        const next = x - delta * 1;
-        print("Avatar X:", x);
-        if (next <= 1.5) {
-          setPhase("expression");
-          return 0;
-        }
-        return next;
-      });
-    }
-    // Cuando está en "expression", no mueve más el avatar
-  });
+    // Verificar inmediatamente y también después de un pequeño delay
+    checkAssetsLoaded();
+    const timer = setTimeout(checkAssetsLoaded, 100);
+    
+    return () => clearTimeout(timer);
+  }, [avatarGltf, idleGltf, expressionGltf, onLoad]);
 
-  // Solo renderizar cuando esté cargado
+  // 🔥 EJECUTAR ANIMACIÓN DE SALUDO CUANDO SEA EL MOMENTO
+  useEffect(() => {
+    if (!isLoaded || !showGreeting || !actions) return;
+
+    const idleName = `${prefix}_Standing_Idle_001`;
+    const exprAnimName = "M_Standing_Expressions_001"; // Siempre usar masculino para expresiones
+    
+    const idleAction = actions[idleName];
+    const greetingAction = actions[exprAnimName];
+
+    if (greetingAction && idleAction) {
+      print("🎭 Ejecutando animación de saludo:", exprAnimName);
+      
+      // 🔥 HACER CROSSFADE DEL IDLE A EXPRESIÓN
+      idleAction.fadeOut(0.5);
+      
+      greetingAction
+        .reset()
+        .setLoop(THREE.LoopOnce, 1)
+        .fadeIn(0.5)
+        .play();
+      greetingAction.clampWhenFinished = true;
+
+      // 🔥 VOLVER AL IDLE DESPUÉS DE LA EXPRESIÓN
+      const durationMs = (greetingAction.getClip().duration || 3) * 1000;
+      
+      setTimeout(() => {
+        greetingAction.fadeOut(0.5);
+        idleAction
+          .reset()
+          .setLoop(THREE.LoopRepeat, Infinity)
+          .fadeIn(0.5)
+          .play();
+        
+        print("🔄 Volviendo al idle después del saludo");
+      }, durationMs + 200);
+    }
+  }, [showGreeting, actions, isLoaded, prefix]);
+
+  // 🔥 MOSTRAR AVATAR SIEMPRE, PERO MARCAR COMO CARGADO CUANDO ESTÉ LISTO
   return (
     <group ref={group} dispose={null}>
-      {isLoaded && phase !== "waitRight" && phase !== "waiting" && (
-        <primitive
-          object={avatarGltf.scene}
-          scale={1.5}
-          position={[avatarX, -2.2, 0]}
-        />
-      )}
+      <primitive
+        object={avatarGltf.scene}
+        scale={1.5}
+        position={[0, -2.2, 0]}
+      />
     </group>
   );
 }
@@ -157,31 +135,31 @@ const WelcomeText = ({ isVisible }: { isVisible: boolean }) => {
     visible: { 
       opacity: 1,
       transition: { 
-        duration: 0.5,
-        staggerChildren: 0.2
+        duration: 0.8,
+        staggerChildren: 0.3
       }
     }
   };
 
   const textVariants = {
-    hidden: { opacity: 0, x: -20 },
+    hidden: { opacity: 0, y: -30 },
     visible: { 
       opacity: 1, 
-      x: 0,
+      y: 0,
       transition: { 
-        duration: 0.8,
+        duration: 1,
         ease: "easeOut"
       }
     }
   };
 
   const logoVariants = {
-    hidden: { opacity: 0, x: 20 },
+    hidden: { opacity: 0, scale: 0.8 },
     visible: { 
       opacity: 1, 
-      x: 0,
+      scale: 1,
       transition: { 
-        duration: 0.8,
+        duration: 1,
         ease: "easeOut"
       }
     }
@@ -207,7 +185,7 @@ const WelcomeText = ({ isVisible }: { isVisible: boolean }) => {
           className="flex-shrink-0"
         >
           <img 
-            src="/img/logoAlone.png" 
+            src="/img/LogoAlone.png" 
             alt="Raices Logo" 
             className="h-[100px] w-auto object-contain"
           />
@@ -216,6 +194,13 @@ const WelcomeText = ({ isVisible }: { isVisible: boolean }) => {
     </motion.div>
   );
 };
+
+// 🔥 COMPONENTE DE LOADING MÁS SUTIL
+const LoadingSpinner = () => (
+  <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm rounded-full">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4A2B4A]"></div>
+  </div>
+);
 
 export default function WelcomeAnimation({ 
   avatarUrl,
@@ -228,31 +213,27 @@ export default function WelcomeAnimation({
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   const router = useRouter();
 
-  // Normalizar el género para asegurar consistencia
+  // Normalizar el género
   const normalizedGender = gender?.toLowerCase() === "feminine" ? "feminine" : "masculine";
-  
-  // Usar F o M para las rutas de archivos
   const safeGender = normalizedGender === "feminine" ? "F" : "M";
-  
-  // Determinar qué versión de animación usar según el género
-  const versionGender = safeGender === "F" ? "001" : "002";
 
-  print("Género recibido:", gender);
-  print("Género normalizado:", normalizedGender);
-  print("Género para archivos:", safeGender, "- Usando versión:", versionGender);
+  print("🎭 Género recibido:", gender, "-> Usando:", safeGender);
 
+  // 🔥 TIMELINE SIMPLIFICADO
   useEffect(() => {
     if (assetsLoaded) {
-      const timer = setTimeout(() => {
+      // Mostrar texto de bienvenida después de que cargue
+      const welcomeTimer = setTimeout(() => {
         setShowWelcome(true);
-      }, 4000);
+      }, 1000);
 
+      // Navegar después de completar la animación
       const navigationTimer = setTimeout(() => {
         router.push('/projects');
-      }, 8000);
+      }, 8000); // 🔥 AUMENTADO: 8 segundos para ver el saludo completo
 
       return () => {
-        clearTimeout(timer);
+        clearTimeout(welcomeTimer);
         clearTimeout(navigationTimer);
       };
     }
@@ -263,7 +244,7 @@ export default function WelcomeAnimation({
       <div className="relative">
         <WelcomeText isVisible={showWelcome} />
         <div
-          className="rounded-full shadow-lg bg-white flex items-center justify-center"
+          className="rounded-full shadow-lg bg-white flex items-center justify-center relative"
           style={{
             width: 320,
             height: 320,
@@ -272,21 +253,33 @@ export default function WelcomeAnimation({
             overflow: "hidden",
           }}
         >
+          {/* 🔥 LOADING SPINNER SOLO CUANDO NO ESTÁ CARGADO */}
+          {!assetsLoaded && <LoadingSpinner />}
+          
+          {/* 🔥 CANVAS SIEMPRE VISIBLE */}
           <Canvas camera={{ position: [0, 0.3, 3.5], fov: 30 }}>
             <ambientLight intensity={0.6} />
             <directionalLight position={[2, 5, 2]} intensity={1} />
             <Suspense fallback={null}>
-              <AvatarSequence
+              <SimpleAvatarGreeting
                 avatarUrl={avatarUrl}
                 gender={safeGender}
-                walkAnimUrl={`/animation/avatarAnimations/locomotion/${safeGender}_Walk_Strafe_Left_${versionGender}.glb`}
-                jogAnimUrl={`/animation/avatarAnimations/locomotion/${safeGender}_Walk_Strafe_Right_${versionGender}.glb`}
                 expressionAnimUrl={`/animation/avatarAnimations/expression/M_Standing_Expressions_001.glb`}
-                onLoad={() => setAssetsLoaded(true)}
+                onLoad={() => {
+                  print("🎉 Assets completamente cargados, ocultando spinner");
+                  setAssetsLoaded(true);
+                }}
               />
             </Suspense>
           </Canvas>
         </div>
+        
+        {/* 🔥 INDICADOR DE PROGRESO */}
+        {!assetsLoaded && (
+          <div className="absolute bottom-[-60px] left-1/2 transform -translate-x-1/2 text-center">
+            <p className="text-[#4A2B4A] text-sm animate-pulse">Loading your avatar...</p>
+          </div>
+        )}
       </div>
     </div>
   );

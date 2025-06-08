@@ -28,10 +28,17 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
-      {/* Lado izqueirdo | Fondo morado y texto */}
+      {/* Lado izquierdo | Fondo morado y texto */}
       <div className="flex flex-1 flex-col items-center justify-center bg-[#4A2B4D] p-8 text-center text-white">
-        <div className="mb-8 flex h-40 w-40 items-center justify-center rounded-full bg-[#D9B8D9]">
-          <Image src="/logo.png" alt="RACES Logo" width={160} height={120} className="object-contain" priority />
+        <div className="mb-8 flex h-56 w-56 items-center justify-center rounded-full bg-[#D9B8D9]">
+          <Image
+            src="/logo.png"
+            alt="RAICES Logo"
+            width={220}
+            height={160}
+            className="object-contain"
+            priority
+          />
         </div>
         <div className="max-w-md">
           <p className="text-lg font-small">Plan, track, and grow your projects organically.</p>

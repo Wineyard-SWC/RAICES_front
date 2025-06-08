@@ -131,8 +131,15 @@ export default function CreateAccountPage() {
   return (
     <div className="flex min-h-screen">
       <div className="w-full sm:w-1/2 flex flex-col justify-center items-center text-white p-10" style={{ backgroundColor: '#4A2B4A' }}>
-        <div className="mb-8 flex h-40 w-40 items-center justify-center rounded-full bg-[#D9B8D9]">
-          <Image src="/logo.png" alt="RACES Logo" width={160} height={120} className="object-contain" priority />
+        <div className="mb-8 flex h-56 w-56 items-center justify-center rounded-full bg-[#D9B8D9]">
+          <Image 
+            src="/logo.png" 
+            alt="RAICES Logo" 
+            width={220} 
+            height={160} 
+            className="object-contain" 
+            priority 
+          />
         </div>
         <p className="text-center mt-4 max-w-md">
           Join our community of agile teams and start planning your sprints more effectively. Get started with RAICES today.
