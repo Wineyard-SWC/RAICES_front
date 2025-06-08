@@ -24,7 +24,7 @@ export default function RecentlyUsedRoadmaps({
   if (toShow.length === 0) {
     return (
       <div className="text-gray-500 text-center py-8">
-        No recent roadmaps yet.
+        No recent dependencies yet.
       </div>
     );
   }
