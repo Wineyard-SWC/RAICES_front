@@ -1,5 +1,5 @@
-describe('template spec', () => {
-  it('passes', () => {
+describe('User can delete a Team', () => {
+  it('User can delete a Team', () => {
     cy.login();
     cy.wait(10000);
     cy.login();

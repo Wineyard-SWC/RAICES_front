@@ -1,5 +1,5 @@
-describe('template spec', () => {
-  it('passes', () => {
+describe('User can view detailed view of a team', () => {
+  it('User can view detailed view of a team', () => {
     cy.login();
     cy.wait(10000);
     cy.login();
