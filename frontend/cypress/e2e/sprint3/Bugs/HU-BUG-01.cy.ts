@@ -13,7 +13,7 @@ describe('User can assign a sprint to an existing Bug', () => {
       cy.contains('button', 'View full Backlog').click();
       cy.wait(4000);
 
-      cy.contains('h3', 'BUG PRUEBA COMENTARIOS CYPRESS').click();
+      cy.contains('h3', 'BUG PRUEBA EDICION').click();
       cy.wait(4000);
       
       cy.contains('button', ' Edit').click();
