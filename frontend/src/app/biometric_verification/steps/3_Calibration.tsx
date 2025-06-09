@@ -45,9 +45,18 @@ export default function Calibration({ participant, onComplete }: CalibrationProp
   const [infoTime, setInfoTime] = useState(10);
   const [isInfoActive, setIsInfoActive] = useState(false);
 
-  // Referencias para evitar duplicados
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  // 🔥 UNA SOLA REFERENCIA PARA TODOS LOS TIMERS
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
   const hasCalibrationCompleted = useRef(false);
+
+  // 🔥 FUNCIÓN PARA LIMPIAR CUALQUIER TIMER ACTIVO
+  const clearAnyTimer = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+      print("🧹 Timer limpiado");
+    }
+  };
 
   // Escuchar cambios en el estado de conexión
   useEffect(() => {
@@ -73,7 +82,6 @@ export default function Calibration({ participant, onComplete }: CalibrationProp
     } catch (error: any) {
       printError("Error connecting to Muse:", error);
       
-      // Handle specific user cancellation error
       if (error.message?.includes("User cancelled") || 
           error.name === "NotFoundError" || 
           error.name === "AbortError") {
@@ -87,73 +95,70 @@ export default function Calibration({ participant, onComplete }: CalibrationProp
   // Start the calibration process
   const startCalibration = () => {
     print("🚀 Starting info phase before calibration");
+    
+    // 🔥 LIMPIAR CUALQUIER TIMER EXISTENTE PRIMERO
+    clearAnyTimer();
+    
     setConnectionPhase(false);
     setShowInfoPhase(true);
     setIsInfoActive(true);
-    setInfoTime(20);
+    setInfoTime(10); // 🔥 REINICIAR A 10 segundos
     
     // Iniciar countdown de información
     startInfoCountdown();
   };
 
-  // 🔥 NUEVA FUNCIÓN PARA COUNTDOWN DE INFORMACIÓN
+  // 🔥 FUNCIÓN PARA COUNTDOWN DE INFORMACIÓN (MEJORADA)
   const startInfoCountdown = () => {
     print("ℹ️ Starting info countdown");
     
     // 🔥 ASEGURAR QUE NO HAY TIMERS PREVIOS
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
+    clearAnyTimer();
     
-    const infoInterval = setInterval(() => {
+    timerRef.current = setInterval(() => {
       setInfoTime((prevTime) => {
-        print(`ℹ️ Info time remaining: ${prevTime - 1}s`);
+        const newTime = prevTime - 1;
+        print(`ℹ️ Info time remaining: ${newTime}s`);
         
-        if (prevTime <= 1) {
-          clearInterval(infoInterval);
+        if (newTime <= 0) {
+          // 🔥 LIMPIAR TIMER ANTES DE CONTINUAR
+          clearAnyTimer();
           
-          // 🔥 PEQUEÑO DELAY ANTES DE EMPEZAR CALIBRACIÓN PARA EVITAR CONFLICTOS
+          // 🔥 TRANSICIÓN A CALIBRACIÓN REAL
           setTimeout(() => {
-            // Transición a calibración real
             setShowInfoPhase(false);
             setIsInfoActive(false);
             setIsCalibrating(true);
-            setCalibrationTime(30);
+            setCalibrationTime(30); // 🔥 REINICIAR A 30 segundos
             hasCalibrationCompleted.current = false;
             
             // Iniciar calibración real
-            startCountdown();
-          }, 100); // 100ms de delay
+            startActualCalibration();
+          }, 100);
           
           return 0;
         }
         
-        return prevTime - 1;
+        return newTime;
       });
     }, 1000);
   };
 
-  // 🔥 TAMBIÉN MEJORAR startCountdown PARA ASEGURAR LIMPIEZA
-  const startCountdown = () => {
-    print("⏱️ Iniciando countdown de calibración");
+  // 🔥 NUEVA FUNCIÓN SEPARADA PARA CALIBRACIÓN REAL
+  const startActualCalibration = () => {
+    print("⏱️ Iniciando countdown de calibración REAL");
     
     // 🔥 ASEGURAR QUE NO HAY TIMERS PREVIOS
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
+    clearAnyTimer();
     
-    intervalRef.current = setInterval(() => {
+    timerRef.current = setInterval(() => {
       setCalibrationTime((prevTime) => {
-        print(`⏱️ Calibration time remaining: ${prevTime - 1}s`);
+        const newTime = prevTime - 1;
+        print(`⏱️ Calibration time remaining: ${newTime}s`);
         
-        if (prevTime <= 1) {
-          // Tiempo terminado
-          if (intervalRef.current) {
-            clearInterval(intervalRef.current);
-            intervalRef.current = null;
-          }
+        if (newTime <= 0) {
+          // 🔥 LIMPIAR TIMER Y COMPLETAR CALIBRACIÓN
+          clearAnyTimer();
           
           if (!hasCalibrationCompleted.current) {
             hasCalibrationCompleted.current = true;
@@ -163,9 +168,29 @@ export default function Calibration({ participant, onComplete }: CalibrationProp
           return 0;
         }
         
-        return prevTime - 1;
+        return newTime;
       });
     }, 1000);
+  };
+
+  // 🔥 FUNCIÓN PARA SALTAR DIRECTAMENTE A CALIBRACIÓN
+  const skipToCalibration = () => {
+    print("⏭️ Saltando instrucciones - yendo directo a calibración");
+    
+    // 🔥 LIMPIAR CUALQUIER TIMER ACTIVO
+    clearAnyTimer();
+    
+    // Cambiar estados
+    setShowInfoPhase(false);
+    setIsInfoActive(false);
+    setIsCalibrating(true);
+    setCalibrationTime(30); // 🔥 REINICIAR A 30 segundos
+    hasCalibrationCompleted.current = false;
+    
+    // 🔥 INICIAR CALIBRACIÓN REAL INMEDIATAMENTE
+    setTimeout(() => {
+      startActualCalibration();
+    }, 100);
   };
 
   const handleCalibrationComplete = () => {
@@ -191,29 +216,31 @@ export default function Calibration({ participant, onComplete }: CalibrationProp
     }, 500);
   };
 
-  // Cleanup al desmontar
+  // 🔥 CLEANUP MEJORADO
   useEffect(() => {
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
+      clearAnyTimer();
       disconnect();
     };
   }, [disconnect]);
 
-  // Reset cuando cambia de participante
+  // 🔥 RESET MEJORADO CUANDO CAMBIA DE PARTICIPANTE
   useEffect(() => {
+    print("🔄 Reseteando para nuevo participante:", participant.id);
+    
+    // Limpiar timers
+    clearAnyTimer();
+    
+    // Reset de estados
     setConnectionPhase(true);
+    setShowInfoPhase(false);
+    setIsInfoActive(false);
     setCalibrationTime(30);
+    setInfoTime(10);
     setCalibrationComplete(false);
     setShowNeutralPoint(false);
     setIsCalibrating(false);
     hasCalibrationCompleted.current = false;
-    
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
   }, [participant.id]);
 
   return (
@@ -405,27 +432,9 @@ export default function Calibration({ participant, onComplete }: CalibrationProp
               Calibration will begin automatically when the countdown reaches zero.
             </p>
             
-            {/* 🔥 BOTÓN PARA SALTAR INSTRUCCIONES */}
+            {/* 🔥 BOTÓN DE SKIP MEJORADO */}
             <Button 
-              onClick={() => {
-                // Limpiar el timer actual
-                if (intervalRef.current) {
-                  clearInterval(intervalRef.current);
-                  intervalRef.current = null;
-                }
-                
-                // Ir directamente a calibración
-                setShowInfoPhase(false);
-                setIsInfoActive(false);
-                setIsCalibrating(true);
-                setCalibrationTime(30);
-                hasCalibrationCompleted.current = false;
-                
-                // Iniciar calibración real inmediatamente
-                setTimeout(() => {
-                  startCountdown();
-                }, 100);
-              }}
+              onClick={skipToCalibration}
               className="bg-blue-600 text-white hover:bg-blue-700 px-6 py-2"
             >
               Skip Instructions - Start Calibration Now
