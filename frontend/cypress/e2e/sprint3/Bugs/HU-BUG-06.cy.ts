@@ -18,7 +18,7 @@ describe('User can create a Bug', () => {
     cy.contains('button', 'Bug Report').click();
     cy.wait(1000);
 
-     cy.get('input[placeholder="Brief description of the bug"]')
+    cy.get('input[placeholder="Brief description of the bug"]')
       .type('BUG CREADO PRUEBA');
     
     cy.get('textarea[placeholder="Detailed description of the bug"]')
