@@ -1,11 +1,11 @@
 import { Sprint } from "@/types/sprint";
 import { UserStory } from "@/types/userstory";
 import { Task } from "@/types/task";
+import { Bug } from "@/types/bug"; // Añadir esta importación
 import { getProjectSprints } from "@/utils/getProjectSprints";
 import { getProjectUserStories } from "@/utils/getProjectUserStories";
 import { getProjectTasks } from "@/utils/getProjectTasks";
 import { getProjectBugs } from "@/utils/getProjectBugs";
-import { printError } from "./debugLogger";
 
 export interface SprintMetric {
   sprintId: string;
@@ -20,6 +20,9 @@ export interface SprintMetric {
   selectedStories: UserStory[];
   completedStories: UserStory[];
   bugsCount: number;
+  tasksCount: number;           
+  sprintTasks: Task[];          
+  completedTasks: Task[];       
   startDate: string;
   endDate: string;
 }
@@ -41,7 +44,7 @@ export async function getProjectSprintMetrics(projectId: string): Promise<Sprint
     const allTasks = await getProjectTasks(projectId);
     
     // 4. Obtener todos los bugs del proyecto
-    let allBugs = [];
+    let allBugs: Bug[] = []; // Especificar el tipo explícitamente
     try {
       allBugs = await getProjectBugs(projectId);
     } catch (error) {
@@ -67,11 +70,6 @@ export async function getProjectSprintMetrics(projectId: string): Promise<Sprint
           [story.id, story.uuid].filter(Boolean)
         );
         
-        // Historias completadas (Done)
-        const completedStories = selectedStories.filter(
-          story => story.status_khanban === 'Done'
-        );
-        
         // Filtrar tareas asociadas a este sprint
         const sprintTasks = allTasks.filter(task => {
           // Si la tarea tiene sprint_id directo
@@ -83,15 +81,28 @@ export async function getProjectSprintMetrics(projectId: string): Promise<Sprint
           return false;
         });
         
+        // Calcular historias completadas basándose en el estado de sus tareas
+        const completedStories = selectedStories.filter(story => {
+          // Encontrar todas las tareas asociadas a esta historia
+          const storyTasks = sprintTasks.filter(task => 
+            task.user_story_id === story.id || task.user_story_id === story.uuid
+          );
+          
+          // Si la historia no tiene tareas asociadas, no se considera completada
+          if (storyTasks.length === 0) {
+            return false;
+          }
+          
+          // La historia está completa solo si TODAS sus tareas están en "Done"
+          return storyTasks.every(task => task.status_khanban === 'Done');
+        });
+        
         // Filtrar bugs asociados a este sprint
         const sprintBugs = allBugs.filter(bug => {
           // Si el bug tiene sprint_id directamente
-          if (bug.sprint_id === sprint.id) return true;
+          if (bug.sprintId === sprint.id) return true;
           
           // Si el bug está relacionado con una user story del sprint
-          if (bug.user_story_id && selectedStoryIdentifiers.includes(bug.user_story_id)) return true;
-          
-          // Si el bug tiene una propiedad userStoryRelated
           if (bug.userStoryRelated && selectedStoryIdentifiers.includes(bug.userStoryRelated)) return true;
           
           return false;
@@ -102,30 +113,31 @@ export async function getProjectSprintMetrics(projectId: string): Promise<Sprint
           task => task.status_khanban === 'Done'
         );
         
-        // Calcular puntos totales (sumando los puntos de historia o story_points de las tareas)
-        const totalPoints = sprintTasks.reduce(
-          (sum, task) => sum + (task.story_points || 0),
+        // Calcular puntos totales 
+        const totalPointsFromTasks = sprintTasks.reduce(
+          (sum, task) => sum + (task.story_points || 0), 
           0
         );
         
-        // Si no hay story_points en las tareas, usar los points de las historias
-        const totalPointsFromStories = totalPoints === 0 
+        // Solo usar puntos de historias si no hay puntos en las tareas
+        const totalPointsFromStories = totalPointsFromTasks === 0 
           ? selectedStories.reduce((sum, story) => sum + (story.points || 0), 0)
           : 0;
         
-        // Puntos completados
-        const completedPoints = completedTasks.reduce(
-          (sum, task) => sum + (task.story_points || 0),
+        // Calcular puntos completados - PRIORIZAR puntos de tareas completadas
+        const completedPointsFromTasks = completedTasks.reduce(
+          (sum, task) => sum + (task.story_points || 0), 
           0
         );
         
-        const completedPointsFromStories = completedPoints === 0
+        // Solo usar puntos de historias completadas si no hay puntos en las tareas
+        const completedPointsFromStories = completedPointsFromTasks === 0
           ? completedStories.reduce((sum, story) => sum + (story.points || 0), 0)
           : 0;
         
-        // Usar los puntos de las tareas si están disponibles, de lo contrario usar los de las historias
-        const finalTotalPoints = totalPoints > 0 ? totalPoints : totalPointsFromStories;
-        const finalCompletedPoints = completedPoints > 0 ? completedPoints : completedPointsFromStories;
+        // Usar los puntos de las tareas
+        const finalTotalPoints = totalPointsFromTasks > 0 ? totalPointsFromTasks : totalPointsFromStories;
+        const finalCompletedPoints = completedPointsFromTasks > 0 ? completedPointsFromTasks : completedPointsFromStories;
         
         // Calcular días restantes
         const startDate = new Date(sprint.start_date);
@@ -154,8 +166,11 @@ export async function getProjectSprintMetrics(projectId: string): Promise<Sprint
           totalDuration: totalDurationDays,
           teamSize: sprint.team_members.length,
           selectedStories,
-          completedStories,
+          completedStories, 
           bugsCount: sprintBugs.length,
+          tasksCount: sprintTasks.length,
+          sprintTasks,
+          completedTasks,
           startDate: sprint.start_date,
           endDate: sprint.end_date
         };
@@ -165,12 +180,12 @@ export async function getProjectSprintMetrics(projectId: string): Promise<Sprint
     return sprintMetrics;
     
   } catch (error) {
-    printError("Error obteniendo métricas de los sprints:", error);
+    console.error("Error obteniendo métricas de los sprints:", error);
     return [];
   }
 }
 
-// Función auxiliar para obtener el sprint actual (activo) si existe
+// Función auxiliar para obtener el sprint currente (activo) si existe
 export async function getCurrentSprintMetric(projectId: string): Promise<SprintMetric | null> {
   const metrics = await getProjectSprintMetrics(projectId);
   return metrics.find(metric => metric.status === "active") || metrics[0] || null;
