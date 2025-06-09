@@ -1,5 +1,5 @@
-describe('User can assign a sprint to an existing Bug', () => {
-  it('User can assign a sprint to an existing Bug', () => {
+describe('User can only assign a valid priority to an existing Bug', () => {
+  it('User can only assign a valid priority to an existing Bug', () => {
 
       const validPriorities = ["High","Medium","Low"];
 

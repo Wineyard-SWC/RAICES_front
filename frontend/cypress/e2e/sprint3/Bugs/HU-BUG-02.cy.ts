@@ -1,5 +1,5 @@
-describe('User can assign a sprint to an existing Bug', () => {
-  it('User can assign a sprint to an existing Bug', () => {
+describe('User can edit an existing Bug', () => {
+  it('User can edit an existing Bug', () => {
 
       cy.login();
       cy.wait(10000);

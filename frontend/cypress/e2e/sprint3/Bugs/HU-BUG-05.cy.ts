@@ -1,8 +1,6 @@
-describe('User can assign a sprint to an existing Bug', () => {
-  it('User can assign a sprint to an existing Bug', () => {
-
-      const validPriorities = ["High","Medium","Low"];
-
+describe('User can delete an existing Bug', () => {
+  it('User can delete an existing Bug', () => {
+    
       cy.login();
       cy.wait(10000);
       cy.login();
