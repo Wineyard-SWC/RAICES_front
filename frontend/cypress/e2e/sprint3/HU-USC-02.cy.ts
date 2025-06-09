@@ -1,5 +1,5 @@
-describe('Comments in product backlog kanban items', () => {
-    it('Comment succesfully added', () => {
+describe('No empty comments allowed in product backlog kanban items', () => {
+    it('Empty comment not added', () => {
       cy.login();
       cy.wait(10000);
       cy.login();
