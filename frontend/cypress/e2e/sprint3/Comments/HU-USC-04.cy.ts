@@ -1,5 +1,5 @@
-describe('template spec', () => {
-  it('passes', () => {
+describe('User can delete his own comments', () => {
+  it('User can delete his own comments', () => {
     cy.login();
       cy.wait(10000);
       cy.login();
