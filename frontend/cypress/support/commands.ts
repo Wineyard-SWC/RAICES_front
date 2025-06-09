@@ -4,7 +4,7 @@ require("@4tw/cypress-drag-drop");
 
 Cypress.Commands.add('login', () => {
     cy.fixture('loginInfo').then((user) => {
-      cy.visit('login'); // Cambia la ruta si es diferente
+      cy.visit('https://raices-eta.vercel.app/login'); // Cambia la ruta si es diferente
       cy.get('#email').type(user.verifiedMail)
       cy.get('#password').type(user.verifiedPassword)
       cy.get('.inline-flex').click()
