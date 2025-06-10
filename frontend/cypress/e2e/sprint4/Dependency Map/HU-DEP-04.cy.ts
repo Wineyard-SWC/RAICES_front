@@ -14,7 +14,7 @@ describe('User can add elements in a dependency map', () => {
     
     cy.get('li')  
       .find('div')  
-      .contains('CAMBIO TITULO CYPRESS PRUEBA DEPENDENCY MAP')  // Encuentra el div con el texto
+      .contains('CAMBIO TITULO CYPRESS PRUEBA DEPENDENCY MAP')  
       .parents('li') 
       .find('button')  
       .contains('Load')  
