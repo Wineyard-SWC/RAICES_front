@@ -1,5 +1,5 @@
-describe('User can add elements in a dependency map', () => {
-  it('User can add elements in a dependency map', () => {
+describe('User can add a phase to a dependency map', () => {
+  it('User can add a phase to a dependency map', () => {
         
     cy.login();
     cy.wait(10000);  
