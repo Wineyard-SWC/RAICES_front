@@ -1,5 +1,5 @@
-describe('User can add elements in a dependency map', () => {
-  it('User can add elements in a dependency map', () => {
+describe('User can save changes of a dependency map', () => {
+  it('User can save changes of a dependency map', () => {
         
     cy.login();
     cy.wait(10000);  
@@ -44,6 +44,8 @@ describe('User can add elements in a dependency map', () => {
       .should('not.exist'); 
     
     cy.contains('button', 'Done').click();
+
+    cy.contains('button','Save').click();
 
     })
 })

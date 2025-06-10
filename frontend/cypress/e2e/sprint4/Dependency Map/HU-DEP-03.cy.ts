@@ -1,5 +1,5 @@
-describe('User can view all dependency maps of a project', () => {
-  it('User can view all dependency maps of a project', () => {
+describe('User can change the description and title of a dependency map', () => {
+  it('User can change the description and title of a dependency map', () => {
         
     cy.login();
     cy.wait(10000);  
@@ -30,7 +30,7 @@ describe('User can view all dependency maps of a project', () => {
       .clear()
       .type('CAMBIO DESCRIPCION CYPRESS PRUEBA DEPENDENCY MAP'); 
     cy.wait(500);
-    
+
     cy.contains('button', 'Save').click(); 
     
     })
