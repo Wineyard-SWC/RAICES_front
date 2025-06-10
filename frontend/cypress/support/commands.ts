@@ -23,7 +23,26 @@ Cypress.Commands.add('login', () => {
     }
   }
   
-
+Cypress.Commands.add('loginForBiometrics', () => {
+    cy.fixture('loginInfo').then((user) => {
+      cy.visit('https://raices-eta.vercel.app/login'); // Cambia la ruta si es diferente
+      cy.get('#email').type(user.verifiedMailBio)
+      cy.get('#password').type(user.verifiedPasswordBio)
+      cy.get('.inline-flex').click()
+    });
+  });
+  
+  declare global {
+    namespace Cypress {
+      interface Chainable {
+        /**
+         * Custom command to log in using fixture data.
+         * @example cy.login()
+         */
+        loginForBiometrics(): Chainable<void>;
+      }
+    }
+  }
 // ***********************************************
 // This example commands.ts shows you how to
 // create various custom commands and overwrite
